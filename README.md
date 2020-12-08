@@ -11,4 +11,7 @@ Think: our own, internal HaveIBeenPwned database.
 3. To quickly generate statistics on credential leaks
 4. To have a well defined interface to pass on data to pass it on to other automation steps
 
+## Documentation
+
+See the [confluence page](https://conf.s.cec.eu.int/display/~kaplale/CredentialLeakDB) for a high level description
 
