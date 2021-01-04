@@ -17,3 +17,4 @@ See the [confluence page](https://conf.s.cec.eu.int/display/~kaplale/CredentialL
 
 SQL structure: [db.sql](db.sql)
 
+x
