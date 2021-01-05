@@ -148,7 +148,8 @@ CREATE TABLE public.leak_data (
     password_verified_ok boolean DEFAULT false,
     ip inet,
     domain character varying(1000),
-    browser character varying(1000)
+    browser character varying(1000),
+    jira_ticket_id character varying(32)
 );
 
 
