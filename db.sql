@@ -143,6 +143,7 @@ CREATE TABLE public.leak_data (
     leak_id integer,
     email character varying(1000),
     password_enc character varying(1000),
+    hash_algo character varying(100),
     password_unenc character varying(1000),
     email_verified boolean DEFAULT false,
     password_verified_ok boolean DEFAULT false,
