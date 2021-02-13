@@ -13,8 +13,9 @@ Think: our own, internal HaveIBeenPwned database.
 
 ## Documentation
 
-See the [confluence page](https://conf.s.cec.eu.int/display/~kaplale/CredentialLeakDB) for a high level description.
+Search in Confluence for "credentialLeakDB" in the Automation space.
 
 SQL structure: [db.sql](db.sql)
 
-x
+
+![EER Diagram](EER.png)
