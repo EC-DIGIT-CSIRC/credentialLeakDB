@@ -38,12 +38,13 @@ CREATE TABLE public.leak (
 
 ALTER TABLE public.leak OWNER TO credentialleakdb;
 
+ALTER TABLE public.leak OWNER TO credentialleakdb;
+
 --
 -- Name: COLUMN leak.breach_ts; Type: COMMENT; Schema: public; Owner: credentialleakdb
 --
 
 COMMENT ON COLUMN public.leak.breach_ts IS 'If known, the timestamp when the breach happened.';
-
 
 --
 -- Name: COLUMN leak.source_publish_ts; Type: COMMENT; Schema: public; Owner: credentialleakdb
@@ -196,7 +197,6 @@ ALTER TABLE ONLY public.leak_data ALTER COLUMN id SET DEFAULT nextval('public.le
 -- 5	2020-11-05 00:00:00+01	2020-11-05 00:00:00+01	2020-12-02 00:03:48.068866+01	Smoke Stealer	\N	\N	\N
 -- 6	\N	\N	2021-02-14 01:45:04.36858+01	COMB	\N	\N	\N
 -- \.
-
 
 --
 -- Data for Name: leak_data; Type: TABLE DATA; Schema: public; Owner: credentialleakdb
