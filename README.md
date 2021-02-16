@@ -17,5 +17,8 @@ Search in Confluence for "credentialLeakDB" in the Automation space.
 
 SQL structure: [db.sql](db.sql)
 
+The EER diagram __intentionally__ got simplified a lot. If we are going to store billions of repeated ``text`` datatype records, we can 
+go back to more normalization. For now, however, this seems to be enough.
+
 
 ![EER Diagram](EER.png)
