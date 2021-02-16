@@ -2,10 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.12 (Ubuntu 10.12-0ubuntu0.18.04.1)
--- Dumped by pg_dump version 10.12 (Ubuntu 10.12-0ubuntu0.18.04.1)
-
--- Started on 2020-12-08 16:18:51 CET
+-- Dumped from database version 11.10
+-- Dumped by pg_dump version 11.10
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -17,92 +15,12 @@ SET check_function_bodies = false;
 SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
-
---
--- TOC entry 2965 (class 1262 OID 17123)
--- Name: credentialleakdb; Type: DATABASE; Schema: -; Owner: credentialleakdb
---
-
-CREATE DATABASE credentialleakdb WITH TEMPLATE = template0 ENCODING = 'UTF8' LC_COLLATE = 'en_US.UTF-8' LC_CTYPE = 'en_US.UTF-8';
-
-
-ALTER DATABASE credentialleakdb OWNER TO credentialleakdb;
-
-\connect credentialleakdb
-
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET idle_in_transaction_session_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SELECT pg_catalog.set_config('search_path', '', false);
-SET check_function_bodies = false;
-SET xmloption = content;
-SET client_min_messages = warning;
-SET row_security = off;
-
---
--- TOC entry 1 (class 3079 OID 13041)
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
---
-
-CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
-
-
---
--- TOC entry 2967 (class 0 OID 0)
--- Dependencies: 1
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
---
-
-COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
-
 
 SET default_tablespace = '';
 
 SET default_with_oids = false;
 
 --
--- TOC entry 203 (class 1259 OID 17214)
--- Name: collection; Type: TABLE; Schema: public; Owner: credentialleakdb
---
-
-CREATE TABLE public.collection (
-    id integer NOT NULL,
-    ts timestamp with time zone,
-    name character varying(1000)
-);
-
-
-ALTER TABLE public.collection OWNER TO credentialleakdb;
-
---
--- TOC entry 202 (class 1259 OID 17212)
--- Name: collection_id_seq; Type: SEQUENCE; Schema: public; Owner: credentialleakdb
---
-
-CREATE SEQUENCE public.collection_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.collection_id_seq OWNER TO credentialleakdb;
-
---
--- TOC entry 2968 (class 0 OID 0)
--- Dependencies: 202
--- Name: collection_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: credentialleakdb
---
-
-ALTER SEQUENCE public.collection_id_seq OWNED BY public.collection.id;
-
-
---
--- TOC entry 199 (class 1259 OID 17182)
 -- Name: leak; Type: TABLE; Schema: public; Owner: credentialleakdb
 --
 
@@ -110,54 +28,104 @@ CREATE TABLE public.leak (
     id integer NOT NULL,
     breach_ts timestamp with time zone,
     source_publish_ts timestamp with time zone,
-    ingestion_ts timestamp with time zone,
-    leak_reporter_id integer,
-    breach_title character varying(1000),
-    leaked_website character varying(1000),
-    jira_ticket_id character varying(32)
+    ingestion_ts timestamp with time zone NOT NULL,
+    summary text NOT NULL,
+    ticket_id text,
+    reporter_name text,
+    source_name text
 );
 
 
 ALTER TABLE public.leak OWNER TO credentialleakdb;
 
 --
--- TOC entry 204 (class 1259 OID 17224)
--- Name: leak2collection; Type: TABLE; Schema: public; Owner: credentialleakdb
+-- Name: COLUMN leak.breach_ts; Type: COMMENT; Schema: public; Owner: credentialleakdb
 --
 
-CREATE TABLE public.leak2collection (
-    collection_id integer,
-    leak_id integer
-);
+COMMENT ON COLUMN public.leak.breach_ts IS 'If known, the timestamp when the breach happened.';
 
-
-ALTER TABLE public.leak2collection OWNER TO credentialleakdb;
 
 --
--- TOC entry 201 (class 1259 OID 17198)
+-- Name: COLUMN leak.source_publish_ts; Type: COMMENT; Schema: public; Owner: credentialleakdb
+--
+
+COMMENT ON COLUMN public.leak.source_publish_ts IS 'The timestamp according when the source (e.g. spycloud) published the data.';
+
+
+--
+-- Name: COLUMN leak.ingestion_ts; Type: COMMENT; Schema: public; Owner: credentialleakdb
+--
+
+COMMENT ON COLUMN public.leak.ingestion_ts IS 'The timestamp when we ingested the data.';
+
+
+--
+-- Name: COLUMN leak.summary; Type: COMMENT; Schema: public; Owner: credentialleakdb
+--
+
+COMMENT ON COLUMN public.leak.summary IS 'A short summary (slug) of the leak. Used for displaying it somewhere';
+
+
+--
+-- Name: COLUMN leak.reporter_name; Type: COMMENT; Schema: public; Owner: credentialleakdb
+--
+
+COMMENT ON COLUMN public.leak.reporter_name IS 'The name of the reporter where we got the notification from. E.g. CERT-eu, Spycloud, etc... Who sent us the data?';
+
+
+--
+-- Name: COLUMN leak.source_name; Type: COMMENT; Schema: public; Owner: credentialleakdb
+--
+
+COMMENT ON COLUMN public.leak.source_name IS 'The name of the source where this leak came from. Either the name of a collection or some other name.';
+
+
+--
 -- Name: leak_data; Type: TABLE; Schema: public; Owner: credentialleakdb
 --
 
 CREATE TABLE public.leak_data (
     id integer NOT NULL,
-    leak_id integer,
-    email character varying(1000),
-    password_enc character varying(1000),
-    hash_algo character varying(100),
-    password_unenc character varying(1000),
+    leak_id integer NOT NULL,
+    email text NOT NULL,
+    password_hashed text,
+    hash_algo text,
+    password_plain text,
     email_verified boolean DEFAULT false,
     password_verified_ok boolean DEFAULT false,
     ip inet,
-    domain character varying(1000),
-    browser character varying(1000),
-    jira_ticket_id character varying(32)
+    domain text,
+    browser text,
+    ticket_id text,
+    malware_name text,
+    password text NOT NULL
 );
 
 
 ALTER TABLE public.leak_data OWNER TO credentialleakdb;
 
 --
--- TOC entry 200 (class 1259 OID 17196)
+-- Name: COLUMN leak_data.hash_algo; Type: COMMENT; Schema: public; Owner: credentialleakdb
+--
+
+COMMENT ON COLUMN public.leak_data.hash_algo IS 'If we can determine the hashing algo and the password_hashed field is set';
+
+
+--
+-- Name: COLUMN leak_data.malware_name; Type: COMMENT; Schema: public; Owner: credentialleakdb
+--
+
+COMMENT ON COLUMN public.leak_data.malware_name IS 'If the password was leaked via a credential stealer malware, then the malware name goes here.';
+
+
+--
+-- Name: COLUMN leak_data.password; Type: COMMENT; Schema: public; Owner: credentialleakdb
+--
+
+COMMENT ON COLUMN public.leak_data.password IS 'Either the encrypted or unencrypted password. If the unencrypted password is available, that is what is going to be in this field.';
+
+
+--
 -- Name: leak_data_id_seq; Type: SEQUENCE; Schema: public; Owner: credentialleakdb
 --
 
@@ -173,8 +141,6 @@ CREATE SEQUENCE public.leak_data_id_seq
 ALTER TABLE public.leak_data_id_seq OWNER TO credentialleakdb;
 
 --
--- TOC entry 2969 (class 0 OID 0)
--- Dependencies: 200
 -- Name: leak_data_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: credentialleakdb
 --
 
@@ -182,7 +148,6 @@ ALTER SEQUENCE public.leak_data_id_seq OWNED BY public.leak_data.id;
 
 
 --
--- TOC entry 198 (class 1259 OID 17180)
 -- Name: leak_id_seq; Type: SEQUENCE; Schema: public; Owner: credentialleakdb
 --
 
@@ -198,8 +163,6 @@ CREATE SEQUENCE public.leak_id_seq
 ALTER TABLE public.leak_id_seq OWNER TO credentialleakdb;
 
 --
--- TOC entry 2970 (class 0 OID 0)
--- Dependencies: 198
 -- Name: leak_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: credentialleakdb
 --
 
@@ -207,53 +170,6 @@ ALTER SEQUENCE public.leak_id_seq OWNED BY public.leak.id;
 
 
 --
--- TOC entry 197 (class 1259 OID 17171)
--- Name: leak_reporter; Type: TABLE; Schema: public; Owner: credentialleakdb
---
-
-CREATE TABLE public.leak_reporter (
-    id integer NOT NULL,
-    name character varying(1000) NOT NULL
-);
-
-
-ALTER TABLE public.leak_reporter OWNER TO credentialleakdb;
-
---
--- TOC entry 196 (class 1259 OID 17169)
--- Name: leak_reporter_id_seq; Type: SEQUENCE; Schema: public; Owner: credentialleakdb
---
-
-CREATE SEQUENCE public.leak_reporter_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.leak_reporter_id_seq OWNER TO credentialleakdb;
-
---
--- TOC entry 2971 (class 0 OID 0)
--- Dependencies: 196
--- Name: leak_reporter_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: credentialleakdb
---
-
-ALTER SEQUENCE public.leak_reporter_id_seq OWNED BY public.leak_reporter.id;
-
-
---
--- TOC entry 2817 (class 2604 OID 17217)
--- Name: collection id; Type: DEFAULT; Schema: public; Owner: credentialleakdb
---
-
-ALTER TABLE ONLY public.collection ALTER COLUMN id SET DEFAULT nextval('public.collection_id_seq'::regclass);
-
-
---
--- TOC entry 2813 (class 2604 OID 17185)
 -- Name: leak id; Type: DEFAULT; Schema: public; Owner: credentialleakdb
 --
 
@@ -261,7 +177,6 @@ ALTER TABLE ONLY public.leak ALTER COLUMN id SET DEFAULT nextval('public.leak_id
 
 
 --
--- TOC entry 2814 (class 2604 OID 17201)
 -- Name: leak_data id; Type: DEFAULT; Schema: public; Owner: credentialleakdb
 --
 
@@ -269,65 +184,29 @@ ALTER TABLE ONLY public.leak_data ALTER COLUMN id SET DEFAULT nextval('public.le
 
 
 --
--- TOC entry 2812 (class 2604 OID 17174)
--- Name: leak_reporter id; Type: DEFAULT; Schema: public; Owner: credentialleakdb
---
-
-ALTER TABLE ONLY public.leak_reporter ALTER COLUMN id SET DEFAULT nextval('public.leak_reporter_id_seq'::regclass);
-
-
---
--- TOC entry 2958 (class 0 OID 17214)
--- Dependencies: 203
--- Data for Name: collection; Type: TABLE DATA; Schema: public; Owner: credentialleakdb
---
-
-COPY public.collection (id, ts, name) FROM stdin;
-1	2020-10-02 00:00:00+02	Cit0Day
-\.
-
-
---
--- TOC entry 2954 (class 0 OID 17182)
--- Dependencies: 199
 -- Data for Name: leak; Type: TABLE DATA; Schema: public; Owner: credentialleakdb
 --
 
-COPY public.leak (id, breach_ts, source_publish_ts, ingestion_ts, leak_reporter_id, breach_title, leaked_website, jira_ticket_id) FROM stdin;
-1	2020-11-05 00:00:00+01	2020-11-05 00:00:00+01	2020-12-02 00:02:05.371812+01	1	Russian Password Stealer	\N	\N
-2	2020-11-05 00:00:00+01	2020-11-05 00:00:00+01	2020-12-02 00:02:39.609522+01	1	Reincubate	\N	\N
-3	2020-11-05 00:00:00+01	2020-11-05 00:00:00+01	2020-12-02 00:02:53.816163+01	1	Taurus Stealer	\N	\N
-4	2020-11-05 00:00:00+01	2020-11-05 00:00:00+01	2020-12-02 00:03:34.302622+01	1	Azorult Botnet	\N	\N
-5	2020-11-05 00:00:00+01	2020-11-05 00:00:00+01	2020-12-02 00:03:48.068866+01	1	Smoke Stealer	\N	\N
-\.
-
-
-
---
--- TOC entry 2952 (class 0 OID 17171)
--- Dependencies: 197
--- Data for Name: leak_reporter; Type: TABLE DATA; Schema: public; Owner: credentialleakdb
---
-
-COPY public.leak_reporter (id, name) FROM stdin;
-1	SpyCloud
-2	HaveIBeenPwned
-3	Cit0Day.in
+-- example:
+-- COPY public.leak (id, breach_ts, source_publish_ts, ingestion_ts, summary, ticket_id, reporter_name, source_name) FROM stdin;
+-- 1	2020-11-05 00:00:00+01	2020-11-05 00:00:00+01	2020-12-02 00:02:05.371812+01	Russian Password Stealer	\N	\N	\N
+-- 2	2020-11-05 00:00:00+01	2020-11-05 00:00:00+01	2020-12-02 00:02:39.609522+01	Reincubate	\N	\N	\N
+-- 3	2020-11-05 00:00:00+01	2020-11-05 00:00:00+01	2020-12-02 00:02:53.816163+01	Taurus Stealer	\N	\N	\N
+-- 4	2020-11-05 00:00:00+01	2020-11-05 00:00:00+01	2020-12-02 00:03:34.302622+01	Azorult Botnet	\N	\N	\N
+-- 5	2020-11-05 00:00:00+01	2020-11-05 00:00:00+01	2020-12-02 00:03:48.068866+01	Smoke Stealer	\N	\N	\N
+-- 6	\N	\N	2021-02-14 01:45:04.36858+01	COMB	\N	\N	\N
 \.
 
 
 --
--- TOC entry 2972 (class 0 OID 0)
--- Dependencies: 202
--- Name: collection_id_seq; Type: SEQUENCE SET; Schema: public; Owner: credentialleakdb
+-- Data for Name: leak_data; Type: TABLE DATA; Schema: public; Owner: credentialleakdb
 --
 
-SELECT pg_catalog.setval('public.collection_id_seq', 1, false);
+COPY public.leak_data (id, leak_id, email, password_hashed, hash_algo, password_plain, email_verified, password_verified_ok, ip, domain, browser, ticket_id, malware_name, password) FROM stdin;
+\.
 
 
 --
--- TOC entry 2973 (class 0 OID 0)
--- Dependencies: 200
 -- Name: leak_data_id_seq; Type: SEQUENCE SET; Schema: public; Owner: credentialleakdb
 --
 
@@ -335,34 +214,13 @@ SELECT pg_catalog.setval('public.leak_data_id_seq', 1, true);
 
 
 --
--- TOC entry 2974 (class 0 OID 0)
--- Dependencies: 198
 -- Name: leak_id_seq; Type: SEQUENCE SET; Schema: public; Owner: credentialleakdb
 --
-
-SELECT pg_catalog.setval('public.leak_id_seq', 1, true);
-
-
---
--- TOC entry 2975 (class 0 OID 0)
--- Dependencies: 196
--- Name: leak_reporter_id_seq; Type: SEQUENCE SET; Schema: public; Owner: credentialleakdb
---
-
-SELECT pg_catalog.setval('public.leak_reporter_id_seq', 1, false);
+-- example:
+SELECT pg_catalog.setval('public.leak_id_seq', 6, true);
 
 
 --
--- TOC entry 2825 (class 2606 OID 17222)
--- Name: collection collection_pkey; Type: CONSTRAINT; Schema: public; Owner: credentialleakdb
---
-
-ALTER TABLE ONLY public.collection
-    ADD CONSTRAINT collection_pkey PRIMARY KEY (id);
-
-
---
--- TOC entry 2823 (class 2606 OID 17206)
 -- Name: leak_data leak_data_pkey; Type: CONSTRAINT; Schema: public; Owner: credentialleakdb
 --
 
@@ -371,7 +229,6 @@ ALTER TABLE ONLY public.leak_data
 
 
 --
--- TOC entry 2821 (class 2606 OID 17190)
 -- Name: leak leak_pkey; Type: CONSTRAINT; Schema: public; Owner: credentialleakdb
 --
 
@@ -380,34 +237,6 @@ ALTER TABLE ONLY public.leak
 
 
 --
--- TOC entry 2819 (class 2606 OID 17179)
--- Name: leak_reporter leak_source_pkey; Type: CONSTRAINT; Schema: public; Owner: credentialleakdb
---
-
-ALTER TABLE ONLY public.leak_reporter
-    ADD CONSTRAINT leak_source_pkey PRIMARY KEY (id);
-
-
---
--- TOC entry 2828 (class 2606 OID 17227)
--- Name: leak2collection leak2collection_collection_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: credentialleakdb
---
-
-ALTER TABLE ONLY public.leak2collection
-    ADD CONSTRAINT leak2collection_collection_id_fkey FOREIGN KEY (collection_id) REFERENCES public.collection(id);
-
-
---
--- TOC entry 2829 (class 2606 OID 17232)
--- Name: leak2collection leak2collection_leak_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: credentialleakdb
---
-
-ALTER TABLE ONLY public.leak2collection
-    ADD CONSTRAINT leak2collection_leak_id_fkey FOREIGN KEY (leak_id) REFERENCES public.leak(id);
-
-
---
--- TOC entry 2827 (class 2606 OID 17207)
 -- Name: leak_data leak_data_leak_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: credentialleakdb
 --
 
@@ -416,16 +245,6 @@ ALTER TABLE ONLY public.leak_data
 
 
 --
--- TOC entry 2826 (class 2606 OID 17191)
--- Name: leak leak_source_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: credentialleakdb
---
-
-ALTER TABLE ONLY public.leak
-    ADD CONSTRAINT leak_source_id_fkey FOREIGN KEY (leak_reporter_id) REFERENCES public.leak_reporter(id);
-
-
--- Completed on 2020-12-08 16:18:52 CET
-
---
 -- PostgreSQL database dump complete
 --
+
