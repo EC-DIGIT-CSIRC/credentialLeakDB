@@ -56,7 +56,7 @@ def parse(folder: Path(), pattern='*.txt') -> pd.DataFrame:
             yield df
 
         except Exception as ex:
-            logging.error("could not pandas.read_csv(%s). Reason: %s. Skipping file" %(fname, str(ex)))
+            logging.error("could not pandas.read_csv(%s). Reason: %s. Skipping file." %(fname, str(ex)))
             errcnt += 1
         print("parsed {} with {} errors".format(fname, errcnt))
         total_errs += errcnt
