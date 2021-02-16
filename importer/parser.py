@@ -45,7 +45,7 @@ def parse(folder: Path(), pattern='*.txt') -> pd.DataFrame:
     for fname in tqdm(Path(folder).rglob(pattern)):
         i+=1
         errcnt = 0
-        leak_name = str(fname).split('/')[1]
+        # leak_name = str(fname).split('/')[1]
 
         dialect = peek_into_file(Path(fname))
         try:
