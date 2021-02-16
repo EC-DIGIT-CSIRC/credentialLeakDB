@@ -11,7 +11,7 @@ from tqdm import tqdm
 import pandas as pd
 import psycopg2
 
-debug=True
+debug = True
 conn = None
 cur = None
 
@@ -43,7 +43,7 @@ def parse(folder: Path(), pattern='*.txt') -> pd.DataFrame:
     errcnt = 0
     i = 0
     for fname in tqdm(Path(folder).rglob(pattern)):
-        i+=1
+        i += 1
         errcnt = 0
         # leak_name = str(fname).split('/')[1]
 
@@ -79,8 +79,8 @@ def prepare_db_structures(breach_title, reporter, collection=None, breach_ts=Non
 
     # first try to insert the collection, if we have one
     if collection:
+        sql = 'INSERT into collection (name) values (%s) ON CONFLICT (name) DO UPDATE SET name = %s RETURNING id'
         try:
-            sql = 'INSERT into collection (name) values (%s) ON CONFLICT (name) DO UPDATE SET name = %s RETURNING id'
             cur.execute(sql, (collection, collection))
             collection_id = cur.fetchone()[0]
         except Exception as ex:
@@ -89,8 +89,8 @@ def prepare_db_structures(breach_title, reporter, collection=None, breach_ts=Non
         collection_id = None
 
     # next the reporter
+    sql = 'INSERT into leak_reporter (name) values (%s) RETURNING id'
     try:
-        sql = 'INSERT into leak_reporter (name) values (%s) RETURNING id'
         cur.execute(sql, (reporter, ))
         reporter_id = cur.fetchone()[0]
     except Exception as ex:
@@ -107,8 +107,8 @@ def prepare_db_structures(breach_title, reporter, collection=None, breach_ts=Non
 
     # and if we have a collection, do the n-to-m intersection tbl
     if leak_id and collection and collection_id:
+        sql = 'INSERT into leak2collection (collection_id, leak_id) values (%s, %s)'
         try:
-            sql = 'INSERT into leak2collection (collection_id, leak_id) values (%s, %s)'
             cur.execute(sql, (collection_id, leak_id))
         except Exception as ex:
             print("could not insert/fetch into leak2collection, reason: {}. SQL={}".format(str(ex), cur.mogrify(sql, (collection_id, leak_id,))))

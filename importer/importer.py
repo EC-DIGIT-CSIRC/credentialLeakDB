@@ -3,10 +3,11 @@
 import logging
 import time
 
-import parser
+from . import parser
 
 
 if __name__ == "__main__":
+    """Test the parser."""
     errcnt = 0
 
     logging.basicConfig()
