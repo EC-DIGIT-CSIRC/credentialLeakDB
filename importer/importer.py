@@ -8,7 +8,7 @@ from . import parser
 
 if __name__ == "__main__":
     """Test the parser."""
-    errcnt = 0
+    ERRCNT = 0
 
     logging.basicConfig()
     logging.getLogger().setLevel(logging.INFO)
@@ -17,4 +17,4 @@ if __name__ == "__main__":
     for df in parser.parse('test_leaks', '*.txt'):
         print(df)
     t1 = time.time()
-    logging.info("processed everything in %f [sec]" % (t1 - t0))
+    logging.info("processed everything in %s [sec]", (t1 - t0))
