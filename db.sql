@@ -99,7 +99,9 @@ CREATE TABLE public.leak_data (
     ip inet,
     domain text,
     browser text,
-    malware_name text
+    malware_name text,
+    infected_machine text,
+	DG text NOT NULL
 );
 
 
@@ -117,6 +119,9 @@ COMMENT ON COLUMN public.leak_data.hash_algo IS 'If we can determine the hashing
 --
 
 COMMENT ON COLUMN public.leak_data.malware_name IS 'If the password was leaked via a credential stealer malware, then the malware name goes here.';
+
+COMMENT ON COLUMN public.leak_data.infected_machine  IS 'The infected machine (some ID for the machine)';
+COMMENT ON COLUMN public.leak_data.DG  IS 'The affected DG';
 
 
 --

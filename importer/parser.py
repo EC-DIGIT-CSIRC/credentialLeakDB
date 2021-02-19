@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+"""importer.parser """
 
 import sys
 import logging
@@ -12,58 +12,62 @@ import pandas as pd
 import psycopg2
 
 debug = True
-conn = None
-cur = None
 
 
-def peek_into_file(_f: Path()) -> csv.Dialect:
+def peek_into_file(fname: Path) -> csv.Dialect:
     """Peek into a file in order to determine the dialect for pandas.read_csv() / csv functions."""
-    with _f.open(mode='r') as f:
+    with fname.open(mode='r') as f:
         sniffer = csv.Sniffer()
-        logging.debug("has header: %s" % sniffer.has_header(f.read(1024)))
+        logging.debug("has header: %s", sniffer.has_header(f.readline()))
         f.seek(0)
-        dialect = sniffer.sniff(f.read(1024))
-        logging.debug("delim: '%s'" % dialect.delimiter)
-        logging.debug("quotechar: '%s'" % dialect.quotechar)
-        logging.debug("doublequote: %s" % dialect.doublequote)
-        logging.debug("escapechar: '%s'" % dialect.escapechar)
-        logging.debug("lineterminator: %r" % dialect.lineterminator)
-        logging.debug("quoting: %s" % dialect.quoting)
-        logging.debug("skipinitialspace: %s" % dialect.skipinitialspace)
+        dialect = sniffer.sniff(f.readline(50))
+        logging.debug("delim: '%s'", dialect.delimiter)
+        logging.debug("quotechar: '%s'", dialect.quotechar)
+        logging.debug("doublequote: %s", dialect.doublequote)
+        logging.debug("escapechar: '%s'", dialect.escapechar)
+        logging.debug("lineterminator: %r", dialect.lineterminator)
+        logging.debug("quoting: %s", dialect.quoting)
+        logging.debug("skipinitialspace: %s", dialect.skipinitialspace)
         return dialect
 
 
-def parse(folder: Path(), pattern='*.txt') -> pd.DataFrame:
-    """Recursively search a given folder for <pattern> and parse all files there.
-    Return a pandas dataframe with the parsed data.
+class BaseParser:
+    """The abstract Parser class."""
+    def __init__(self):
+        pass
 
-    Iterator.
-    """
-    total_errs = 0
-    errcnt = 0
-    i = 0
-    for fname in tqdm(Path(folder).rglob(pattern)):
-        i += 1
-        errcnt = 0
-        # leak_name = str(fname).split('/')[1]
+    def parse_file(self, fname: Path, csv_dialect=None) -> pd.DataFrame:
+        """Parse file (non-recursive) and return either None (in case of errors) or a DataFrame with the contents.
+        Overwrite this method in YOUR Parser subclass.
 
-        dialect = peek_into_file(Path(fname))
+        Returns:
+            a DataFrame
+            number of errors while parsing
+            :rtype: tuple
+        """
+        logging.debug("Parsing file %s...", fname)
         try:
-            df = pd.read_csv(fname, dialect=dialect, error_bad_lines=False, warn_bad_lines=True, usecols=range(2), engine='c')
-            if debug:
-                print(df.head(), file=sys.stderr)
-                print(df.describe(), file=sys.stderr)
-            yield df
+            if csv_dialect:
+                dialect = csv_dialect
+            else:
+                dialect = peek_into_file(fname)     # try to guess
+            df = pd.read_csv(fname, dialect=dialect, error_bad_lines=False, warn_bad_lines=True, usecols=range(16))
+            logging.debug(df.head())
+            logging.debug(df.describe())
+            logging.debug("parsed %s", fname)
+            return df
 
         except Exception as ex:
             logging.error("could not pandas.read_csv(%s). Reason: %s. Skipping file." %(fname, str(ex)))
-            errcnt += 1
-        print("parsed {} with {} errors".format(fname, errcnt))
-        total_errs += errcnt
-    print("Summary: in total we parse {} files with {} errors".format(i, errcnt))
+            return None
+
+    def normalize_data(self, df: pd.DataFrame) -> pd.DataFrame:
+        return df
 
 
-def prepare_db_structures(breach_title, reporter, collection=None, breach_ts=None, source_publish_ts=None, leaked_website=None, jira_ticket_id=None):
+def prepare_db_structures(breach_title, reporter, collection=None, breach_ts=None, source_publish_ts=None,
+                          leaked_website=None, jira_ticket_id=None, infected_machine=None, dg=None):
+    """ XXX FIXME !! THIS IS BROKEN """
     """Fill up all relevant tables (leak, reporter, when the breach happened,
     etc. etc.) up first before we insert the actual leak data (individual rows).
 
@@ -84,7 +88,7 @@ def prepare_db_structures(breach_title, reporter, collection=None, breach_ts=Non
             cur.execute(sql, (collection, collection))
             collection_id = cur.fetchone()[0]
         except Exception as ex:
-            print("could not insert/fetch collection, reason: {}. SQL={}".format(str(ex), cur.mogrify(sql, (collection, collection))))
+            logging.error("could not insert/fetch collection, reason: %s. SQL=%s", str(ex), cur.mogrify(sql, (collection, collection)))
     else:
         collection_id = None
 
@@ -94,7 +98,7 @@ def prepare_db_structures(breach_title, reporter, collection=None, breach_ts=Non
         cur.execute(sql, (reporter, ))
         reporter_id = cur.fetchone()[0]
     except Exception as ex:
-        print("could not insert/fetch reporter, reason: {}. SQL={}".format(str(ex), cur.mogrify(sql, (reporter,))))
+        logging.error("could not insert/fetch reporter, reason: %s. SQL=%s",str(ex), cur.mogrify(sql, (reporter,)))
 
     # the actual leak
     leak_id = None
@@ -103,7 +107,7 @@ def prepare_db_structures(breach_title, reporter, collection=None, breach_ts=Non
         cur.execute(sql, (breach_title, reporter_id, ))
         leak_id = cur.fetchone()[0]
     except Exception as ex:
-        print("could not insert to DB, reason: {}".format(str(ex)))
+        logging.error("could not insert to DB, reason: %s",str(ex))
 
     # and if we have a collection, do the n-to-m intersection tbl
     if leak_id and collection and collection_id:
@@ -111,25 +115,21 @@ def prepare_db_structures(breach_title, reporter, collection=None, breach_ts=Non
         try:
             cur.execute(sql, (collection_id, leak_id))
         except Exception as ex:
-            print("could not insert/fetch into leak2collection, reason: {}. SQL={}".format(str(ex), cur.mogrify(sql, (collection_id, leak_id,))))
+            logging.error("could not insert/fetch into leak2collection, reason: %s. SQL=%s", str(ex), cur.mogrify(sql, (collection_id, leak_id,)))
 
     conn.commit()
     cur.close()
 
 
 if __name__ == "__main__":
-    errcnt = 0
 
     logging.basicConfig()
     logging.getLogger().setLevel(logging.INFO)
+    if debug:
+        logging.getLogger().setLevel(logging.DEBUG)
 
-    conn = psycopg2.connect("dbname=credentialleakdb user=credentialleakdb")
-    cur = conn.cursor()
-
-    prepare_db_structures(breach_title='COMB', reporter='Anonymous', collection='COMB')
-
+    p = BaseParser()
     t0 = time.time()
-    for df in parse('test_leaks', '*.txt'):
-        print(df)
+    p.parse_recursively('test_leaks', '*.txt')
     t1 = time.time()
-    logging.info("processed everything in %f [sec]" % (t1 - t0))
+    logging.info("processed everything in %f [sec]", (t1 - t0))
