@@ -1,3 +1,7 @@
 
+0.3 * moved to public github.com/EC-DIGIT-CSIRC/credentialLeakDB.git
+    * refactored code so that the Parser is now abstract, implement basic Spycloud parser
+    * refactored DB insert
+    * first API version, though still lots of bugs
 0.2 moved to an internal proj. in github after OK from @ddurvaux
 0.1 initial import

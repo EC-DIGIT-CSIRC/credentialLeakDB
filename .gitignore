@@ -3,4 +3,9 @@ venv
 old
 cache
 
+importer/real_data
 poetry.lock
+
+
+*.swp
+*/*.swp
