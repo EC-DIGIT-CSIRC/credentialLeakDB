@@ -86,6 +86,17 @@ async def get_user_by_email(email: EmailStr):
     except Exception as ex:
         return {"error": str(ex), "data": []}
 
+@app.get('/user_and_password/{email}/{password}')
+async def get_user_by_email(email: EmailStr, password: str):
+    sql = """SELECT * from leak_data where email=%s and password=%s"""
+    db = get_db()
+    try:
+        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(sql, (email, password))
+        return {"data": cur.fetchall()}
+    except Exception as ex:
+        return {"error": str(ex), "data": []}
+
 
 @app.get('/exists/by_email/{email}')
 async def check_user_by_email(email: EmailStr):

@@ -51,7 +51,7 @@ class BaseParser:
                 dialect = csv_dialect
             else:
                 dialect = peek_into_file(fname)     # try to guess
-            df = pd.read_csv(fname, dialect=dialect, error_bad_lines=False, warn_bad_lines=True, usecols=range(16))
+            df = pd.read_csv(fname, dialect=dialect, error_bad_lines=False, warn_bad_lines=True, usecols=range(2))
             logging.debug(df.head())
             logging.debug(df.describe())
             logging.debug("parsed %s", fname)
