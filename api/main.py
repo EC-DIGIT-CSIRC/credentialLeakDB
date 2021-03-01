@@ -10,6 +10,7 @@ from tempfile import SpooledTemporaryFile
 import time
 import shutil
 from pathlib import Path
+import datetime
 
 import psycopg2
 import psycopg2.extras
@@ -86,8 +87,9 @@ async def get_user_by_email(email: EmailStr):
     except Exception as ex:
         return {"error": str(ex), "data": []}
 
+
 @app.get('/user_and_password/{email}/{password}')
-async def get_user_by_email(email: EmailStr, password: str):
+async def get_user_by_email_and_password(email: EmailStr, password: str):
     sql = """SELECT * from leak_data where email=%s and password=%s"""
     db = get_db()
     try:
@@ -162,6 +164,65 @@ async def store_file(orig_filename: str, file: SpooledTemporaryFile,
 
 async def check_file(filename: str) -> bool:
     return True     # XXX FIXME Implement
+
+
+@app.post("/import/csv")
+async def import_csv(leak_summary: str, ticket_id: str,
+                     reporter: str, source: str,
+                     breach_ts: datetime.datetime = None,
+                     source_publish_ts: datetime.datetime = None,
+                     file: UploadFile = File(...)):
+    """Import a CSV file into the DB. The parameters are given for the leak table entry."""
+
+
+    t0 = time.time()
+
+    sql = '''
+    INSERT INTO leak (summary, ticket_id, reporter_name, source_name, breach_ts, source_publish_ts, ingestion_ts) 
+    VALUES (%s, %s, %s, %s, %s, %s, now()) 
+    ON CONFLICT  DO NOTHING RETURNING id
+    '''
+    leak_id = -1
+    db = get_db()
+    file_on_disk = await store_file(file.filename, file.file)
+    await check_file(file_on_disk)  # XXX FIXME. Additional checks on the dumped file still missing
+
+    try:
+        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(sql, (leak_summary, ticket_id, reporter, source, breach_ts, source_publish_ts))
+        leak_id = cur.fetchall()[0]
+    except Exception as ex:
+        return {"error": str(ex), "data": []}
+
+    p = parser.BaseParser()
+    # p = parser_spycloud.Parser()      # XXX FIXME need to be flexible when chosing which parser to use
+    df = p.parse_file(Path(file_on_disk))
+
+    # insert file into DB XXX FIXME
+
+    # dedup
+
+    t1 = time.time()
+    # return results
+    return {"meta": {"duration": (t1 - t0)}, "data": df.to_dict(orient="records")}         # orient='table', index=False)
+
+    """
+    sql2 = '''
+    INSERT INTO leak_data (leak_id, email, password, password_plain, password_hashed, hash_algo, email_verified, 
+       password_verified_ok, ip, domain, browser, malware_name, infected_machine, dg) 
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    ON CONFLICT DO NOTHING RETURNING id
+    '''
+    p = parser_spycloud.SpycloudParser()
+    df = p.parse_file(file)
+    for i, row in df.iterrows(): 
+        try:
+            cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            cur.execute(sql2, (leak_id, row['email'], row['password'], ...))
+            leak_id = cur.fetchall()[0]
+        except Exception as ex:
+            return {"error": str(ex), "data": []}
+    """
 
 
 @app.post("/deduplicate/csv/")
