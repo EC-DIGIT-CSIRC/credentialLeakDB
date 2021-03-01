@@ -30,7 +30,7 @@ app = FastAPI()         # root_path='/api/v1')
 # DB functions
 
 db_conn = None
-DSN = "dbname=%s dbuser=%s" % (os.getenv('DBNAME'), os.getenv('DBUSER'))
+DSN = "dbname=%s user=%s" % (os.getenv('DBNAME'), os.getenv('DBUSER'))
 
 
 #############
