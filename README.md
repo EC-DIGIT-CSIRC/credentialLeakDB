@@ -22,3 +22,23 @@ go back to more normalization. For now, however, this seems to be enough.
 
 
 ![EER Diagram](EER.png)
+
+
+## Installation
+
+1. Install Postgresql 
+2. as user postgres:
+```bash
+createdb credentialleakdb
+createuser credentialleakdb
+```
+3. ``psql credentialleakdb < db.sql``
+4. set the env vars: 
+```bash
+export DBNAME=credentialleakdb
+export DBUSER=credentialleakdb
+```
+5. start the program:
+```bash
+uvicorn --reload --host 0.0.0.0 --port 8080 api.main:app
+```

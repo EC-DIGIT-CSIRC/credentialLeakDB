@@ -30,7 +30,7 @@ app = FastAPI()         # root_path='/api/v1')
 # DB functions
 
 db_conn = None
-DSN = "dbname=credentialdb dbuser=aaron"
+DSN = "dbname=%s dbuser=%s" % (os.getenv('DBNAME'), os.getenv('DBUSER'))
 
 
 #############
@@ -42,7 +42,7 @@ def get_db():
     global db_conn
 
     if not db_conn:
-        db_conn = connect_db("dbname=credentialleakdb user=aaron")
+        db_conn = connect_db(DSN)
     return db_conn
 
 
@@ -174,11 +174,10 @@ async def import_csv(leak_summary: str, ticket_id: str,
                      file: UploadFile = File(...)):
     """Import a CSV file into the DB. The parameters are given for the leak table entry."""
 
-
     t0 = time.time()
 
     sql = '''
-    INSERT INTO leak (summary, ticket_id, reporter_name, source_name, breach_ts, source_publish_ts, ingestion_ts) 
+    INSERT INTO leak (summary, ticket_id, reporter_name, source_name, breach_ts, source_publish_ts, ingestion_ts)
     VALUES (%s, %s, %s, %s, %s, %s, now()) 
     ON CONFLICT  DO NOTHING RETURNING id
     '''
