@@ -84,7 +84,7 @@ async def get_user_by_email(email: EmailStr) -> Answer:
         cur.execute(sql, (email,))
         return Answer(data=cur.fetchall())
     except Exception as ex:
-        return Answer(error=str(ex), data=[])
+        return Answer(error=str(ex), data={})
 
 
 @app.get('/user_and_password/{email}/{password}')
@@ -96,7 +96,7 @@ async def get_user_by_email_and_password(email: EmailStr, password: str) -> Answ
         cur.execute(sql, (email, password))
         return Answer(data=cur.fetchall())
     except Exception as ex:
-        return Answer(error=str(ex), data=[])
+        return Answer(error=str(ex), data={})
 
 
 @app.get('/exists/by_email/{email}')
@@ -108,7 +108,7 @@ async def check_user_by_email(email: EmailStr) -> Answer:
         cur.execute(sql, (email,))
         return Answer(data=cur.fetchone())
     except Exception as ex:
-        return Answer(error=str(ex), data=[])
+        return Answer(error=str(ex), data={})
 
 
 @app.get('/exists/by_password/{password}')
@@ -121,7 +121,7 @@ async def check_user_by_password(password: str) -> Answer:
         cur.execute(sql, (password, password, password))
         return Answer(data=cur.fetchall())
     except Exception as ex:
-        return Answer(error=str(ex), data=[])
+        return Answer(error=str(ex), data={})
 
 
 @app.get('/exists/by_domain/{domain}')
@@ -133,7 +133,7 @@ async def check_user_by_domain(domain: str) -> Answer:
         cur.execute(sql, (domain,))
         return Answer(data=cur.fetchall())
     except Exception as ex:
-        return Answer(error=str(ex), data=[])
+        return Answer(error=str(ex), data={})
 
 
 #####################################
@@ -176,7 +176,7 @@ async def get_leak_by_id(_id: int) -> Answer:
         cur.execute(sql, (_id,))
         return Answer(data=cur.fetchall())
     except Exception as ex:
-        return Answer(error=str(ex), data=[])
+        return Answer(error=str(ex), data={})
 
 
 @app.get("/leak/by_summary/{summary}", tags=["Leak"])
@@ -189,7 +189,7 @@ async def get_leak_by_summary(summary: str) -> Answer:
         cur.execute(sql, (summary,))
         return Answer(data=cur.fetchall())
     except Exception as ex:
-        return Answer(error=str(ex), data=[])
+        return Answer(error=str(ex), data={})
 
 
 @app.get("/leak/by_reporter/{reporter}", tags=["Leak"])
@@ -202,7 +202,7 @@ async def get_leak_by_reporter(reporter: str) -> Answer:
         cur.execute(sql, (reporter,))
         return Answer(data=cur.fetchall())
     except Exception as ex:
-        return Answer(error=str(ex), data=[])
+        return Answer(error=str(ex), data={})
 
 
 @app.get("/leak/by_source/{source_name}", tags=["Leak"])
@@ -215,7 +215,7 @@ async def get_leak_by_source(source_name: str) -> Answer:
         cur.execute(sql, (source_name,))
         return Answer(data=cur.fetchall())
     except Exception as ex:
-        return Answer(error=str(ex), data=[])
+        return Answer(error=str(ex), data={})
 
 
 @app.post("/leak/", tags=["Leak"])
@@ -236,7 +236,7 @@ async def new_leak(leak: Leak) -> Answer:
                           leak.source_publish_ts,))
         return Answer(data=cur.fetchall())
     except Exception as ex:
-        return Answer(error=str(ex), data=[])
+        return Answer(error=str(ex), data={})
 
 
 @app.put("/leak/", tags=["Leak"])
@@ -260,7 +260,7 @@ async def update_leak(leak: Leak) -> Answer:
                           leak.source_name, leak.breach_ts, leak.source_publish_ts, leak.id))
         return Answer(data=cur.fetchall())
     except Exception as ex:
-        return Answer(error=str(ex), data=[])
+        return Answer(error=str(ex), data={})
 
 
 @app.post("/leak_data/", tags=["Leak Data"])
@@ -284,7 +284,7 @@ async def new_leak_data(row: LeakData) -> Answer:
                           row.malware_name, row.infected_machine, row.dg))
         return Answer(data=cur.fetchall())
     except Exception as ex:
-        return Answer(error=str(ex), data=[])
+        return Answer(error=str(ex), data={})
 
 
 @app.put("/leak_data/", tags=["Leak Data"])
@@ -319,7 +319,7 @@ async def update_leak_data(row: LeakData) -> Answer:
                           row.malware_name, row.infected_machine, row.dg, row.id))
         return Answer(data=cur.fetchall())
     except Exception as ex:
-        return Answer(error=str(ex), data=[])
+        return Answer(error=str(ex), data={})
 
 
 # async def import_csv(leak: Leak = Form(...), file: UploadFile = File(...)):
@@ -346,14 +346,14 @@ async def import_csv(leak: Leak = Form(...), file: UploadFile = File(...)) -> An
                           leak.breach_ts, leak.source_publish_ts))
         leak_id = cur.fetchall()[0]
     except Exception as ex:
-        return Answer(error=str(ex), data=[])
+        return Answer(error=str(ex), data={})
 
     p = parser.BaseParser()
     try:
         # p = parser_spycloud.Parser()      # XXX FIXME need to be flexible when chosing which parser to use
         df = p.parse_file(Path(file_on_disk))
     except Exception as ex:
-        return Answer(error=str(ex), data=[])
+        return Answer(error=str(ex), data={})
 
     # insert file into DB XXX FIXME
 
@@ -378,7 +378,7 @@ async def import_csv(leak: Leak = Form(...), file: UploadFile = File(...)) -> An
             cur.execute(sql2, (leak_id, row['email'], row['password'], ...))
             leak_id = cur.fetchall()[0]
         except Exception as ex:
-            return Answer(error=str(ex), data=[])
+            return Answer(error=str(ex), data={})
     """
 
 

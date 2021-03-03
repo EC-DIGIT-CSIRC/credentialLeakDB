@@ -5,7 +5,7 @@ License: see LICENSE.
 """
 
 from pydantic import BaseModel, EmailStr
-from typing import Optional, Dict
+from typing import Optional, Dict, Union, List
 
 import datetime
 
@@ -46,5 +46,5 @@ class AnswerMeta(BaseModel):
 
 class Answer(BaseModel):
     meta: Optional[AnswerMeta]
-    data: Dict
+    data: Union[Dict,List]
     error: Optional[str]
