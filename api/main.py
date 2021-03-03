@@ -17,7 +17,7 @@ import logging
 
 from fastapi import FastAPI, HTTPException, File, UploadFile, Form
 import uvicorn
-from models import Leak, LeakData, Answer, AnswerMeta
+from .models import Leak, LeakData, Answer, AnswerMeta
 from pydantic import EmailStr
 
 from importer import parser, parser_spycloud
@@ -28,8 +28,7 @@ app = FastAPI()  # root_path='/api/v1')
 # DB functions
 
 db_conn = None
-DSN = "host=%s dbname=%s user=%s" % (os.getenv('DBHOST', 'localhost'),
-                                     os.getenv('DBNAME'), os.getenv('DBUSER'))
+DSN = "host=%s dbname=%s user=%s" % (os.getenv('DBHOST', 'localhost'), os.getenv('DBNAME'), os.getenv('DBUSER'))
 
 
 #############
