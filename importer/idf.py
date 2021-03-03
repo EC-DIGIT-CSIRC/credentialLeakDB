@@ -17,6 +17,7 @@ internal_format = {
     password_verified_ok boolean DEFAULT false,
     ip inet,
     domain text,
+    url text,
     browser text,
     malware_name text,
     infected_machine text,

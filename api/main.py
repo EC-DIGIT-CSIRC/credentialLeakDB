@@ -16,9 +16,9 @@ import psycopg2
 import psycopg2.extras
 import logging
 
-from fastapi import FastAPI, Request, HTTPException, File, UploadFile
+from fastapi import FastAPI, Request, HTTPException, File, UploadFile, Form
 import uvicorn
-# import models
+from models import Leak, LeakData
 from pydantic import EmailStr
 
 from importer import parser, parser_spycloud
@@ -30,7 +30,8 @@ app = FastAPI()         # root_path='/api/v1')
 # DB functions
 
 db_conn = None
-DSN = "dbname=%s user=%s" % (os.getenv('DBNAME'), os.getenv('DBUSER'))
+DSN = "host=%s dbname=%s user=%s" % (os.getenv('DBHOST', 'localhost'),
+                                     os.getenv('DBNAME'), os.getenv('DBUSER'))
 
 
 #############
@@ -166,16 +167,170 @@ async def check_file(filename: str) -> bool:
     return True     # XXX FIXME Implement
 
 
-@app.post("/import/csv")
-async def import_csv(leak_summary: str, ticket_id: str,
-                     reporter: str, source: str,
-                     breach_ts: datetime.datetime = None,
-                     source_publish_ts: datetime.datetime = None,
-                     file: UploadFile = File(...)):
-    """Import a CSV file into the DB. The parameters are given for the leak table entry."""
+@app.get("/leak/{id}", tags=["Leak"])
+@app.get("/leak/by_id/{id}", tags=["Leak"])
+async def get_leak_by_id(id: int) -> Leak:
+    """Fetch a leak by its ID"""
+    sql = "SELECT * from leak WHERE id = %s"
+    db =  get_db()
+    try:
+        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(sql, (id,))
+        return {"data": cur.fetchall()}
+    except Exception as ex:
+        return {"error": str(ex), "data": []}
 
+
+@app.get("/leak/by_summary/{summary}", tags=["Leak"])
+async def get_leak_by_summary(summary: str) -> Leak:
+    """Fetch a leak by summary"""
+    sql = "SELECT * from leak WHERE summary = %s"
+    db =  get_db()
+    try:
+        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(sql, (summary,))
+        return {"data": cur.fetchall()}
+    except Exception as ex:
+        return {"error": str(ex), "data": []}
+
+
+@app.get("/leak/by_reporter/{reporter}", tags=["Leak"])
+async def get_leak_by_reporter(reporter: str) -> Leak:
+    """Fetch a leak by its reporter"""
+    sql = "SELECT * from leak WHERE reporter_name = %s"
+    db =  get_db()
+    try:
+        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(sql, (reporter,))
+        return {"data": cur.fetchall()}
+    except Exception as ex:
+        return {"error": str(ex), "data": []}
+
+
+@app.get("/leak/by_source/{source_name}", tags=["Leak"])
+async def get_leak_by_source(source_name: str) -> Leak:
+    """Fetch a leak by its source (i.e. WHO collected the leak data (spycloud, HaveIBeenPwned, etc.)"""
+    sql = "SELECT * from leak WHERE source_name = %s"
+    db =  get_db()
+    try:
+        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(sql, (source_name,))
+        return {"data": cur.fetchall()}
+    except Exception as ex:
+        return {"error": str(ex), "data": []}
+
+
+@app.post("/leak/", tags=["Leak"])
+async def new_leak(leak: Leak):
+    """
+    INSERT a new leak into the leak table in the database.
+    """
+    sql = """INSERT into leak 
+             (summary, ticket_id, reporter_name, source_name, breach_ts, source_publish_ts, ingestion_ts) 
+             VALUES (%s, %s, %s, %s, %s, %s, now()) 
+             ON CONFLICT DO NOTHING 
+             RETURNING id
+        """
+    db =  get_db()
+    try:
+        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(sql, (leak.summary, leak.ticket_id, leak.reporter_name, leak.source_name, leak.breach_ts, leak.source_publish_ts,))
+        return {"data": cur.fetchall()}
+    except Exception as ex:
+        return {"error": str(ex), "data": []}
+
+
+@app.put("/leak/", tags=["Leak"])
+async def update_leak(leak: Leak):
+    """
+    UPDATE an existing leak.
+    """
+    sql = """UPDATE leak SET 
+                summary = %s, ticket_id = %s, reporter_name = %s, source_name = %s, 
+                breach_ts = %s, source_publish_ts = %s, ingestion_ts = %s
+             WHERE id = %s
+             ON CONFLICT DO NOTHING 
+             RETURNING id
+        """
+    db =  get_db()
+    if not leak.id:
+        return {"error": "id %s not given. Please specify a leak.id you want to UPDATE", "data": []}
+    try:
+        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(sql, (leak.summary, leak.ticket_id, leak.reporter_name,
+                          leak.source_name, leak.breach_ts, leak.source_publish_ts, leak.id))
+        return {"data": cur.fetchall()}
+    except Exception as ex:
+        return {"error": str(ex), "data": []}
+
+
+@app.post("/leak_data/", tags=["Leak Data"])
+async def new_leak_data(row: LeakData):
+    """
+    INSERT a new leak_data row into the leak_data table.
+    """
+    sql = """INSERT into leak_data  
+             (leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id, 
+             email_verified, password_verified_ok, ip, domain, browser, malware_name, infected_machine, dg)
+             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) 
+             ON CONFLICT DO NOTHING 
+             RETURNING id
+        """
+    db =  get_db()
+    print(row)
+    try:
+        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(sql, (row.leak_id, row.email, row.password, row.password_plain, row.password_hashed, row.hash_algo,
+                          row.ticket_id, row.email_verified, row.password_verified_ok, row.ip, row.domain, row.browser,
+                          row.malware_name, row.infected_machine, row.dg))
+        return {"data": cur.fetchall()}
+    except Exception as ex:
+        return {"error": str(ex), "data": []}
+
+
+@app.put("/leak_data/", tags=["Leak Data"])
+async def update_leak_data(row: LeakData):
+    """
+    UPDATE leak_data row in the leak_data table.
+    """
+    sql = """UPDATE leak_data SET
+                leak_id = %s, 
+                email = %s, 
+                password = %s, 
+                password_plain = %s, 
+                password_hashed = %s, 
+                hash_algo = %s, 
+                ticket_id = %s, 
+                email_verified = %s, 
+                password_verified_ok = %s, 
+                ip = %s, 
+                domain = %s, 
+                browser = %s, 
+                malware_name = %s, 
+                infected_machine = %s, 
+                dg = %s
+             WHERE id = %s
+             RETURNING id
+        """
+    db =  get_db()
+    try:
+        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(sql, (row.leak_id, row.email, row.password, row.password_plain, row.password_hashed, row.hash_algo,
+                          row.ticket_id, row.email_verified, row.password_verified_ok, row.ip, row.domain, row.browser,
+                          row.malware_name, row.infected_machine, row.dg, row.id))
+        return {"data": cur.fetchall()}
+    except Exception as ex:
+        return {"error": str(ex), "data": []}
+
+
+# async def import_csv(leak: Leak = Form(...), file: UploadFile = File(...)):
+@app.post("/import/csv", tags=["Leak"])
+async def import_csv( leak: Leak = Form(...)):
+        # file: UploadFile = File(...),
+    """Import a CSV file into the DB. The parameters are given for the leak table entry."""
     t0 = time.time()
 
+    print(leak)
     sql = '''
     INSERT INTO leak (summary, ticket_id, reporter_name, source_name, breach_ts, source_publish_ts, ingestion_ts)
     VALUES (%s, %s, %s, %s, %s, %s, now()) 
@@ -188,14 +343,19 @@ async def import_csv(leak_summary: str, ticket_id: str,
 
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute(sql, (leak_summary, ticket_id, reporter, source, breach_ts, source_publish_ts))
+        cur.execute(sql, (leak.summary, leak.ticket_id, leak.reporter_name,
+                          leak.source_name,
+                          leak.breach_ts, leak.source_publish_ts))
         leak_id = cur.fetchall()[0]
     except Exception as ex:
         return {"error": str(ex), "data": []}
 
     p = parser.BaseParser()
-    # p = parser_spycloud.Parser()      # XXX FIXME need to be flexible when chosing which parser to use
-    df = p.parse_file(Path(file_on_disk))
+    try:
+        # p = parser_spycloud.Parser()      # XXX FIXME need to be flexible when chosing which parser to use
+        df = p.parse_file(Path(file_on_disk))
+    except Exception as ex:
+        return { "error": str(ex), "data": [] }
 
     # insert file into DB XXX FIXME
 
