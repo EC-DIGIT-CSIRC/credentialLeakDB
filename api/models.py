@@ -45,6 +45,6 @@ class AnswerMeta(BaseModel):
 
 
 class Answer(BaseModel):
-    meta: AnswerMeta
+    meta: Optional[AnswerMeta]
     data: Dict
     error: Optional[str]
