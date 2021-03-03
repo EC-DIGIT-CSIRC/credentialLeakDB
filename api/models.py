@@ -9,6 +9,7 @@ from typing import Optional, Dict
 
 import datetime
 
+
 class Leak(BaseModel):
     id: Optional[int]
     ticket_id: Optional[int]
@@ -47,5 +48,3 @@ class Answer(BaseModel):
     meta: AnswerMeta
     data: Dict
     error: Optional[str]
-
-

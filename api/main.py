@@ -10,21 +10,19 @@ from tempfile import SpooledTemporaryFile
 import time
 import shutil
 from pathlib import Path
-import datetime
 
 import psycopg2
 import psycopg2.extras
 import logging
 
-from fastapi import FastAPI, Request, HTTPException, File, UploadFile, Form
+from fastapi import FastAPI, HTTPException, File, UploadFile, Form
 import uvicorn
-from models import Leak, LeakData
+from models import Leak, LeakData, Answer, AnswerMeta
 from pydantic import EmailStr
 
 from importer import parser, parser_spycloud
 
-
-app = FastAPI()         # root_path='/api/v1')
+app = FastAPI()  # root_path='/api/v1')
 
 #################################
 # DB functions
@@ -48,8 +46,9 @@ def get_db():
 
 
 @app.on_event('shutdown')
-def close_db(db_conn):
+def close_db():
     """Closes the database again at the end of the request."""
+    global db_conn
 
     logging.info('shutting down....')
     if db_conn:
@@ -73,69 +72,69 @@ async def ping():
 
 
 @app.get("/")
-async def root(request: Request):
-    return {"message": "Hello World"}       # , "root_path": request.scope.get("root_path")}
+async def root():
+    return {"message": "Hello World"}  # , "root_path": request.scope.get("root_path")}
 
 
 @app.get('/user/{email}')
-async def get_user_by_email(email: EmailStr):
+async def get_user_by_email(email: EmailStr) -> Answer:
     sql = """SELECT * from leak_data where email=%s"""
     db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (email,))
-        return {"data": cur.fetchall()}
+        return Answer(data=cur.fetchall())
     except Exception as ex:
-        return {"error": str(ex), "data": []}
+        return Answer(error=str(ex), data=[])
 
 
 @app.get('/user_and_password/{email}/{password}')
-async def get_user_by_email_and_password(email: EmailStr, password: str):
+async def get_user_by_email_and_password(email: EmailStr, password: str) -> Answer:
     sql = """SELECT * from leak_data where email=%s and password=%s"""
     db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (email, password))
-        return {"data": cur.fetchall()}
+        return Answer(data=cur.fetchall())
     except Exception as ex:
-        return {"error": str(ex), "data": []}
+        return Answer(error=str(ex), data=[])
 
 
 @app.get('/exists/by_email/{email}')
-async def check_user_by_email(email: EmailStr):
+async def check_user_by_email(email: EmailStr) -> Answer:
     sql = """SELECT count(*) from leak_data where email=%s"""
     db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (email,))
-        return {"data": cur.fetchone()}
+        return Answer(data=cur.fetchone())
     except Exception as ex:
-        return {"error": str(ex), "data": []}
+        return Answer(error=str(ex), data=[])
 
 
 @app.get('/exists/by_password/{password}')
-async def check_user_by_password(password: str):
+async def check_user_by_password(password: str) -> Answer:
     # can do better... use the hashid library?
     sql = """SELECT count(*) from leak_data where password=%s or password_plain=%s or password_hashed=%s"""
     db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (password, password, password))
-        return {"data": cur.fetchall()}
+        return Answer(data=cur.fetchall())
     except Exception as ex:
-        return {"error": str(ex), "data": []}
+        return Answer(error=str(ex), data=[])
 
 
 @app.get('/exists/by_domain/{domain}')
-async def check_user_by_domain(domain: str):
+async def check_user_by_domain(domain: str) -> Answer:
     sql = """SELECT count(*) from leak_data where domain=%s"""
     db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (domain,))
-        return {"data": cur.fetchall()}
+        return Answer(data=cur.fetchall())
     except Exception as ex:
-        return {"error": str(ex), "data": []}
+        return Answer(error=str(ex), data=[])
 
 
 #####################################
@@ -155,7 +154,7 @@ async def store_file(orig_filename: str, file: SpooledTemporaryFile,
     #
     # filepath syntax:  <UPLOAD_PATH>/<original filename>
     #   example: /tmp/Spycloud.csv
-    path = "{}/{}".format(upload_path, orig_filename)     # prefix, orig_filename, sha256, pid, suffix)
+    path = "{}/{}".format(upload_path, orig_filename)  # prefix, orig_filename, sha256, pid, suffix)
     logging.info("storing %s ... to %s" % (orig_filename, path))
     file.seek(0)
     with open(path, "w+b") as outfile:
@@ -163,65 +162,65 @@ async def store_file(orig_filename: str, file: SpooledTemporaryFile,
     return path
 
 
-async def check_file(filename: str) -> bool:
-    return True     # XXX FIXME Implement
+async def check_file(_filename: str) -> bool:
+    return True  # XXX FIXME Implement
 
 
 @app.get("/leak/{id}", tags=["Leak"])
 @app.get("/leak/by_id/{id}", tags=["Leak"])
-async def get_leak_by_id(id: int) -> Leak:
+async def get_leak_by_id(_id: int) -> Answer:
     """Fetch a leak by its ID"""
     sql = "SELECT * from leak WHERE id = %s"
-    db =  get_db()
+    db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute(sql, (id,))
-        return {"data": cur.fetchall()}
+        cur.execute(sql, (_id,))
+        return Answer(data=cur.fetchall())
     except Exception as ex:
-        return {"error": str(ex), "data": []}
+        return Answer(error=str(ex), data=[])
 
 
 @app.get("/leak/by_summary/{summary}", tags=["Leak"])
-async def get_leak_by_summary(summary: str) -> Leak:
+async def get_leak_by_summary(summary: str) -> Answer:
     """Fetch a leak by summary"""
     sql = "SELECT * from leak WHERE summary = %s"
-    db =  get_db()
+    db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (summary,))
-        return {"data": cur.fetchall()}
+        return Answer(data=cur.fetchall())
     except Exception as ex:
-        return {"error": str(ex), "data": []}
+        return Answer(error=str(ex), data=[])
 
 
 @app.get("/leak/by_reporter/{reporter}", tags=["Leak"])
-async def get_leak_by_reporter(reporter: str) -> Leak:
+async def get_leak_by_reporter(reporter: str) -> Answer:
     """Fetch a leak by its reporter"""
     sql = "SELECT * from leak WHERE reporter_name = %s"
-    db =  get_db()
+    db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (reporter,))
-        return {"data": cur.fetchall()}
+        return Answer(data=cur.fetchall())
     except Exception as ex:
-        return {"error": str(ex), "data": []}
+        return Answer(error=str(ex), data=[])
 
 
 @app.get("/leak/by_source/{source_name}", tags=["Leak"])
-async def get_leak_by_source(source_name: str) -> Leak:
+async def get_leak_by_source(source_name: str) -> Answer:
     """Fetch a leak by its source (i.e. WHO collected the leak data (spycloud, HaveIBeenPwned, etc.)"""
     sql = "SELECT * from leak WHERE source_name = %s"
-    db =  get_db()
+    db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (source_name,))
-        return {"data": cur.fetchall()}
+        return Answer(data=cur.fetchall())
     except Exception as ex:
-        return {"error": str(ex), "data": []}
+        return Answer(error=str(ex), data=[])
 
 
 @app.post("/leak/", tags=["Leak"])
-async def new_leak(leak: Leak):
+async def new_leak(leak: Leak) -> Answer:
     """
     INSERT a new leak into the leak table in the database.
     """
@@ -231,17 +230,18 @@ async def new_leak(leak: Leak):
              ON CONFLICT DO NOTHING 
              RETURNING id
         """
-    db =  get_db()
+    db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute(sql, (leak.summary, leak.ticket_id, leak.reporter_name, leak.source_name, leak.breach_ts, leak.source_publish_ts,))
-        return {"data": cur.fetchall()}
+        cur.execute(sql, (leak.summary, leak.ticket_id, leak.reporter_name, leak.source_name, leak.breach_ts,
+                          leak.source_publish_ts,))
+        return Answer(data=cur.fetchall())
     except Exception as ex:
-        return {"error": str(ex), "data": []}
+        return Answer(error=str(ex), data=[])
 
 
 @app.put("/leak/", tags=["Leak"])
-async def update_leak(leak: Leak):
+async def update_leak(leak: Leak) -> Answer:
     """
     UPDATE an existing leak.
     """
@@ -252,20 +252,20 @@ async def update_leak(leak: Leak):
              ON CONFLICT DO NOTHING 
              RETURNING id
         """
-    db =  get_db()
+    db = get_db()
     if not leak.id:
         return {"error": "id %s not given. Please specify a leak.id you want to UPDATE", "data": []}
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (leak.summary, leak.ticket_id, leak.reporter_name,
                           leak.source_name, leak.breach_ts, leak.source_publish_ts, leak.id))
-        return {"data": cur.fetchall()}
+        return Answer(data=cur.fetchall())
     except Exception as ex:
-        return {"error": str(ex), "data": []}
+        return Answer(error=str(ex), data=[])
 
 
 @app.post("/leak_data/", tags=["Leak Data"])
-async def new_leak_data(row: LeakData):
+async def new_leak_data(row: LeakData) -> Answer:
     """
     INSERT a new leak_data row into the leak_data table.
     """
@@ -276,20 +276,20 @@ async def new_leak_data(row: LeakData):
              ON CONFLICT DO NOTHING 
              RETURNING id
         """
-    db =  get_db()
+    db = get_db()
     print(row)
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (row.leak_id, row.email, row.password, row.password_plain, row.password_hashed, row.hash_algo,
                           row.ticket_id, row.email_verified, row.password_verified_ok, row.ip, row.domain, row.browser,
                           row.malware_name, row.infected_machine, row.dg))
-        return {"data": cur.fetchall()}
+        return Answer(data=cur.fetchall())
     except Exception as ex:
-        return {"error": str(ex), "data": []}
+        return Answer(error=str(ex), data=[])
 
 
 @app.put("/leak_data/", tags=["Leak Data"])
-async def update_leak_data(row: LeakData):
+async def update_leak_data(row: LeakData) -> Answer:
     """
     UPDATE leak_data row in the leak_data table.
     """
@@ -312,21 +312,20 @@ async def update_leak_data(row: LeakData):
              WHERE id = %s
              RETURNING id
         """
-    db =  get_db()
+    db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (row.leak_id, row.email, row.password, row.password_plain, row.password_hashed, row.hash_algo,
                           row.ticket_id, row.email_verified, row.password_verified_ok, row.ip, row.domain, row.browser,
                           row.malware_name, row.infected_machine, row.dg, row.id))
-        return {"data": cur.fetchall()}
+        return Answer(data=cur.fetchall())
     except Exception as ex:
-        return {"error": str(ex), "data": []}
+        return Answer(error=str(ex), data=[])
 
 
 # async def import_csv(leak: Leak = Form(...), file: UploadFile = File(...)):
 @app.post("/import/csv", tags=["Leak"])
-async def import_csv( leak: Leak = Form(...)):
-        # file: UploadFile = File(...),
+async def import_csv(leak: Leak = Form(...), file: UploadFile = File(...)) -> Answer:
     """Import a CSV file into the DB. The parameters are given for the leak table entry."""
     t0 = time.time()
 
@@ -348,14 +347,14 @@ async def import_csv( leak: Leak = Form(...)):
                           leak.breach_ts, leak.source_publish_ts))
         leak_id = cur.fetchall()[0]
     except Exception as ex:
-        return {"error": str(ex), "data": []}
+        return Answer(error=str(ex), data=[])
 
     p = parser.BaseParser()
     try:
         # p = parser_spycloud.Parser()      # XXX FIXME need to be flexible when chosing which parser to use
         df = p.parse_file(Path(file_on_disk))
     except Exception as ex:
-        return { "error": str(ex), "data": [] }
+        return Answer(error=str(ex), data=[])
 
     # insert file into DB XXX FIXME
 
@@ -363,7 +362,7 @@ async def import_csv( leak: Leak = Form(...)):
 
     t1 = time.time()
     # return results
-    return {"meta": {"duration": (t1 - t0)}, "data": df.to_dict(orient="records")}         # orient='table', index=False)
+    return {"meta": {"duration": (t1 - t0)}, "data": df.to_dict(orient="records")}  # orient='table', index=False)
 
     """
     sql2 = '''
@@ -380,12 +379,12 @@ async def import_csv( leak: Leak = Form(...)):
             cur.execute(sql2, (leak_id, row['email'], row['password'], ...))
             leak_id = cur.fetchall()[0]
         except Exception as ex:
-            return {"error": str(ex), "data": []}
+            return Answer(error=str(ex), data=[])
     """
 
 
 @app.post("/deduplicate/csv/")
-async def dedup_csv(file: UploadFile = File(...)):
+async def dedup_csv(file: UploadFile = File(...)) -> Answer:
     """ XXX FIXME. need to implement deduping. XXX"""
 
     t0 = time.time()
@@ -405,10 +404,9 @@ async def dedup_csv(file: UploadFile = File(...)):
 
     t1 = time.time()
     # return results
-    return {"meta": {"duration": (t1 - t0)}, "data": df.to_dict(orient="records")}         # orient='table', index=False)
+    return Answer(meta=AnswerMeta(duration=t1 - t0), data=df.to_dict(orient="records"))  # orient='table', index=False)
 
 
 if __name__ == "__main__":
-
     db_conn = connect_db(DSN)
     uvicorn.run(app, debug=True, port=os.getenv('PORT', default=8888))
