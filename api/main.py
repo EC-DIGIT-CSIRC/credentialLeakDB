@@ -17,10 +17,12 @@ import logging
 
 from fastapi import FastAPI, HTTPException, File, UploadFile, Form
 import uvicorn
-from models import Leak, LeakData, Answer, AnswerMeta
+from .models import Leak, LeakData, Answer, AnswerMeta
 from pydantic import EmailStr
 
 # from ..importer import parser, parser_spycloud
+
+import pandas as pd
 
 app = FastAPI()  # root_path='/api/v1')
 
@@ -223,10 +225,10 @@ async def new_leak(leak: Leak) -> Answer:
     """
     INSERT a new leak into the leak table in the database.
     """
-    sql = """INSERT into leak 
-             (summary, ticket_id, reporter_name, source_name, breach_ts, source_publish_ts, ingestion_ts) 
-             VALUES (%s, %s, %s, %s, %s, %s, now()) 
-             ON CONFLICT DO NOTHING 
+    sql = """INSERT into leak
+             (summary, ticket_id, reporter_name, source_name, breach_ts, source_publish_ts, ingestion_ts)
+             VALUES (%s, %s, %s, %s, %s, %s, now())
+             ON CONFLICT DO NOTHING
              RETURNING id
         """
     db = get_db()
@@ -244,11 +246,11 @@ async def update_leak(leak: Leak) -> Answer:
     """
     UPDATE an existing leak.
     """
-    sql = """UPDATE leak SET 
-                summary = %s, ticket_id = %s, reporter_name = %s, source_name = %s, 
+    sql = """UPDATE leak SET
+                summary = %s, ticket_id = %s, reporter_name = %s, source_name = %s,
                 breach_ts = %s, source_publish_ts = %s, ingestion_ts = %s
              WHERE id = %s
-             ON CONFLICT DO NOTHING 
+             ON CONFLICT DO NOTHING
              RETURNING id
         """
     db = get_db()
@@ -268,11 +270,11 @@ async def new_leak_data(row: LeakData) -> Answer:
     """
     INSERT a new leak_data row into the leak_data table.
     """
-    sql = """INSERT into leak_data  
-             (leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id, 
+    sql = """INSERT into leak_data
+             (leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id,
              email_verified, password_verified_ok, ip, domain, browser, malware_name, infected_machine, dg)
-             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) 
-             ON CONFLICT DO NOTHING 
+             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+             ON CONFLICT DO NOTHING
              RETURNING id
         """
     db = get_db()
@@ -293,20 +295,20 @@ async def update_leak_data(row: LeakData) -> Answer:
     UPDATE leak_data row in the leak_data table.
     """
     sql = """UPDATE leak_data SET
-                leak_id = %s, 
-                email = %s, 
-                password = %s, 
-                password_plain = %s, 
-                password_hashed = %s, 
-                hash_algo = %s, 
-                ticket_id = %s, 
-                email_verified = %s, 
-                password_verified_ok = %s, 
-                ip = %s, 
-                domain = %s, 
-                browser = %s, 
-                malware_name = %s, 
-                infected_machine = %s, 
+                leak_id = %s,
+                email = %s,
+                password = %s,
+                password_plain = %s,
+                password_hashed = %s,
+                hash_algo = %s,
+                ticket_id = %s,
+                email_verified = %s,
+                password_verified_ok = %s,
+                ip = %s,
+                domain = %s,
+                browser = %s,
+                malware_name = %s,
+                infected_machine = %s,
                 dg = %s
              WHERE id = %s
              RETURNING id
@@ -331,7 +333,7 @@ async def import_csv(leak: Leak = Form(...), file: UploadFile = File(...)) -> An
     print(leak)
     sql = '''
     INSERT INTO leak (summary, ticket_id, reporter_name, source_name, breach_ts, source_publish_ts, ingestion_ts)
-    VALUES (%s, %s, %s, %s, %s, %s, now()) 
+    VALUES (%s, %s, %s, %s, %s, %s, now())
     ON CONFLICT  DO NOTHING RETURNING id
     '''
     leak_id = -1
@@ -366,14 +368,14 @@ async def import_csv(leak: Leak = Form(...), file: UploadFile = File(...)) -> An
 
     """
     sql2 = '''
-    INSERT INTO leak_data (leak_id, email, password, password_plain, password_hashed, hash_algo, email_verified, 
-       password_verified_ok, ip, domain, browser, malware_name, infected_machine, dg) 
+    INSERT INTO leak_data (leak_id, email, password, password_plain, password_hashed, hash_algo, email_verified,
+       password_verified_ok, ip, domain, browser, malware_name, infected_machine, dg)
     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     ON CONFLICT DO NOTHING RETURNING id
     '''
     p = parser_spycloud.SpycloudParser()
     df = p.parse_file(file)
-    for i, row in df.iterrows(): 
+    for i, row in df.iterrows():
         try:
             cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
             cur.execute(sql2, (leak_id, row['email'], row['password'], ...))
@@ -394,9 +396,10 @@ async def dedup_csv(file: UploadFile = File(...)) -> Answer:
     file_on_disk = await store_file(file.filename, file.file)
     await check_file(file_on_disk)  # XXX FIXME. Additional checks on the dumped file still missing
 
-    p = parser.BaseParser()
+    # p = parser.BaseParser()
     # p = parser_spycloud.Parser()      # XXX FIXME need to be flexible when chosing which parser to use
-    df = p.parse_file(Path(file_on_disk))
+    # df = p.parse_file(Path(file_on_disk))
+    df = pd.DataFrame()
 
     # insert file into DB XXX FIXME
 
