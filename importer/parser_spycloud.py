@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 # from parser import BaseParser
-from ..importer.parser import BaseParser
+from .parser import BaseParser
 
 
 class SpycloudParser(BaseParser):
