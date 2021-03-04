@@ -1,5 +1,7 @@
 # credentialleakDB
 
+[![flak8 and pytest](https://github.com/EC-DIGIT-CSIRC/credentialLeakDB/actions/workflows/python-app.yml/badge.svg)](https://github.com/EC-DIGIT-CSIRC/credentialLeakDB/actions/workflows/python-app.yml)
+
 A database structure to store leaked credentials. 
 
 Think: our own, internal HaveIBeenPwned database.
