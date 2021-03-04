@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 """importer.parser """
 
-import sys
+
 import logging
 from pathlib import Path
 import csv
 import time
-from tqdm import tqdm
 
 import pandas as pd
-import psycopg2
 
 debug = True
 
@@ -65,6 +63,7 @@ class BaseParser:
         return df
 
 
+'''
 def prepare_db_structures(breach_title, reporter, collection=None, breach_ts=None, source_publish_ts=None,
                           leaked_website=None, jira_ticket_id=None, infected_machine=None, dg=None):
     """ XXX FIXME !! THIS IS BROKEN """
@@ -119,7 +118,7 @@ def prepare_db_structures(breach_title, reporter, collection=None, breach_ts=Non
 
     conn.commit()
     cur.close()
-
+'''
 
 if __name__ == "__main__":
 
