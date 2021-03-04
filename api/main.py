@@ -5,24 +5,27 @@ Author: Aaron Kaplan
 License: see LICENSE
 
 """
+
+# system / base packages
 import os
 from tempfile import SpooledTemporaryFile
 import time
 import shutil
+import logging
 from pathlib import Path
 
+# database, ASGI, etc.
 import psycopg2
 import psycopg2.extras
-import logging
-
 from fastapi import FastAPI, HTTPException, File, UploadFile, Form
 import uvicorn
-from models import Leak, LeakData, Answer, AnswerMeta
 from pydantic import EmailStr
-
-# from ..importer import parser, parser_spycloud
-
 import pandas as pd
+
+# packages from this code repo
+from api.models import Leak, LeakData, Answer, AnswerMeta
+import importer.parser as parser
+
 
 app = FastAPI()  # root_path='/api/v1')
 

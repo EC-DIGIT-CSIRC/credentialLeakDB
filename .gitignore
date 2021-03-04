@@ -1,13 +1,27 @@
+# config secrets etc.
+ENV
+.env
+
+# python venvs
 .venv
 venv
 old
 cache
 
+# real data directories, don't upload to github ;-)
 importer/real_data
+data/
+
+
 poetry.lock
 
 
 *.swp
 */*.swp
+
+
+# test caches from pytest
 .pytest_cache
 */.pytest_cache
+__pycache__/
+*/__pycache__/
