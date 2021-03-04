@@ -20,5 +20,5 @@ jobs:
         pip install -r requirements.txt
     - name: Analysing the code with pylint
       run: |
-        pylint -d C0301 -E api/main.py
+        pylint --extension-pkg-whitelist='pydantic' -d C0301 -E api/main.py
         # pylint -d C0301 `ls -R|grep .py$|xargs`
