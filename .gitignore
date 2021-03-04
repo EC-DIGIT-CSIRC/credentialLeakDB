@@ -9,3 +9,5 @@ poetry.lock
 
 *.swp
 */*.swp
+.pytest_cache
+*/.pytest_cache
