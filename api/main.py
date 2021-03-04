@@ -20,7 +20,7 @@ import uvicorn
 from models import Leak, LeakData, Answer, AnswerMeta
 from pydantic import EmailStr
 
-from ..importer import parser, parser_spycloud
+# from ..importer import parser, parser_spycloud
 
 app = FastAPI()  # root_path='/api/v1')
 
@@ -348,12 +348,12 @@ async def import_csv(leak: Leak = Form(...), file: UploadFile = File(...)) -> An
     except Exception as ex:
         return Answer(error=str(ex), data={})
 
-    p = parser.BaseParser()
-    try:
-        # p = parser_spycloud.Parser()      # XXX FIXME need to be flexible when chosing which parser to use
-        df = p.parse_file(Path(file_on_disk))
-    except Exception as ex:
-        return Answer(error=str(ex), data={})
+    # p = parser.BaseParser()
+    # try:
+    #     # p = parser_spycloud.Parser()      # XXX FIXME need to be flexible when chosing which parser to use
+    #     df = p.parse_file(Path(file_on_disk))
+    # except Exception as ex:
+    #     return Answer(error=str(ex), data={})
 
     # insert file into DB XXX FIXME
 
@@ -361,7 +361,8 @@ async def import_csv(leak: Leak = Form(...), file: UploadFile = File(...)) -> An
 
     t1 = time.time()
     # return results
-    return {"meta": {"duration": (t1 - t0)}, "data": df.to_dict(orient="records")}  # orient='table', index=False)
+    return Answer(error="XXX not implemented right now, fixing something at the moment", data=[])
+    # return {"meta": {"duration": (t1 - t0)}, "data": df.to_dict(orient="records")}  # orient='table', index=False)
 
     """
     sql2 = '''
