@@ -98,7 +98,7 @@ def prepare_db_structures(breach_title, reporter, collection=None, breach_ts=Non
         cur.execute(sql, (reporter, ))
         reporter_id = cur.fetchone()[0]
     except Exception as ex:
-        logging.error("could not insert/fetch reporter, reason: %s. SQL=%s",str(ex), cur.mogrify(sql, (reporter,)))
+        logging.error("could not insert/fetch reporter, reason: %s. SQL=%s", str(ex), cur.mogrify(sql, (reporter,)))
 
     # the actual leak
     leak_id = None
@@ -107,7 +107,7 @@ def prepare_db_structures(breach_title, reporter, collection=None, breach_ts=Non
         cur.execute(sql, (breach_title, reporter_id, ))
         leak_id = cur.fetchone()[0]
     except Exception as ex:
-        logging.error("could not insert to DB, reason: %s",str(ex))
+        logging.error("could not insert to DB, reason: %s", str(ex))
 
     # and if we have a collection, do the n-to-m intersection tbl
     if leak_id and collection and collection_id:
