@@ -17,10 +17,10 @@ import logging
 
 from fastapi import FastAPI, HTTPException, File, UploadFile, Form
 import uvicorn
-from .models import Leak, LeakData, Answer, AnswerMeta
+from models import Leak, LeakData, Answer, AnswerMeta
 from pydantic import EmailStr
 
-from importer import parser, parser_spycloud
+from ..importer import parser, parser_spycloud
 
 app = FastAPI()  # root_path='/api/v1')
 
