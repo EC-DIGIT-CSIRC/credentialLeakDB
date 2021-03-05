@@ -24,7 +24,7 @@ import pandas as pd
 
 # packages from this code repo
 from api.models import Leak, LeakData, Answer, AnswerMeta
-import importer.parser as parser
+from importer import parser
 
 
 app = FastAPI()  # root_path='/api/v1')
@@ -389,12 +389,12 @@ async def import_csv(leak: Leak = Form(...), file: UploadFile = File(...)) -> An
     except Exception as ex:
         return Answer(error=str(ex), data={})
 
-    # p = parser.BaseParser()
-    # try:
-    #     # p = parser_spycloud.Parser()      # XXX FIXME need to be flexible when chosing which parser to use
-    #     df = p.parse_file(Path(file_on_disk))
-    # except Exception as ex:
-    #     return Answer(error=str(ex), data={})
+    p = parser.BaseParser()
+    try:
+        # p = parser_spycloud.Parser()      # XXX FIXME need to be flexible when chosing which parser to use
+        df = p.parse_file(Path(file_on_disk))
+    except Exception as ex:
+        return Answer(error=str(ex), data={})
 
     # insert file into DB XXX FIXME
 
@@ -402,8 +402,8 @@ async def import_csv(leak: Leak = Form(...), file: UploadFile = File(...)) -> An
 
     t1 = time.time()
     # return results
-    return Answer(error="XXX not implemented right now, fixing something at the moment", data=[])
-    # return {"meta": {"duration": (t1 - t0)}, "data": df.to_dict(orient="records")}  # orient='table', index=False)
+    # return Answer(error="XXX not implemented right now, fixing something at the moment", data=[])
+    return {"meta": {"duration": (t1 - t0)}, "data": df.to_dict(orient="records")}  # orient='table', index=False)
 
     """
     sql2 = '''
@@ -435,9 +435,9 @@ async def dedup_csv(file: UploadFile = File(...)) -> Answer:
     file_on_disk = await store_file(file.filename, file.file)
     await check_file(file_on_disk)  # XXX FIXME. Additional checks on the dumped file still missing
 
-    # p = parser.BaseParser()
+    p = parser.BaseParser()
     # p = parser_spycloud.Parser()      # XXX FIXME need to be flexible when chosing which parser to use
-    # df = p.parse_file(Path(file_on_disk))
+    df = p.parse_file(Path(file_on_disk))
     df = pd.DataFrame()
 
     # insert file into DB XXX FIXME
