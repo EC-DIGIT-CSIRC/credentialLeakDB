@@ -129,6 +129,6 @@ if __name__ == "__main__":
 
     p = BaseParser()
     t0 = time.time()
-    p.parse_recursively('test_leaks', '*.txt')
+    # p.parse_recursively('test_leaks', '*.txt')
     t1 = time.time()
     logging.info("processed everything in %f [sec]", (t1 - t0))

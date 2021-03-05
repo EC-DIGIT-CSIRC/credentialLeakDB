@@ -12,8 +12,8 @@ import argparse
 from pathlib import Path
 from tqdm import tqdm
 
-import parser
-import parser_spycloud
+import importer.parser as parser
+import importer.parser_spycloud as parser_spycloud
 
 
 def parse_recursively(folder: Path, pattern='*.csv'):

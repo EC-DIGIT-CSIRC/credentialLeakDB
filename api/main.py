@@ -35,6 +35,8 @@ app = FastAPI()  # root_path='/api/v1')
 db_conn = None
 DSN = "host=%s dbname=%s user=%s" % (os.getenv('DBHOST', 'localhost'), os.getenv('DBNAME'), os.getenv('DBUSER'))
 
+VER="0.3"
+
 
 #############
 # DB specific functions
@@ -168,6 +170,40 @@ async def store_file(orig_filename: str, file: SpooledTemporaryFile,
 
 async def check_file(_filename: str) -> bool:
     return True  # XXX FIXME Implement
+
+
+@app.get("/leak/all", tags=["Leak"])
+async def get_all_leaks() -> Answer:
+    """Fetch all leaks."""
+    t0 = time.time()
+    sql = "SELECT * from leak"
+    db = get_db()
+    try:
+        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(sql)
+        rows = cur.fetchall()
+        t1 = time.time()
+        d=t1-t0
+        return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
+    except Exception as ex:
+        return Answer(error=str(ex), data={})
+
+
+@app.get("/leak_data/{leak_id}", tags=["Leak Data"])
+async def get_leak_data_by_leak(leak_id: int) -> Answer:
+    """Fetch all leak data entries of a given leak_id."""
+    t0 = time.time()
+    sql = "SELECT * from leak_data where leak_id=%s"
+    db = get_db()
+    try:
+        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(sql, (leak_id,))
+        rows = cur.fetchall()
+        t1 = time.time()
+        d=t1-t0
+        return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
+    except Exception as ex:
+        return Answer(error=str(ex), data={})
 
 
 @app.get("/leak/{id}", tags=["Leak"])
