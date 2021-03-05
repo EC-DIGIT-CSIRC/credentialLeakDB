@@ -183,7 +183,7 @@ async def get_all_leaks() -> Answer:
         cur.execute(sql)
         rows = cur.fetchall()
         t1 = time.time()
-        d=t1-t0
+        d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data={})
@@ -200,7 +200,7 @@ async def get_leak_data_by_leak(leak_id: int) -> Answer:
         cur.execute(sql, (leak_id,))
         rows = cur.fetchall()
         t1 = time.time()
-        d=t1-t0
+        d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data={})

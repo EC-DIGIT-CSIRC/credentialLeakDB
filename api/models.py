@@ -40,7 +40,7 @@ class LeakData(BaseModel):
 
 
 """ Example:
-Multiple answers: 
+Multiple answers:
 { "meta": { "version": "rel-1.0", "duration": 0.78, "count": 3 }, "data": [ <dict>, <dict>, <dict> ], "error": "all OK" }
 
 No data:
@@ -50,6 +50,8 @@ Single result:
 { "meta": { "version": "rel-1.0", "duration": 0.78 , "count": 1 }, "data": [ { "foo": "bar", "baz": 77 } ],
   "error": "all OK" }
 """
+
+
 class AnswerMeta(BaseModel):
     version: str
     duration: float
@@ -58,5 +60,5 @@ class AnswerMeta(BaseModel):
 
 class Answer(BaseModel):
     meta: Optional[AnswerMeta]
-    data: List[Dict] # Union[Dict,List]
+    data: List[Dict]    # Union[Dict,List]
     error: Optional[str]
