@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 """importer.parser """
 
-import sys
+
 import logging
 from pathlib import Path
 import csv
 import time
-from tqdm import tqdm
 
 import pandas as pd
-import psycopg2
 
 debug = True
 
@@ -65,6 +63,7 @@ class BaseParser:
         return df
 
 
+'''
 def prepare_db_structures(breach_title, reporter, collection=None, breach_ts=None, source_publish_ts=None,
                           leaked_website=None, jira_ticket_id=None, infected_machine=None, dg=None):
     """ XXX FIXME !! THIS IS BROKEN """
@@ -98,7 +97,7 @@ def prepare_db_structures(breach_title, reporter, collection=None, breach_ts=Non
         cur.execute(sql, (reporter, ))
         reporter_id = cur.fetchone()[0]
     except Exception as ex:
-        logging.error("could not insert/fetch reporter, reason: %s. SQL=%s",str(ex), cur.mogrify(sql, (reporter,)))
+        logging.error("could not insert/fetch reporter, reason: %s. SQL=%s", str(ex), cur.mogrify(sql, (reporter,)))
 
     # the actual leak
     leak_id = None
@@ -107,7 +106,7 @@ def prepare_db_structures(breach_title, reporter, collection=None, breach_ts=Non
         cur.execute(sql, (breach_title, reporter_id, ))
         leak_id = cur.fetchone()[0]
     except Exception as ex:
-        logging.error("could not insert to DB, reason: %s",str(ex))
+        logging.error("could not insert to DB, reason: %s", str(ex))
 
     # and if we have a collection, do the n-to-m intersection tbl
     if leak_id and collection and collection_id:
@@ -119,7 +118,7 @@ def prepare_db_structures(breach_title, reporter, collection=None, breach_ts=Non
 
     conn.commit()
     cur.close()
-
+'''
 
 if __name__ == "__main__":
 
@@ -130,6 +129,6 @@ if __name__ == "__main__":
 
     p = BaseParser()
     t0 = time.time()
-    p.parse_recursively('test_leaks', '*.txt')
+    # p.parse_recursively('test_leaks', '*.txt')
     t1 = time.time()
     logging.info("processed everything in %f [sec]", (t1 - t0))
