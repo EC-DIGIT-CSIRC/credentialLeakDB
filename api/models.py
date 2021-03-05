@@ -12,7 +12,7 @@ import datetime
 
 class Leak(BaseModel):
     id: Optional[int]
-    ticket_id: Optional[int]
+    ticket_id: Optional[str]
     summary: str
     reporter_name: Optional[str]
     source_name: Optional[str]
