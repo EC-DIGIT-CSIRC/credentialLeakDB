@@ -39,10 +39,12 @@ createuser credentialleakdb
 3. ``psql credentialleakdb < db.sql``
 4. set the env vars: 
 ```bash
+export PORT=8080
 export DBNAME=credentialleakdb
 export DBUSER=credentialleakdb
+export DBHOST=localhost
 ```
-5. start the program:
+5. start the program from the main directory:
 ```bash
-uvicorn --reload --host 0.0.0.0 --port 8080 api.main:app
+uvicorn --reload --host 0.0.0.0 --port $PORT api.main:app
 ```
