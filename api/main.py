@@ -24,7 +24,7 @@ import pandas as pd
 
 # packages from this code repo
 from api.models import Leak, LeakData, Answer, AnswerMeta
-from importer import parser
+from importer.parser import BaseParser
 
 
 app = FastAPI()  # root_path='/api/v1')
@@ -35,7 +35,7 @@ app = FastAPI()  # root_path='/api/v1')
 db_conn = None
 DSN = "host=%s dbname=%s user=%s" % (os.getenv('DBHOST', 'localhost'), os.getenv('DBNAME'), os.getenv('DBUSER'))
 
-VER="0.3"
+VER = "0.3"
 
 
 #############
@@ -210,12 +210,33 @@ async def get_leak_data_by_leak(leak_id: int) -> Answer:
 @app.get("/leak/by_id/{id}", tags=["Leak"])
 async def get_leak_by_id(_id: int) -> Answer:
     """Fetch a leak by its ID"""
+    t0 = time.time()
     sql = "SELECT * from leak WHERE id = %s"
     db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (_id,))
-        return Answer(data=cur.fetchall())
+        rows = cur.fetchall()
+        t1 = time.time()
+        d = t1 - t0
+        return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
+    except Exception as ex:
+        return Answer(error=str(ex), data={})
+
+
+@app.get("/leak/by_ticket_id/{ticket_id}", tags=["Leak"])
+async def get_leak_by_ticket_id(ticket_id: str) -> Answer:
+    """Fetch a leak by its ticket system id"""
+    t0 = time.time()
+    sql = "SELECT * from leak WHERE ticket_id = %s"
+    db = get_db()
+    try:
+        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(sql, (ticket_id,))
+        rows = cur.fetchall()
+        t1 = time.time()
+        d = t1 - t0
+        return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data={})
 
@@ -300,6 +321,23 @@ async def update_leak(leak: Leak) -> Answer:
         cur.execute(sql, (leak.summary, leak.ticket_id, leak.reporter_name,
                           leak.source_name, leak.breach_ts, leak.source_publish_ts, leak.id))
         return Answer(data=cur.fetchall())
+    except Exception as ex:
+        return Answer(error=str(ex), data={})
+
+
+@app.get("/leak_data/by_ticket_id/{ticket_id}", tags=["Leak Data"])
+async def get_leak_data_by_ticket_id(ticket_id: str) -> Answer:
+    """Fetch a leak row (leak_data table) by its ticket system id"""
+    t0 = time.time()
+    sql = "SELECT * from leak_data WHERE ticket_id = %s"
+    db = get_db()
+    try:
+        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(sql, (ticket_id,))
+        rows = cur.fetchall()
+        t1 = time.time()
+        d = t1 - t0
+        return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data={})
 
@@ -389,7 +427,7 @@ async def import_csv(leak: Leak = Form(...), file: UploadFile = File(...)) -> An
     except Exception as ex:
         return Answer(error=str(ex), data={})
 
-    p = parser.BaseParser()
+    p = BaseParser()
     try:
         # p = parser_spycloud.Parser()      # XXX FIXME need to be flexible when chosing which parser to use
         df = p.parse_file(Path(file_on_disk))
@@ -435,7 +473,7 @@ async def dedup_csv(file: UploadFile = File(...)) -> Answer:
     file_on_disk = await store_file(file.filename, file.file)
     await check_file(file_on_disk)  # XXX FIXME. Additional checks on the dumped file still missing
 
-    p = parser.BaseParser()
+    p = BaseParser()
     # p = parser_spycloud.Parser()      # XXX FIXME need to be flexible when chosing which parser to use
     df = p.parse_file(Path(file_on_disk))
     df = pd.DataFrame()
@@ -446,7 +484,7 @@ async def dedup_csv(file: UploadFile = File(...)) -> Answer:
 
     t1 = time.time()
     # return results
-    return Answer(meta=AnswerMeta(duration=t1 - t0), data=df.to_dict(orient="records"))  # orient='table', index=False)
+    return Answer(meta=AnswerMeta(duration=t1 - t0, version=VER, count=len(df)), data=df.to_dict(orient="records"))
 
 
 if __name__ == "__main__":
