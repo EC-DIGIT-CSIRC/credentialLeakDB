@@ -46,5 +46,5 @@ export DBHOST=localhost
 ```
 5. start the program from the main directory:
 ```bash
-uvicorn --reload --host 0.0.0.0 --port $PORT api.main:app
+export PYTHONPATH=$(pwd); uvicorn --reload --host 0.0.0.0 --port $PORT api.main:app
 ```
