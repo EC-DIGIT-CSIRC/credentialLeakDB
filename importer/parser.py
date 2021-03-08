@@ -34,7 +34,7 @@ class BaseParser:
     def __init__(self):
         pass
 
-    def parse_file(self, fname: Path, leak_id: int=None, csv_dialect=None) -> pd.DataFrame:
+    def parse_file(self, fname: Path, leak_id: int = None, csv_dialect=None) -> pd.DataFrame:
         """Parse file (non-recursive) and return either None (in case of errors) or a DataFrame with the contents.
         Overwrite this method in YOUR Parser subclass.
 
@@ -50,7 +50,7 @@ class BaseParser:
                 dialect = csv_dialect
             else:
                 dialect = peek_into_file(fname)     # try to guess
-            df = pd.read_csv(fname, dialect=dialect, error_bad_lines=False, warn_bad_lines=True) #, usecols=range(2))
+            df = pd.read_csv(fname, dialect=dialect, error_bad_lines=False, warn_bad_lines=True)  # , usecols=range(2))
             print("Parsing file 2...")
             df.insert(0, 'leak_id', leak_id)
             print("Parsing file 2...")
@@ -60,10 +60,10 @@ class BaseParser:
             return df
 
         except Exception as ex:
-            logging.error("could not pandas.read_csv(%s). Reason: %s. Skipping file." %(fname, str(ex)))
+            logging.error("could not pandas.read_csv(%s). Reason: %s. Skipping file." % (fname, str(ex)))
             return None
 
-    def normalize_data(self, df: pd.DataFrame) -> pd.DataFrame:
+    def normalize_data(self, df: pd.DataFrame, leak_id: str=None) -> pd.DataFrame:
         return df
 
 

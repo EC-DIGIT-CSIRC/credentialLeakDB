@@ -17,7 +17,7 @@ from pathlib import Path
 # database, ASGI, etc.
 import psycopg2
 import psycopg2.extras
-from fastapi import FastAPI, HTTPException, File, UploadFile, Form
+from fastapi import FastAPI, HTTPException, File, UploadFile
 import uvicorn
 from pydantic import EmailStr
 import pandas as pd
@@ -352,7 +352,7 @@ async def update_leak(leak: Leak) -> Answer:
     t0 = time.time()
     db = get_db()
     if not leak.id:
-        return {"error": "id %s not given. Please specify a leak.id you want to UPDATE", "data": []}
+        return Answer(error="id %s not given. Please specify a leak.id you want to UPDATE", data=[])
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (leak.summary, leak.ticket_id, leak.reporter_name,
@@ -504,7 +504,7 @@ async def import_csv(leak_id: int, _file: UploadFile = File(...)) -> Answer:
     
     """
 
-    for r in data_pandas.reset_index().to_dict('rows'):
+    for r in df.reset_index().to_dict('rows'):
         sql = """
         INSERT into leak_data(
           leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id, email_verified, 
@@ -545,8 +545,8 @@ async def import_csv(leak_id: int, _file: UploadFile = File(...)) -> Answer:
     """
 
 
-@app.post("/deduplicate/csv/")
-async def dedup_csv(file: UploadFile = File(...)) -> Answer:
+@app.post("/deduplicate/csv/{leak_id}")
+async def dedup_csv(leak_id: int, file: UploadFile = File(...)) -> Answer:
     """ XXX FIXME. need to implement deduping. XXX"""
 
     t0 = time.time()
