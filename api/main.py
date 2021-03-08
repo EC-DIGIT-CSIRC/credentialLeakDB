@@ -345,9 +345,8 @@ async def update_leak(leak: Leak) -> Answer:
     """
     sql = """UPDATE leak SET
                 summary = %s, ticket_id = %s, reporter_name = %s, source_name = %s,
-                breach_ts = %s, source_publish_ts = %s, ingestion_ts = %s
+                breach_ts = %s, source_publish_ts = %s
              WHERE id = %s
-             ON CONFLICT DO NOTHING
              RETURNING id
         """
     t0 = time.time()
@@ -489,7 +488,7 @@ async def import_csv(leak_id: int, _file: UploadFile = File(...)) -> Answer:
         # p = parser_spycloud.Parser()      # XXX FIXME need to be flexible when chosing which parser to use
         print('still alive 2a')
         print('still alive 2a: file on disk = %s' % file_on_disk)
-        df = p.parse_file(Path(file_on_disk))
+        df = p.parse_file(Path(file_on_disk), leak_id=leak_id)
         print('still alive 3')
     except Exception as ex:
         return Answer(error=str(ex), data=[])
@@ -559,7 +558,7 @@ async def dedup_csv(file: UploadFile = File(...)) -> Answer:
 
     p = BaseParser()
     # p = parser_spycloud.Parser()      # XXX FIXME need to be flexible when chosing which parser to use
-    df = p.parse_file(Path(file_on_disk))
+    df = p.parse_file(Path(file_on_disk, leak_id = leak_id))
     df = pd.DataFrame()
 
     # insert file into DB XXX FIXME

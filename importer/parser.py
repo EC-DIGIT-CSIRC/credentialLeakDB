@@ -34,7 +34,7 @@ class BaseParser:
     def __init__(self):
         pass
 
-    def parse_file(self, fname: Path, leak_id, csv_dialect=None) -> pd.DataFrame:
+    def parse_file(self, fname: Path, leak_id: int=None, csv_dialect=None) -> pd.DataFrame:
         """Parse file (non-recursive) and return either None (in case of errors) or a DataFrame with the contents.
         Overwrite this method in YOUR Parser subclass.
 
