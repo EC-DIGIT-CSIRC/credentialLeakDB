@@ -96,7 +96,7 @@ async def get_user_by_email(email: EmailStr) -> Answer:
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(error=str(ex), data={})
+        return Answer(error=str(ex), data=[])
 
 
 @app.get('/user_and_password/{email}/{password}')
@@ -112,7 +112,7 @@ async def get_user_by_email_and_password(email: EmailStr, password: str) -> Answ
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(error=str(ex), data={})
+        return Answer(error=str(ex), data=[])
 
 
 @app.get('/exists/by_email/{email}')
@@ -128,7 +128,7 @@ async def check_user_by_email(email: EmailStr) -> Answer:
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(error=str(ex), data={})
+        return Answer(error=str(ex), data=[])
 
 
 @app.get('/exists/by_password/{password}')
@@ -145,7 +145,7 @@ async def check_user_by_password(password: str) -> Answer:
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(error=str(ex), data={})
+        return Answer(error=str(ex), data=[])
 
 
 @app.get('/exists/by_domain/{domain}')
@@ -161,7 +161,7 @@ async def check_user_by_domain(domain: str) -> Answer:
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(error=str(ex), data={})
+        return Answer(error=str(ex), data=[])
 
 
 #####################################
@@ -207,7 +207,7 @@ async def get_all_leaks() -> Answer:
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(error=str(ex), data={})
+        return Answer(error=str(ex), data=[])
 
 
 @app.get("/leak_data/{leak_id}", tags=["Leak Data"])
@@ -224,7 +224,7 @@ async def get_leak_data_by_leak(leak_id: int) -> Answer:
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(error=str(ex), data={})
+        return Answer(error=str(ex), data=[])
 
 
 @app.get("/leak/{_id}", tags=["Leak"], description='Get the leak info by its ID.')
@@ -242,7 +242,7 @@ async def get_leak_by_id(_id: int) -> Answer:
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(error=str(ex), data={})
+        return Answer(error=str(ex), data=[])
 
 
 @app.get("/leak/by_ticket_id/{ticket_id}", tags=["Leak"])
@@ -259,7 +259,7 @@ async def get_leak_by_ticket_id(ticket_id: str) -> Answer:
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(error=str(ex), data={})
+        return Answer(error=str(ex), data=[])
 
 
 @app.get("/leak/by_summary/{summary}", tags=["Leak"])
@@ -276,7 +276,7 @@ async def get_leak_by_summary(summary: str) -> Answer:
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(error=str(ex), data={})
+        return Answer(error=str(ex), data=[])
 
 
 @app.get("/leak/by_reporter/{reporter}", tags=["Leak"])
@@ -293,7 +293,7 @@ async def get_leak_by_reporter(reporter: str) -> Answer:
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(error=str(ex), data={})
+        return Answer(error=str(ex), data=[])
 
 
 @app.get("/leak/by_source/{source_name}", tags=["Leak"])
@@ -310,7 +310,7 @@ async def get_leak_by_source(source_name: str) -> Answer:
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(error=str(ex), data={})
+        return Answer(error=str(ex), data=[])
 
 
 @app.post("/leak/", tags=["Leak"])
@@ -335,7 +335,7 @@ async def new_leak(leak: Leak) -> Answer:
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(error=str(ex), data={})
+        return Answer(error=str(ex), data=[])
 
 
 @app.put("/leak/", tags=["Leak"])
@@ -363,7 +363,7 @@ async def update_leak(leak: Leak) -> Answer:
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(error=str(ex), data={})
+        return Answer(error=str(ex), data=[])
 
 
 @app.get("/leak_data/by_ticket_id/{ticket_id}", tags=["Leak Data"])
@@ -380,7 +380,7 @@ async def get_leak_data_by_ticket_id(ticket_id: str) -> Answer:
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(error=str(ex), data={})
+        return Answer(error=str(ex), data=[])
 
 
 @app.post("/leak_data/", tags=["Leak Data"])
@@ -408,7 +408,7 @@ async def new_leak_data(row: LeakData) -> Answer:
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(error=str(ex), data={})
+        return Answer(error=str(ex), data=[])
 
 
 @app.put("/leak_data/", tags=["Leak Data"])
@@ -447,50 +447,85 @@ async def update_leak_data(row: LeakData) -> Answer:
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(error=str(ex), data={})
+        return Answer(error=str(ex), data=[])
 
 
-# async def import_csv(leak: Leak = Form(...), file: UploadFile = File(...)):
-@app.post("/import/csv", tags=["Leak"])
-async def import_csv(leak: Leak = Form(...), file: UploadFile = File(...)) -> Answer:
-    """Import a CSV file into the DB. The parameters are given for the leak table entry."""
+@app.post("/import/csv/{leak_id}", tags=["Leak"])
+async def import_csv(leak_id: int, _file: UploadFile = File(...)) -> Answer:
+    """
+    Import a CSV file into the DB. You **need** to specify a ?leak_id=<int> parameter so that the CSV file may be
+    linked to a leak_id. Failure to provide a leak_id will result in the file not being imported into the DB.
+    """
+
     t0 = time.time()
 
-    print(leak)
-    sql = '''
-    INSERT INTO leak (summary, ticket_id, reporter_name, source_name, breach_ts, source_publish_ts, ingestion_ts)
-    VALUES (%s, %s, %s, %s, %s, %s, now())
-    ON CONFLICT  DO NOTHING RETURNING id
-    '''
-    leak_id = -1
-    db = get_db()
-    file_on_disk = await store_file(file.filename, file.file)
-    await check_file(file_on_disk)  # XXX FIXME. Additional checks on the dumped file still missing
+    if not leak_id:
+        return Answer(error="Please specify a leak_id GET-style parameter in the URL", data=[])
 
+    # first check if the leak_id exists
+    sql = """SELECT count(*) from leak where id = %s"""
+    db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute(sql, (leak.summary, leak.ticket_id, leak.reporter_name,
-                          leak.source_name,
-                          leak.breach_ts, leak.source_publish_ts))
-        leak_id = cur.fetchall()[0]
+        cur.execute(sql, (leak_id,))
+        rows = cur.fetchone()
+        nr_results = int(rows['count'])
+        if nr_results != 1:
+            return Answer(error="Leak ID %s not found" % leak_id, data=[])
     except Exception as ex:
-        return Answer(error=str(ex), data={})
+        return Answer(error=str(ex), data=[])
 
+    # okay, we found the leak, let's insert the CSV
+    print('leak_id = %s' % leak_id)
+
+    file_on_disk = await store_file(_file.filename, _file.file)
+    await check_file(file_on_disk)  # XXX FIXME. Additional checks on the dumped file still missing
+
+    print('still alive 1')
     p = BaseParser()
+    df = pd.DataFrame()
+    print('still alive 2')
     try:
         # p = parser_spycloud.Parser()      # XXX FIXME need to be flexible when chosing which parser to use
+        print('still alive 2a')
+        print('still alive 2a: file on disk = %s' % file_on_disk)
         df = p.parse_file(Path(file_on_disk))
+        print('still alive 3')
     except Exception as ex:
-        return Answer(error=str(ex), data={})
+        return Answer(error=str(ex), data=[])
 
-    # insert file into DB XXX FIXME
+    df = p.normalize_data(df, leak_id=leak_id)
+    print(df.describe())
 
-    # dedup
+    """ 
+    Now, after normalization, the df is in the format:
+      leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id, email_verified, 
+         password_verified_ok, ip, domain, browser , malware_name, infected_machine, dg
+    Example:
+    
+    """
 
-    t1 = time.time()
-    # return results
-    # return Answer(error="XXX not implemented right now, fixing something at the moment", data=[])
-    return {"meta": {"duration": (t1 - t0)}, "data": df.to_dict(orient="records")}  # orient='table', index=False)
+    for r in data_pandas.reset_index().to_dict('rows'):
+        sql = """
+        INSERT into leak_data(
+          leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id, email_verified, 
+          password_verified_ok, ip, domain, browser , malware_name, infected_machine, dg
+          )
+          VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ) ON CONFLICT DO NOTHING RETURNING *
+        """
+        try:
+            cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            cur.execute(sql, (r['leak_id'], r['email'], r['password'], r['password_plain'], r['password_hashed'],
+                r['hash_algo'], r['ticket_id'], r['email_verified'], r['password_verified_ok'], r['ip'],
+                r['domain'], r['browser'], r['malware_name'], r['infected_machine'], r['dg']))
+            rows = cur.fetchall()
+            t1 = time.time()
+            d = t1 - t0
+            return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
+        except Exception as ex:
+            return Answer(error=str(ex), data=[])
+
+    # XXX FIXME implement dedup
 
     """
     sql2 = '''
@@ -507,7 +542,7 @@ async def import_csv(leak: Leak = Form(...), file: UploadFile = File(...)) -> An
             cur.execute(sql2, (leak_id, row['email'], row['password'], ...))
             leak_id = cur.fetchall()[0]
         except Exception as ex:
-            return Answer(error=str(ex), data={})
+            return Answer(error=str(ex), data=[])
     """
 
 
