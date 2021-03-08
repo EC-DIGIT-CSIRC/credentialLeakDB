@@ -1,5 +1,8 @@
 
 0.4 * added endpoints for /leak and /leak_data
+    * fixed the Answer format for all endpoints.
+    * Added autocommit
+    * Minor bugs.
 
 0.3 * moved to public github.com/EC-DIGIT-CSIRC/credentialLeakDB.git
     * refactored code so that the Parser is now abstract, implement basic Spycloud parser

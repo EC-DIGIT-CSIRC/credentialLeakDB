@@ -35,7 +35,7 @@ app = FastAPI()  # root_path='/api/v1')
 db_conn = None
 DSN = "host=%s dbname=%s user=%s" % (os.getenv('DBHOST', 'localhost'), os.getenv('DBNAME'), os.getenv('DBUSER'))
 
-VER = "0.3"
+VER = "0.4"
 
 
 #############
@@ -66,6 +66,7 @@ def connect_db(dsn: str):
     """Connects to the specific database."""
     try:
         conn = psycopg2.connect(dsn)
+        conn.set_session(autocommit=True)
     except Exception as ex:
         raise HTTPException(status_code=500, detail="could not connect to the DB. Reason: %s" % (str(ex)))
     logging.info("connection to DB established")
@@ -85,11 +86,15 @@ async def root():
 @app.get('/user/{email}')
 async def get_user_by_email(email: EmailStr) -> Answer:
     sql = """SELECT * from leak_data where email=%s"""
+    t0 = time.time()
     db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (email,))
-        return Answer(data=cur.fetchall())
+        rows = cur.fetchall()
+        t1 = time.time()
+        d = t1 - t0
+        return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data={})
 
@@ -97,11 +102,15 @@ async def get_user_by_email(email: EmailStr) -> Answer:
 @app.get('/user_and_password/{email}/{password}')
 async def get_user_by_email_and_password(email: EmailStr, password: str) -> Answer:
     sql = """SELECT * from leak_data where email=%s and password=%s"""
+    t0 = time.time()
     db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (email, password))
-        return Answer(data=cur.fetchall())
+        rows = cur.fetchall()
+        t1 = time.time()
+        d = t1 - t0
+        return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data={})
 
@@ -109,11 +118,15 @@ async def get_user_by_email_and_password(email: EmailStr, password: str) -> Answ
 @app.get('/exists/by_email/{email}')
 async def check_user_by_email(email: EmailStr) -> Answer:
     sql = """SELECT count(*) from leak_data where email=%s"""
+    t0 = time.time()
     db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (email,))
-        return Answer(data=cur.fetchone())
+        rows = cur.fetchone()
+        t1 = time.time()
+        d = t1 - t0
+        return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data={})
 
@@ -122,11 +135,15 @@ async def check_user_by_email(email: EmailStr) -> Answer:
 async def check_user_by_password(password: str) -> Answer:
     # can do better... use the hashid library?
     sql = """SELECT count(*) from leak_data where password=%s or password_plain=%s or password_hashed=%s"""
+    t0 = time.time()
     db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (password, password, password))
-        return Answer(data=cur.fetchall())
+        rows = cur.fetchall()
+        t1 = time.time()
+        d = t1 - t0
+        return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data={})
 
@@ -134,11 +151,15 @@ async def check_user_by_password(password: str) -> Answer:
 @app.get('/exists/by_domain/{domain}')
 async def check_user_by_domain(domain: str) -> Answer:
     sql = """SELECT count(*) from leak_data where domain=%s"""
+    t0 = time.time()
     db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (domain,))
-        return Answer(data=cur.fetchall())
+        rows = cur.fetchall()
+        t1 = time.time()
+        d = t1 - t0
+        return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data={})
 
@@ -206,8 +227,8 @@ async def get_leak_data_by_leak(leak_id: int) -> Answer:
         return Answer(error=str(ex), data={})
 
 
-@app.get("/leak/{id}", tags=["Leak"])
-@app.get("/leak/by_id/{id}", tags=["Leak"])
+@app.get("/leak/{id}", tags=["Leak"], description='Get the leak info by its ID.')
+@app.get("/leak/by_id/{id}", tags=["Leak"], description='Alias endpoint for /leak/{id}.')
 async def get_leak_by_id(_id: int) -> Answer:
     """Fetch a leak by its ID"""
     t0 = time.time()
@@ -245,11 +266,15 @@ async def get_leak_by_ticket_id(ticket_id: str) -> Answer:
 async def get_leak_by_summary(summary: str) -> Answer:
     """Fetch a leak by summary"""
     sql = "SELECT * from leak WHERE summary = %s"
+    t0 = time.time()
     db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (summary,))
-        return Answer(data=cur.fetchall())
+        rows = cur.fetchall()
+        t1 = time.time()
+        d = t1 - t0
+        return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data={})
 
@@ -258,11 +283,15 @@ async def get_leak_by_summary(summary: str) -> Answer:
 async def get_leak_by_reporter(reporter: str) -> Answer:
     """Fetch a leak by its reporter"""
     sql = "SELECT * from leak WHERE reporter_name = %s"
+    t0 = time.time()
     db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (reporter,))
-        return Answer(data=cur.fetchall())
+        rows = cur.fetchall()
+        t1 = time.time()
+        d = t1 - t0
+        return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data={})
 
@@ -271,11 +300,15 @@ async def get_leak_by_reporter(reporter: str) -> Answer:
 async def get_leak_by_source(source_name: str) -> Answer:
     """Fetch a leak by its source (i.e. WHO collected the leak data (spycloud, HaveIBeenPwned, etc.)"""
     sql = "SELECT * from leak WHERE source_name = %s"
+    t0 = time.time()
     db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (source_name,))
-        return Answer(data=cur.fetchall())
+        rows = cur.fetchall()
+        t1 = time.time()
+        d = t1 - t0
+        return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data={})
 
@@ -291,12 +324,16 @@ async def new_leak(leak: Leak) -> Answer:
              ON CONFLICT DO NOTHING
              RETURNING id
         """
+    t0 = time.time()
     db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (leak.summary, leak.ticket_id, leak.reporter_name, leak.source_name, leak.breach_ts,
                           leak.source_publish_ts,))
-        return Answer(data=cur.fetchall())
+        rows = cur.fetchall()
+        t1 = time.time()
+        d = t1 - t0
+        return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data={})
 
@@ -313,6 +350,7 @@ async def update_leak(leak: Leak) -> Answer:
              ON CONFLICT DO NOTHING
              RETURNING id
         """
+    t0 = time.time()
     db = get_db()
     if not leak.id:
         return {"error": "id %s not given. Please specify a leak.id you want to UPDATE", "data": []}
@@ -320,7 +358,10 @@ async def update_leak(leak: Leak) -> Answer:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (leak.summary, leak.ticket_id, leak.reporter_name,
                           leak.source_name, leak.breach_ts, leak.source_publish_ts, leak.id))
-        return Answer(data=cur.fetchall())
+        rows = cur.fetchall()
+        t1 = time.time()
+        d = t1 - t0
+        return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data={})
 
@@ -328,8 +369,8 @@ async def update_leak(leak: Leak) -> Answer:
 @app.get("/leak_data/by_ticket_id/{ticket_id}", tags=["Leak Data"])
 async def get_leak_data_by_ticket_id(ticket_id: str) -> Answer:
     """Fetch a leak row (leak_data table) by its ticket system id"""
-    t0 = time.time()
     sql = "SELECT * from leak_data WHERE ticket_id = %s"
+    t0 = time.time()
     db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -354,6 +395,7 @@ async def new_leak_data(row: LeakData) -> Answer:
              ON CONFLICT DO NOTHING
              RETURNING id
         """
+    t0 = time.time()
     db = get_db()
     print(row)
     try:
@@ -361,7 +403,10 @@ async def new_leak_data(row: LeakData) -> Answer:
         cur.execute(sql, (row.leak_id, row.email, row.password, row.password_plain, row.password_hashed, row.hash_algo,
                           row.ticket_id, row.email_verified, row.password_verified_ok, row.ip, row.domain, row.browser,
                           row.malware_name, row.infected_machine, row.dg))
-        return Answer(data=cur.fetchall())
+        rows = cur.fetchall()
+        t1 = time.time()
+        d = t1 - t0
+        return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data={})
 
@@ -390,13 +435,17 @@ async def update_leak_data(row: LeakData) -> Answer:
              WHERE id = %s
              RETURNING id
         """
+    t0 = time.time()
     db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (row.leak_id, row.email, row.password, row.password_plain, row.password_hashed, row.hash_algo,
                           row.ticket_id, row.email_verified, row.password_verified_ok, row.ip, row.domain, row.browser,
                           row.malware_name, row.infected_machine, row.dg, row.id))
-        return Answer(data=cur.fetchall())
+        rows = cur.fetchall()
+        t1 = time.time()
+        d = t1 - t0
+        return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data={})
 
@@ -489,4 +538,4 @@ async def dedup_csv(file: UploadFile = File(...)) -> Answer:
 
 if __name__ == "__main__":
     db_conn = connect_db(DSN)
-    uvicorn.run(app, debug=True, port=os.getenv('PORT', default=8888))
+    uvicorn.run(app, debug=True, port=os.getenv('PORT', default=8080))
