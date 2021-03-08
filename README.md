@@ -2,6 +2,7 @@
 
 [![Pylint](https://github.com/EC-DIGIT-CSIRC/credentialLeakDB/actions/workflows/pylint.yml/badge.svg)](https://github.com/EC-DIGIT-CSIRC/credentialLeakDB/actions/workflows/pylint.yml)
 [![flak8 and pytest](https://github.com/EC-DIGIT-CSIRC/credentialLeakDB/actions/workflows/python-app.yml/badge.svg)](https://github.com/EC-DIGIT-CSIRC/credentialLeakDB/actions/workflows/python-app.yml)
+[![CodeQL](https://github.com/EC-DIGIT-CSIRC/credentialLeakDB/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/EC-DIGIT-CSIRC/credentialLeakDB/actions/workflows/codeql-analysis.yml)
 
 A database structure to store leaked credentials. 
 
@@ -38,10 +39,12 @@ createuser credentialleakdb
 3. ``psql credentialleakdb < db.sql``
 4. set the env vars: 
 ```bash
+export PORT=8080
 export DBNAME=credentialleakdb
 export DBUSER=credentialleakdb
+export DBHOST=localhost
 ```
-5. start the program:
+5. start the program from the main directory:
 ```bash
-uvicorn --reload --host 0.0.0.0 --port 8080 api.main:app
+export PYTHONPATH=$(pwd); uvicorn --reload --host 0.0.0.0 --port $PORT api.main:app
 ```

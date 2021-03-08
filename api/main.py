@@ -227,8 +227,8 @@ async def get_leak_data_by_leak(leak_id: int) -> Answer:
         return Answer(error=str(ex), data={})
 
 
-@app.get("/leak/{id}", tags=["Leak"], description='Get the leak info by its ID.')
-@app.get("/leak/by_id/{id}", tags=["Leak"], description='Alias endpoint for /leak/{id}.')
+@app.get("/leak/{_id}", tags=["Leak"], description='Get the leak info by its ID.')
+@app.get("/leak/by_id/{_id}", tags=["Leak"], description='Alias endpoint for /leak/{id}.')
 async def get_leak_by_id(_id: int) -> Answer:
     """Fetch a leak by its ID"""
     t0 = time.time()
