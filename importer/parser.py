@@ -44,18 +44,20 @@ class BaseParser:
             :rtype: tuple
         """
         logging.debug("Parsing file %s...", fname)
-        print("Parsing file %s...", fname)
+        print("Parsing file %s..." % fname)
         try:
             if csv_dialect:
                 dialect = csv_dialect
             else:
                 dialect = peek_into_file(fname)     # try to guess
             df = pd.read_csv(fname, dialect=dialect, error_bad_lines=False, warn_bad_lines=True)  # , usecols=range(2))
+            print(df.head())
+            print(df.info())
             print("Parsing file 2...")
             df.insert(0, 'leak_id', leak_id)
-            print("Parsing file 2...")
-            logging.debug(df.head())
-            logging.debug(df.describe())
+            print(df.head())
+            # logging.debug(df.head())
+            # logging.debug(df.describe())
             logging.debug("parsed %s", fname)
             return df
 
@@ -64,7 +66,8 @@ class BaseParser:
             return None
 
     def normalize_data(self, df: pd.DataFrame, leak_id: str=None) -> pd.DataFrame:
-        return df
+        # replace NaN with None
+        return df.where(pd.notnull(df), None)
 
 
 '''
