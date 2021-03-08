@@ -494,7 +494,6 @@ async def import_csv(leak_id: int, _file: UploadFile = File(...)) -> Answer:
         return Answer(error=str(ex), data=[])
 
     df = p.normalize_data(df, leak_id=leak_id)
-    print(df.describe())
 
     """ 
     Now, after normalization, the df is in the format:
@@ -504,6 +503,7 @@ async def import_csv(leak_id: int, _file: UploadFile = File(...)) -> Answer:
     
     """
 
+    i = 0
     for r in df.reset_index().to_dict('rows'):
         sql = """
         INSERT into leak_data(
@@ -517,13 +517,15 @@ async def import_csv(leak_id: int, _file: UploadFile = File(...)) -> Answer:
             cur.execute(sql, (r['leak_id'], r['email'], r['password'], r['password_plain'], r['password_hashed'],
                 r['hash_algo'], r['ticket_id'], r['email_verified'], r['password_verified_ok'], r['ip'],
                 r['domain'], r['browser'], r['malware_name'], r['infected_machine'], r['dg']))
-            rows = cur.fetchall()
-            t1 = time.time()
-            d = t1 - t0
-            return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
+            # rows = cur.fetchall()
+            i += 1
+            # return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
         except Exception as ex:
             return Answer(error=str(ex), data=[])
 
+    t1 = time.time()
+    d = t1 - t0
+    return Answer(meta=AnswerMeta(version=VER, duration=d, count=i), data=df.to_dict(orient='records'))
     # XXX FIXME implement dedup
 
     """
