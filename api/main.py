@@ -166,12 +166,12 @@ async def check_user_by_domain(domain: str) -> Answer:
 
 #####################################
 # File uploading
-async def store_file(orig_filename: str, file: SpooledTemporaryFile,
+async def store_file(orig_filename: str, _file: SpooledTemporaryFile,
                      upload_path=os.getenv('UPLOAD_PATH', default='/tmp')) -> str:
     """
     Stores a SpooledTemporaryFile to a permanent location and returns the path to it
     @param orig_filename:  the filename according to multipart
-    @param file: the SpooledTemporary File
+    @param _file: the SpooledTemporary File
     @param upload_path: where the uploaded file should be stored permanently
     @return: full path to the stored file
     """
@@ -183,13 +183,13 @@ async def store_file(orig_filename: str, file: SpooledTemporaryFile,
     #   example: /tmp/Spycloud.csv
     path = "{}/{}".format(upload_path, orig_filename)  # prefix, orig_filename, sha256, pid, suffix)
     logging.info("storing %s ... to %s" % (orig_filename, path))
-    file.seek(0)
+    _file.seek(0)
     with open(path, "w+b") as outfile:
-        shutil.copyfileobj(file._file, outfile)
+        shutil.copyfileobj(_file._file, outfile)
     return path
 
 
-async def check_file(_filename: str) -> bool:
+async def check_file(filename: str) -> bool:
     return True  # XXX FIXME Implement
 
 
@@ -475,27 +475,17 @@ async def import_csv(leak_id: int, _file: UploadFile = File(...)) -> Answer:
         return Answer(error=str(ex), data=[])
 
     # okay, we found the leak, let's insert the CSV
-    # print('leak_id = %s' % leak_id)
-
     file_on_disk = await store_file(_file.filename, _file.file)
     await check_file(file_on_disk)  # XXX FIXME. Additional checks on the dumped file still missing
 
-    # print('still alive 1')
     p = BaseParser()
     df = pd.DataFrame()
-    # print('still alive 2')
     try:
-        # p = parser_spycloud.Parser()      # XXX FIXME need to be flexible when chosing which parser to use
-        # print('still alive 2a')
-        # print('still alive 2a: file on disk = %s' % file_on_disk)
         df = p.parse_file(Path(file_on_disk), leak_id=leak_id)
-        # print('still alive 3')
     except Exception as ex:
         return Answer(error=str(ex), data=[])
 
     df = p.normalize_data(df, leak_id=leak_id)
-    # print(80*"=")
-    # print(df)
     """ 
     Now, after normalization, the df is in the format:
       leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id, email_verified, 
@@ -503,7 +493,15 @@ async def import_csv(leak_id: int, _file: UploadFile = File(...)) -> Answer:
          
     Example
     -------
-    
+    [5 rows x 15 columns]
+       leak_id                email  ... infected_machine     dg
+    0        1    aaron@example.com  ...     local_laptop  DIGIT
+    1        1    sarah@example.com  ...    sarahs_laptop  DIGIT
+    2        1  rousben@example.com  ...      WORKSTATION  DIGIT
+    3        1    david@example.com  ...      Macbook Pro  DIGIT
+    4        1    lauri@example.com  ...  Raspberry PI 3+  DIGIT
+    5        1  natasha@example.com  ...  Raspberry PI 3+  DIGIT
+
     """
 
     i = 0
@@ -525,17 +523,13 @@ async def import_csv(leak_id: int, _file: UploadFile = File(...)) -> Answer:
                 r['hash_algo'], r['ticket_id'], r['email_verified'], r['password_verified_ok'], r['ip'],
                 r['domain'], r['browser'], r['malware_name'], r['infected_machine'], r['dg']))
             leak_data_id = int(cur.fetchone()['id'])
-            # print(leak_data_id)
             inserted_ids.append(leak_data_id)
             i += 1
-            # return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
         except Exception as ex:
-            # print("oooops, exception. Reason: %s" % (str(ex),))
             return Answer(error=str(ex), data=[])
 
     t1 = time.time()
     d = t1 - t0
-    # print(inserted_ids)
 
     # now get the data of all the IDs / dedup
     try:
@@ -546,49 +540,6 @@ async def import_csv(leak_id: int, _file: UploadFile = File(...)) -> Answer:
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(inserted_ids)), data=data)
     except Exception as ex:
         return Answer(error=str(ex), data=[])
-
-    """
-    sql2 = '''
-    INSERT INTO leak_data (leak_id, email, password, password_plain, password_hashed, hash_algo, email_verified,
-       password_verified_ok, ip, domain, browser, malware_name, infected_machine, dg)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-    ON CONFLICT DO NOTHING RETURNING id
-    '''
-    p = parser_spycloud.SpycloudParser()
-    df = p.parse_file(file)
-    for i, row in df.iterrows():
-        try:
-            cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-            cur.execute(sql2, (leak_id, row['email'], row['password'], ...))
-            leak_id = cur.fetchall()[0]
-        except Exception as ex:
-            return Answer(error=str(ex), data=[])
-    """
-
-
-@app.post("/deduplicate/csv/{leak_id}")
-async def dedup_csv(leak_id: int, file: UploadFile = File(...)) -> Answer:
-    """ XXX FIXME. need to implement deduping. XXX"""
-
-    t0 = time.time()
-
-    # The UploadFile object, is a
-    # https://docs.python.org/3/library/tempfile.html#tempfile.SpooledTemporaryFile) . So first write it to disk:
-    file_on_disk = await store_file(file.filename, file.file)
-    await check_file(file_on_disk)  # XXX FIXME. Additional checks on the dumped file still missing
-
-    p = BaseParser()
-    # p = parser_spycloud.Parser()      # XXX FIXME need to be flexible when chosing which parser to use
-    df = p.parse_file(Path(file_on_disk, leak_id = leak_id))
-    df = pd.DataFrame()
-
-    # insert file into DB XXX FIXME
-
-    # dedup
-
-    t1 = time.time()
-    # return results
-    return Answer(meta=AnswerMeta(duration=t1 - t0, version=VER, count=len(df)), data=df.to_dict(orient="records"))
 
 
 if __name__ == "__main__":
