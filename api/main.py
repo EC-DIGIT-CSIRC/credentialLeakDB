@@ -475,27 +475,27 @@ async def import_csv(leak_id: int, _file: UploadFile = File(...)) -> Answer:
         return Answer(error=str(ex), data=[])
 
     # okay, we found the leak, let's insert the CSV
-    print('leak_id = %s' % leak_id)
+    # print('leak_id = %s' % leak_id)
 
     file_on_disk = await store_file(_file.filename, _file.file)
     await check_file(file_on_disk)  # XXX FIXME. Additional checks on the dumped file still missing
 
-    print('still alive 1')
+    # print('still alive 1')
     p = BaseParser()
     df = pd.DataFrame()
-    print('still alive 2')
+    # print('still alive 2')
     try:
         # p = parser_spycloud.Parser()      # XXX FIXME need to be flexible when chosing which parser to use
-        print('still alive 2a')
-        print('still alive 2a: file on disk = %s' % file_on_disk)
+        # print('still alive 2a')
+        # print('still alive 2a: file on disk = %s' % file_on_disk)
         df = p.parse_file(Path(file_on_disk), leak_id=leak_id)
-        print('still alive 3')
+        # print('still alive 3')
     except Exception as ex:
         return Answer(error=str(ex), data=[])
 
     df = p.normalize_data(df, leak_id=leak_id)
-    print(80*"=")
-    print(df)
+    # print(80*"=")
+    # print(df)
     """ 
     Now, after normalization, the df is in the format:
       leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id, email_verified, 
@@ -525,17 +525,17 @@ async def import_csv(leak_id: int, _file: UploadFile = File(...)) -> Answer:
                 r['hash_algo'], r['ticket_id'], r['email_verified'], r['password_verified_ok'], r['ip'],
                 r['domain'], r['browser'], r['malware_name'], r['infected_machine'], r['dg']))
             leak_data_id = int(cur.fetchone()['id'])
-            print(leak_data_id)
+            # print(leak_data_id)
             inserted_ids.append(leak_data_id)
             i += 1
             # return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
         except Exception as ex:
-            print("oooops, exception. Reason: %s" % (str(ex),))
+            # print("oooops, exception. Reason: %s" % (str(ex),))
             return Answer(error=str(ex), data=[])
 
     t1 = time.time()
     d = t1 - t0
-    print(inserted_ids)
+    # print(inserted_ids)
 
     # now get the data of all the IDs / dedup
     try:
