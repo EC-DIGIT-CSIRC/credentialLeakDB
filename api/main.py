@@ -494,7 +494,8 @@ async def import_csv(leak_id: int, _file: UploadFile = File(...)) -> Answer:
         return Answer(error=str(ex), data=[])
 
     df = p.normalize_data(df, leak_id=leak_id)
-
+    print(80*"=")
+    print(df)
     """ 
     Now, after normalization, the df is in the format:
       leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id, email_verified, 
@@ -506,29 +507,45 @@ async def import_csv(leak_id: int, _file: UploadFile = File(...)) -> Answer:
     """
 
     i = 0
-    for r in df.reset_index().to_dict(orient='records'):
+    inserted_ids = []
+    for r in df.reset_index().to_dict(orient='rows'):
         sql = """
         INSERT into leak_data(
           leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id, email_verified, 
           password_verified_ok, ip, domain, browser , malware_name, infected_machine, dg
           )
-          VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ) ON CONFLICT DO NOTHING RETURNING *
+          VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ) 
+          ON CONFLICT ON CONSTRAINT constr_unique_leak_data_leak_id_email_password_domain 
+          DO UPDATE SET  count_seen = leak_data.count_seen + 1 
+          RETURNING id
         """
         try:
             cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
             cur.execute(sql, (r['leak_id'], r['email'], r['password'], r['password_plain'], r['password_hashed'],
                 r['hash_algo'], r['ticket_id'], r['email_verified'], r['password_verified_ok'], r['ip'],
                 r['domain'], r['browser'], r['malware_name'], r['infected_machine'], r['dg']))
-            # rows = cur.fetchall()
+            leak_data_id = int(cur.fetchone()['id'])
+            print(leak_data_id)
+            inserted_ids.append(leak_data_id)
             i += 1
             # return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
         except Exception as ex:
+            print("oooops, exception. Reason: %s" % (str(ex),))
             return Answer(error=str(ex), data=[])
 
     t1 = time.time()
     d = t1 - t0
-    return Answer(meta=AnswerMeta(version=VER, duration=d, count=i), data=df.to_dict(orient='records'))
-    # XXX FIXME implement dedup
+    print(inserted_ids)
+
+    # now get the data of all the IDs / dedup
+    try:
+        sql = """SELECT * from leak_data where id in %s"""
+        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(sql, (tuple(inserted_ids),))
+        data = cur.fetchall()
+        return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(inserted_ids)), data=data)
+    except Exception as ex:
+        return Answer(error=str(ex), data=[])
 
     """
     sql2 = '''
