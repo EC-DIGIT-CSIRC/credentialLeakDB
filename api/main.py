@@ -17,9 +17,12 @@ from pathlib import Path
 # database, ASGI, etc.
 import psycopg2
 import psycopg2.extras
-from fastapi import FastAPI, HTTPException, File, UploadFile
+from fastapi import FastAPI, HTTPException, File, UploadFile, Depends, Security
+# from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi.security.api_key import APIKeyHeader, APIKey
 import uvicorn
 from pydantic import EmailStr
+from typing import List
 import pandas as pd
 
 # packages from this code repo
@@ -27,7 +30,12 @@ from api.models import Leak, LeakData, Answer, AnswerMeta
 from importer.parser import BaseParser
 
 
-app = FastAPI()  # root_path='/api/v1')
+
+###############################################################################
+# API key stuff
+API_KEYLEN = 32
+API_KEY_NAME = "x-api-key"
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 
 #################################
 # DB functions
@@ -35,8 +43,9 @@ app = FastAPI()  # root_path='/api/v1')
 db_conn = None
 DSN = "host=%s dbname=%s user=%s" % (os.getenv('DBHOST', 'localhost'), os.getenv('DBNAME'), os.getenv('DBUSER'))
 
-VER = "0.4"
+VER = "0.5"
 
+app = FastAPI()  # root_path='/api/v1')
 
 #############
 # DB specific functions
@@ -72,19 +81,65 @@ def connect_db(dsn: str):
     logging.info("connection to DB established")
     return conn
 
+# =====================================================================
+# security / authentication
+def fetch_valid_api_keys() -> List[str]:
+    """Fetch the list of valid API keys from a DB or a config file.
+    @:returns List of strings - the API keys
+    """
+    return [ "random-test-api-key", "another-example-api-key"]
 
-@app.get("/ping")
+def is_valid_api_key(key: str) -> bool:
+    """
+    Validate a given key if it is in the list of allowed API keys *or* if the source IP where the
+    request is coming from in in a list of valid IP addresses.
+
+    @:param the API key
+    @:returns boolean: YES/NO
+    """
+
+    valid_api_keys = fetch_valid_api_keys()
+
+    allowed_ips = ['127.0.0.1',
+                   '192.168.1.1',     # my own IP, in this example an RFC1918
+                  ]
+    if key in valid_api_keys or (request.client.host in allowed_ips):
+        return True
+    return False
+
+
+def validate_api_key(api_key_header: str = Security(api_key_header)):
+    if not api_key_header:
+        raise HTTPException(status_code=403,
+                            detail="need API key. Please get in contact with the admins of this site in order get your API key.")
+    if is_valid_api_key(api_key_header):
+        return api_key_header
+    else:
+        raise HTTPException(
+            status_code=403,    # HTTP FORBIDDEN
+            detail="Could not validate the provided credentials. Please get in contact with the admins of this site in order get your API key."
+        )
+
+
+# ====================================================
+# API endpoints
+
+@app.get("/ping",
+         name="Ping test",
+         summary="Run a ping test, to check if the service is running",
+         tags=["Tests"])
 async def ping():
     return {"message": "pong"}
 
 
 @app.get("/")
-async def root():
+async def root(api_key: APIKey = Depends(validate_api_key)):
     return {"message": "Hello World"}  # , "root_path": request.scope.get("root_path")}
 
 
 @app.get('/user/{email}')
-async def get_user_by_email(email: EmailStr) -> Answer:
+async def get_user_by_email(email: EmailStr,
+                            api_key: APIKey = Depends(validate_api_key)) -> Answer:
     sql = """SELECT * from leak_data where email=%s"""
     t0 = time.time()
     db = get_db()
