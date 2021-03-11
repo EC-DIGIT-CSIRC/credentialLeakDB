@@ -156,7 +156,9 @@ async def get_user_by_email(email: EmailStr,
 
 
 @app.get('/user_and_password/{email}/{password}')
-async def get_user_by_email_and_password(email: EmailStr, password: str) -> Answer:
+async def get_user_by_email_and_password(email: EmailStr, password: str,
+                                         api_key: APIKey = Depends(validate_api_key)
+                                         ) -> Answer:
     sql = """SELECT * from leak_data where email=%s and password=%s"""
     t0 = time.time()
     db = get_db()
@@ -172,7 +174,9 @@ async def get_user_by_email_and_password(email: EmailStr, password: str) -> Answ
 
 
 @app.get('/exists/by_email/{email}')
-async def check_user_by_email(email: EmailStr) -> Answer:
+async def check_user_by_email(email: EmailStr,
+                              api_key: APIKey = Depends(validate_api_key)
+                              ) -> Answer:
     sql = """SELECT count(*) from leak_data where email=%s"""
     t0 = time.time()
     db = get_db()
@@ -188,7 +192,9 @@ async def check_user_by_email(email: EmailStr) -> Answer:
 
 
 @app.get('/exists/by_password/{password}')
-async def check_user_by_password(password: str) -> Answer:
+async def check_user_by_password(password: str,
+                                 api_key: APIKey = Depends(validate_api_key)
+                                 ) -> Answer:
     # can do better... use the hashid library?
     sql = """SELECT count(*) from leak_data where password=%s or password_plain=%s or password_hashed=%s"""
     t0 = time.time()
@@ -205,7 +211,8 @@ async def check_user_by_password(password: str) -> Answer:
 
 
 @app.get('/exists/by_domain/{domain}')
-async def check_user_by_domain(domain: str) -> Answer:
+async def check_user_by_domain(domain: str,
+                               api_key: APIKey = Depends(validate_api_key)) -> Answer:
     sql = """SELECT count(*) from leak_data where domain=%s"""
     t0 = time.time()
     db = get_db()
@@ -223,7 +230,9 @@ async def check_user_by_domain(domain: str) -> Answer:
 #####################################
 # File uploading
 async def store_file(orig_filename: str, _file: SpooledTemporaryFile,
-                     upload_path=os.getenv('UPLOAD_PATH', default='/tmp')) -> str:
+                     upload_path=os.getenv('UPLOAD_PATH', default='/tmp'),
+                     api_key: APIKey = Depends(validate_api_key)
+                     ) -> str:
     """
     Stores a SpooledTemporaryFile to a permanent location and returns the path to it
     @param orig_filename:  the filename according to multipart
@@ -250,7 +259,7 @@ async def check_file(filename: str) -> bool:
 
 
 @app.get("/leak/all", tags=["Leak"])
-async def get_all_leaks() -> Answer:
+async def get_all_leaks(api_key: APIKey = Depends(validate_api_key)) -> Answer:
     """Fetch all leaks."""
     t0 = time.time()
     sql = "SELECT * from leak"
@@ -267,7 +276,7 @@ async def get_all_leaks() -> Answer:
 
 
 @app.get("/leak_data/{leak_id}", tags=["Leak Data"])
-async def get_leak_data_by_leak(leak_id: int) -> Answer:
+async def get_leak_data_by_leak(leak_id: int, api_key: APIKey = Depends(validate_api_key)) -> Answer:
     """Fetch all leak data entries of a given leak_id."""
     t0 = time.time()
     sql = "SELECT * from leak_data where leak_id=%s"
@@ -285,7 +294,9 @@ async def get_leak_data_by_leak(leak_id: int) -> Answer:
 
 @app.get("/leak/{_id}", tags=["Leak"], description='Get the leak info by its ID.')
 @app.get("/leak/by_id/{_id}", tags=["Leak"], description='Alias endpoint for /leak/{id}.')
-async def get_leak_by_id(_id: int) -> Answer:
+async def get_leak_by_id(_id: int,
+                         api_key: APIKey = Depends(validate_api_key)
+                         ) -> Answer:
     """Fetch a leak by its ID"""
     t0 = time.time()
     sql = "SELECT * from leak WHERE id = %s"
@@ -302,7 +313,9 @@ async def get_leak_by_id(_id: int) -> Answer:
 
 
 @app.get("/leak/by_ticket_id/{ticket_id}", tags=["Leak"])
-async def get_leak_by_ticket_id(ticket_id: str) -> Answer:
+async def get_leak_by_ticket_id(ticket_id: str,
+                                api_key: APIKey = Depends(validate_api_key)
+                                ) -> Answer:
     """Fetch a leak by its ticket system id"""
     t0 = time.time()
     sql = "SELECT * from leak WHERE ticket_id = %s"
@@ -319,7 +332,9 @@ async def get_leak_by_ticket_id(ticket_id: str) -> Answer:
 
 
 @app.get("/leak/by_summary/{summary}", tags=["Leak"])
-async def get_leak_by_summary(summary: str) -> Answer:
+async def get_leak_by_summary(summary: str,
+                              api_key: APIKey = Depends(validate_api_key)
+                              ) -> Answer:
     """Fetch a leak by summary"""
     sql = "SELECT * from leak WHERE summary = %s"
     t0 = time.time()
@@ -336,7 +351,9 @@ async def get_leak_by_summary(summary: str) -> Answer:
 
 
 @app.get("/leak/by_reporter/{reporter}", tags=["Leak"])
-async def get_leak_by_reporter(reporter: str) -> Answer:
+async def get_leak_by_reporter(reporter: str,
+                               api_key: APIKey = Depends(validate_api_key)
+                               ) -> Answer:
     """Fetch a leak by its reporter"""
     sql = "SELECT * from leak WHERE reporter_name = %s"
     t0 = time.time()
@@ -353,7 +370,9 @@ async def get_leak_by_reporter(reporter: str) -> Answer:
 
 
 @app.get("/leak/by_source/{source_name}", tags=["Leak"])
-async def get_leak_by_source(source_name: str) -> Answer:
+async def get_leak_by_source(source_name: str,
+                             api_key: APIKey = Depends(validate_api_key)
+                             ) -> Answer:
     """Fetch a leak by its source (i.e. WHO collected the leak data (spycloud, HaveIBeenPwned, etc.)"""
     sql = "SELECT * from leak WHERE source_name = %s"
     t0 = time.time()
@@ -370,7 +389,9 @@ async def get_leak_by_source(source_name: str) -> Answer:
 
 
 @app.post("/leak/", tags=["Leak"])
-async def new_leak(leak: Leak) -> Answer:
+async def new_leak(leak: Leak,
+                   api_key: APIKey = Depends(validate_api_key)
+                   ) -> Answer:
     """
     INSERT a new leak into the leak table in the database.
     """
@@ -395,7 +416,9 @@ async def new_leak(leak: Leak) -> Answer:
 
 
 @app.put("/leak/", tags=["Leak"])
-async def update_leak(leak: Leak) -> Answer:
+async def update_leak(leak: Leak,
+                      api_key: APIKey = Depends(validate_api_key)
+                      ) -> Answer:
     """
     UPDATE an existing leak.
     """
@@ -422,7 +445,9 @@ async def update_leak(leak: Leak) -> Answer:
 
 
 @app.get("/leak_data/by_ticket_id/{ticket_id}", tags=["Leak Data"])
-async def get_leak_data_by_ticket_id(ticket_id: str) -> Answer:
+async def get_leak_data_by_ticket_id(ticket_id: str,
+                                     api_key: APIKey = Depends(validate_api_key)
+                                     ) -> Answer:
     """Fetch a leak row (leak_data table) by its ticket system id"""
     sql = "SELECT * from leak_data WHERE ticket_id = %s"
     t0 = time.time()
@@ -439,7 +464,9 @@ async def get_leak_data_by_ticket_id(ticket_id: str) -> Answer:
 
 
 @app.post("/leak_data/", tags=["Leak Data"])
-async def new_leak_data(row: LeakData) -> Answer:
+async def new_leak_data(row: LeakData,
+                        api_key: APIKey = Depends(validate_api_key)
+                        ) -> Answer:
     """
     INSERT a new leak_data row into the leak_data table.
     """
@@ -467,7 +494,9 @@ async def new_leak_data(row: LeakData) -> Answer:
 
 
 @app.put("/leak_data/", tags=["Leak Data"])
-async def update_leak_data(row: LeakData) -> Answer:
+async def update_leak_data(row: LeakData,
+                           api_key: APIKey = Depends(validate_api_key)
+                           ) -> Answer:
     """
     UPDATE leak_data row in the leak_data table.
     """
@@ -506,7 +535,9 @@ async def update_leak_data(row: LeakData) -> Answer:
 
 
 @app.post("/import/csv/{leak_id}", tags=["Leak"])
-async def import_csv(leak_id: int, _file: UploadFile = File(...)) -> Answer:
+async def import_csv(leak_id: int, _file: UploadFile = File(...),
+                     api_key: APIKey = Depends(validate_api_key)
+                     ) -> Answer:
     """
     Import a CSV file into the DB. You **need** to specify a ?leak_id=<int> parameter so that the CSV file may be
     linked to a leak_id. Failure to provide a leak_id will result in the file not being imported into the DB.
