@@ -185,7 +185,7 @@ async def get_user_by_email(email: EmailStr,
         return Answer(error=str(ex), data=[])
 
 
-@app.get('/user_and_password/{email}/{password}')
+@app.get('/user_and_password/{email}/{password}', response_model=Answer)
 async def get_user_by_email_and_password(email: EmailStr,
                                          password: str,
                                          api_key: APIKey = Depends(validate_api_key)
