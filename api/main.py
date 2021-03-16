@@ -46,7 +46,7 @@ VER = "0.5"
 app = FastAPI(title="CredentialLeakDB", version=VER, )  # root_path='/api/v1')
 
 
-#############
+# ##############################################################################
 # DB specific functions
 @app.on_event('startup')
 def get_db():
@@ -88,7 +88,7 @@ def connect_db(dsn: str):
     return conn
 
 
-# =====================================================================
+# ##############################################################################
 # security / authentication
 def fetch_valid_api_keys() -> List[str]:
     """Fetch the list of valid API keys from a DB or a config file.
@@ -118,23 +118,55 @@ def is_valid_api_key(key: str) -> bool:
     return False
 
 
-def validate_api_key(api_key_header: str = Security(api_key_header)):
+def validate_api_key_header(apikeyheader: str = Security(api_key_header)):
     """
-    Validate if a given API key is present in the HTTP header.
+    Validate if a given API key is present in the HTTP apikeyheader.
 
-    :param api_key_header: the required HTTP Header
-    :returns: the api_key_header again, if it is valid. Otherwise, raise an HTTPException and return 403 to the user.
+    :param apikeyheader: the required HTTP Header
+    :returns: the apikey apikeyheader again, if it is valid. Otherwise, raise an HTTPException and return 403 to the user.
     """
-    if not api_key_header:
+    if not apikeyheader:
         raise HTTPException(status_code=403,
-                            detail="need API key. Please get in contact with the admins of this site in order get your API key.")
-    if is_valid_api_key(api_key_header):
-        return api_key_header
+                            detail="""need API key. Please get in contact with the admins of this 
+                            site in order get your API key.""")
+    if is_valid_api_key(apikeyheader):
+        return apikeyheader
     else:
         raise HTTPException(
             status_code=403,  # HTTP FORBIDDEN
-            detail="Could not validate the provided credentials. Please get in contact with the admins of this site in order get your API key."
+            detail="""Could not validate the provided credentials. Please get in contact with the admins of this 
+            site in order get your API key."""
         )
+
+
+# ##############################################################################
+# File uploading
+async def store_file(orig_filename: str, _file: SpooledTemporaryFile,
+                     upload_path=os.getenv('UPLOAD_PATH', default='/tmp')) -> str:
+    """
+    Stores a SpooledTemporaryFile to a permanent location and returns the path to it
+
+    :param orig_filename:  the filename according to multipart
+    :param _file: the SpooledTemporary File
+    :param upload_path: where the uploaded file should be stored permanently
+    :returns: full path to the stored file
+    """
+    # Unfortunately we need to really shutil.copyfileobj() the file object to disk, even though we already have a
+    # SpooledTemporaryFile object... this is needed for SpooledTemporaryFiles . Sucks. See here:
+    #   https://stackoverflow.com/questions/94153/how-do-i-persist-to-disk-a-temporary-file-using-python
+    #
+    # filepath syntax:  <UPLOAD_PATH>/<original filename>
+    #   example: /tmp/Spycloud.csv
+    path = "{}/{}".format(upload_path, orig_filename)  # prefix, orig_filename, sha256, pid, suffix)
+    logging.info("storing %s ... to %s" % (orig_filename, path))
+    _file.seek(0)
+    with open(path, "w+b") as outfile:
+        shutil.copyfileobj(_file._file, outfile)
+    return path
+
+
+async def check_file(filename: str) -> bool:
+    return True  # XXX FIXME Implement
 
 
 # ====================================================
@@ -149,27 +181,29 @@ async def ping():
     return {"message": "pong"}
 
 
-@app.get("/")
-async def root(api_key: APIKey = Depends(validate_api_key)):
+@app.get("/", tags=["Tests"])
+async def root(api_key: APIKey = Depends(validate_api_key_header)):
     """A simple hello world endpoint. This one requires an API key."""
     return {"message": "Hello World"}  # , "root_path": request.scope.get("root_path")}
 
 
-@app.get('/user/{email}', response_model=Answer)
+# ##############################################################################
+# General API endpoints
+
+
+@app.get('/user/{email}',
+         tags=["General queries"],
+         response_model=Answer)
 async def get_user_by_email(email: EmailStr,
-                            api_key: APIKey = Depends(validate_api_key)) -> Answer:
+                            api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
     """
     Get the all credential leaks in the DB of a given user specified by his email address.
 
-    Parameters
-    ----------
-    email: string
+    # Parameters
+      * email: string. The email address of the user (case insensitive).
 
-       the email address of the user (case insensitive).
-
-    Returns
-    ----------
-    A JSON Answer object with rows being an array of answers, or [] in case there was no data in the DB
+    # Returns
+      * A JSON Answer object with rows being an array of answers, or [] in case there was no data in the DB
     """
     sql = """SELECT * from leak_data where upper(email)=upper(%s)"""
     t0 = time.time()
@@ -185,10 +219,12 @@ async def get_user_by_email(email: EmailStr,
         return Answer(error=str(ex), data=[])
 
 
-@app.get('/user_and_password/{email}/{password}', response_model=Answer)
+@app.get('/user_and_password/{email}/{password}',
+         tags=["General queries"],
+         response_model=Answer)
 async def get_user_by_email_and_password(email: EmailStr,
                                          password: str,
-                                         api_key: APIKey = Depends(validate_api_key)
+                                         api_key: APIKey = Depends(validate_api_key_header)
                                          ) -> Answer:
     """
     Get the all credential leaks in the DB of a given user given by the combination email + password.
@@ -221,9 +257,11 @@ async def get_user_by_email_and_password(email: EmailStr,
         return Answer(error=str(ex), data=[])
 
 
-@app.get('/exists/by_email/{email}', response_model=Answer)
+@app.get('/exists/by_email/{email}',
+         tags=["General queries"],
+         response_model=Answer)
 async def check_user_by_email(email: EmailStr,
-                              api_key: APIKey = Depends(validate_api_key)
+                              api_key: APIKey = Depends(validate_api_key_header)
                               ) -> Answer:
     """
     Check if a certain email address was present in any leak.
@@ -252,11 +290,27 @@ async def check_user_by_email(email: EmailStr,
         return Answer(error=str(ex), data=[])
 
 
-@app.get('/exists/by_password/{password}', response_model=Answer)
+@app.get('/exists/by_password/{password}',
+         tags=["General queries"],
+         response_model=Answer)
 async def check_user_by_password(password: str,
-                                 api_key: APIKey = Depends(validate_api_key)
+                                 api_key: APIKey = Depends(validate_api_key_header)
                                  ) -> Answer:
+    """
+    Check if a user exists with the given password (either plaintext or hashed) in the DB. If so, return the user.
+
+    # Parameters
+    * password: string. The password to be searched.
+
+    # Returns
+    * A JSON Answer object with rows being an array of answers, or [] in case there was no data in the DB
+
+    # Example
+    ``12345`` -->
+    ``{ "meta": { ... }, "data": [ { "id": 14, "leak_id": 1, "email": "aaron@example.com", "password": "12345", ...,  ], "error": null }``
+    """
     # can do better... use the hashid library?
+
     sql = """SELECT count(*) from leak_data where password=%s or password_plain=%s or password_hashed=%s"""
     t0 = time.time()
     db = get_db()
@@ -271,10 +325,22 @@ async def check_user_by_password(password: str,
         return Answer(error=str(ex), data=[])
 
 
-@app.get('/exists/by_domain/{domain}', response_model=Answer)
-async def check_user_by_domain(domain: str,
-                               api_key: APIKey = Depends(validate_api_key)) -> Answer:
-    sql = """SELECT count(*) from leak_data where domain=%s"""
+@app.get('/exists/by_domain/{domain}',
+         tags=["General queries"],
+         response_model=Answer)
+async def check_by_domain(domain: str,
+                          api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
+    """
+    Check if a given domain appears in some leak.
+
+    # Parameters
+      * domain : string. The domain to search for (case insensitive).
+
+    # Returns:
+    A JSON Answer object with the count of occurrences in the data: field.
+    """
+
+    sql = """SELECT count(*) from leak_data where upper(domain)=upper(%s)"""
     t0 = time.time()
     db = get_db()
     try:
@@ -288,40 +354,74 @@ async def check_user_by_domain(domain: str,
         return Answer(error=str(ex), data=[])
 
 
-#####################################
-# File uploading
-async def store_file(orig_filename: str, _file: SpooledTemporaryFile,
-                     upload_path=os.getenv('UPLOAD_PATH', default='/tmp'),
-                     api_key: APIKey = Depends(validate_api_key)
-                     ) -> str:
+
+# ##############################################################################
+# Reference data (reporter, source, etc) starts here
+@app.get('/reporter',
+         tags=["Reference data"],
+         response_model=Answer)
+async def get_reporters(api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
     """
-    Stores a SpooledTemporaryFile to a permanent location and returns the path to it
-    @param: orig_filename:  the filename according to multipart
-    @param: _file: the SpooledTemporary File
-    @param: upload_path: where the uploaded file should be stored permanently
-    @return: full path to the stored file
+    Get the all reporter_name entries (sorted, unique).
+
+    # Parameters
+
+    # Returns
+      * A JSON Answer object with data containing an array of answers, or [] in case there was no data in the DB
     """
-    # Unfortunately we need to really shutil.copyfileobj() the file object to disk, even though we already have a
-    # SpooledTemporaryFile object... this is needed for SpooledTemporaryFiles . Sucks. See here:
-    #   https://stackoverflow.com/questions/94153/how-do-i-persist-to-disk-a-temporary-file-using-python
-    #
-    # filepath syntax:  <UPLOAD_PATH>/<original filename>
-    #   example: /tmp/Spycloud.csv
-    path = "{}/{}".format(upload_path, orig_filename)  # prefix, orig_filename, sha256, pid, suffix)
-    logging.info("storing %s ... to %s" % (orig_filename, path))
-    _file.seek(0)
-    with open(path, "w+b") as outfile:
-        shutil.copyfileobj(_file._file, outfile)
-    return path
+    sql = """SELECT distinct(reporter_name) from leak ORDER by reporter_name asc"""
+    t0 = time.time()
+    db = get_db()
+    try:
+        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(sql)
+        rows = cur.fetchall()
+        t1 = time.time()
+        d = t1 - t0
+        return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
+    except Exception as ex:
+        return Answer(error=str(ex), data=[])
 
 
-async def check_file(filename: str) -> bool:
-    return True  # XXX FIXME Implement
+@app.get('/source_name',
+         tags=["Reference data"],
+         response_model=Answer)
+async def get_reporters(api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
+    """
+    Get the all names of sources of leaks (sorted, unique) - i.e. "SpyCloud", "HaveIBeenPwned", etc..
 
+    # Parameters
+
+    # Returns
+      * A JSON Answer object with data containing an array of answers, or [] in case there was no data in the DB
+    """
+    sql = """SELECT distinct(source_name) from leak ORDER by source_name asc"""
+    t0 = time.time()
+    db = get_db()
+    try:
+        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(sql)
+        rows = cur.fetchall()
+        t1 = time.time()
+        d = t1 - t0
+        return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
+    except Exception as ex:
+        return Answer(error=str(ex), data=[])
+
+
+# ##############################################################################
+# Leak table starts here
 
 @app.get("/leak/all", tags=["Leak"], response_model=Answer)
-async def get_all_leaks(api_key: APIKey = Depends(validate_api_key)) -> Answer:
-    """Fetch all leaks."""
+async def get_all_leaks(api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
+    """Fetch all leaks.
+
+    # Parameters
+
+    # Returns
+     * A JSON Answer object with all leak (i.e. meta-data of leaks) data from the `leak` table.
+    """
+
     t0 = time.time()
     sql = "SELECT * from leak"
     db = get_db()
@@ -336,30 +436,11 @@ async def get_all_leaks(api_key: APIKey = Depends(validate_api_key)) -> Answer:
         return Answer(error=str(ex), data=[])
 
 
-@app.get("/leak_data/{leak_id}", tags=["Leak Data"],
-         response_model=Answer)
-async def get_leak_data_by_leak(leak_id: int, api_key: APIKey = Depends(validate_api_key)) -> Answer:
-    """Fetch all leak data entries of a given leak_id."""
-    t0 = time.time()
-    sql = "SELECT * from leak_data where leak_id=%s"
-    db = get_db()
-    try:
-        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute(sql, (leak_id,))
-        rows = cur.fetchall()
-        t1 = time.time()
-        d = t1 - t0
-        return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
-    except Exception as ex:
-        return Answer(error=str(ex), data=[])
-
-
 @app.get("/leak/{_id}", tags=["Leak"],
          description='Get the leak info by its ID.',
          response_model=Answer)
-@app.get("/leak/by_id/{_id}", tags=["Leak"], description='Alias endpoint for /leak/{id}.')
 async def get_leak_by_id(_id: int,
-                         api_key: APIKey = Depends(validate_api_key)
+                         api_key: APIKey = Depends(validate_api_key_header)
                          ) -> Answer:
     """Fetch a leak by its ID"""
     t0 = time.time()
@@ -377,10 +458,10 @@ async def get_leak_by_id(_id: int,
 
 
 @app.get("/leak/by_ticket_id/{ticket_id}",
-        tags=["Leak"],
-        response_model = Answer)
+         tags = ["Leak"],
+         response_model = Answer)
 async def get_leak_by_ticket_id(ticket_id: str,
-                                api_key: APIKey = Depends(validate_api_key)
+                                api_key: APIKey = Depends(validate_api_key_header)
                                 ) -> Answer:
     """Fetch a leak by its ticket system id"""
     t0 = time.time()
@@ -401,7 +482,7 @@ async def get_leak_by_ticket_id(ticket_id: str,
          tags=["Leak"],
          response_model=Answer)
 async def get_leak_by_summary(summary: str,
-                              api_key: APIKey = Depends(validate_api_key)
+                              api_key: APIKey = Depends(validate_api_key_header)
                               ) -> Answer:
     """Fetch a leak by summary"""
     sql = "SELECT * from leak WHERE summary = %s"
@@ -422,9 +503,9 @@ async def get_leak_by_summary(summary: str,
          tags=["Leak"],
          response_model=Answer)
 async def get_leak_by_reporter(reporter: str,
-                               api_key: APIKey = Depends(validate_api_key)
+                               api_key: APIKey = Depends(validate_api_key_header)
                                ) -> Answer:
-    """Fetch a leak by its reporter"""
+    """Fetch a leak by its reporteri. """
     sql = "SELECT * from leak WHERE reporter_name = %s"
     t0 = time.time()
     db = get_db()
@@ -443,10 +524,18 @@ async def get_leak_by_reporter(reporter: str,
          tags=["Leak"],
          response_model=Answer)
 async def get_leak_by_source(source_name: str,
-                             api_key: APIKey = Depends(validate_api_key)
+                             api_key: APIKey = Depends(validate_api_key_header)
                              ) -> Answer:
-    """Fetch a leak by its source (i.e. WHO collected the leak data (spycloud, HaveIBeenPwned, etc.)"""
-    sql = "SELECT * from leak WHERE source_name = %s"
+    """Fetch all leaks by their source (i.e. *who* collected the leak data (spycloud, HaveIBeenPwned, etc.).
+
+    # Parameters
+      * source_name: string. The name of the source (case insensitive).
+
+    # Returns
+      * a JSON Answer object with all leaks for that given source_name.
+    """
+
+    sql = "SELECT * from leak WHERE upper(source_name) = upper(%s)"
     t0 = time.time()
     db = get_db()
     try:
@@ -462,12 +551,19 @@ async def get_leak_by_source(source_name: str,
 
 @app.post("/leak/",
           tags=["Leak"],
+          description="INSERT a new leak into the DB",
           response_model=Answer)
 async def new_leak(leak: Leak,
-                   api_key: APIKey = Depends(validate_api_key)
+                   api_key: APIKey = Depends(validate_api_key_header)
                    ) -> Answer:
     """
     INSERT a new leak into the leak table in the database.
+
+    # Parameters
+      * leak:  a Leak object. Note that all fields must be set, except for leak.id
+    # Returns
+      * a JSON Answer object with the leak_id in the data: field
+
     """
     sql = """INSERT into leak
              (summary, ticket_id, reporter_name, source_name, breach_ts, source_publish_ts, ingestion_ts)
@@ -493,10 +589,15 @@ async def new_leak(leak: Leak,
          tags=["Leak"],
          response_model=Answer)
 async def update_leak(leak: Leak,
-                      api_key: APIKey = Depends(validate_api_key)
+                      api_key: APIKey = Depends(validate_api_key_header)
                       ) -> Answer:
     """
     UPDATE an existing leak.
+
+    # Parameters
+      * leak: a Leak object. Note that all fields must be set in the Leak object.
+    # Returns
+      * a JSON Answer object with the ID of the updated leak.
     """
     sql = """UPDATE leak SET
                 summary = %s, ticket_id = %s, reporter_name = %s, source_name = %s,
@@ -520,13 +621,49 @@ async def update_leak(leak: Leak,
         return Answer(error=str(ex), data=[])
 
 
+# ############################################################################################################
+# Leak Data starts here
+
+@app.get("/leak_data/{leak_id}", tags=["Leak Data"],
+         response_model=Answer)
+async def get_leak_data_by_leak(leak_id: int, api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
+    """
+    Fetch all leak data entries of a given leak_id.
+
+    # Parameters
+        * leak_id: integer, the DB internal leak_id.
+
+    # Returns
+     * A JSON Answer object with the corresponding leak data (i.e. actual usernames, passwords) from the `leak_data`
+       table which are contained within the specified leak (leak_id).
+    """
+    t0 = time.time()
+    sql = "SELECT * from leak_data where leak_id=%s"
+    db = get_db()
+    try:
+        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(sql, (leak_id,))
+        rows = cur.fetchall()
+        t1 = time.time()
+        d = t1 - t0
+        return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
+    except Exception as ex:
+        return Answer(error=str(ex), data=[])
+
+
 @app.get("/leak_data/by_ticket_id/{ticket_id}",
          tags=["Leak Data"],
          response_model=Answer)
 async def get_leak_data_by_ticket_id(ticket_id: str,
-                                     api_key: APIKey = Depends(validate_api_key)
+                                     api_key: APIKey = Depends(validate_api_key_header)
                                      ) -> Answer:
-    """Fetch a leak row (leak_data table) by its ticket system id"""
+    """Fetch a leak row (leak_data table) by its ticket system id
+
+    # Parameters
+      * ticket_id: string. The ticket system ID which references the leak_data row
+    # Returns
+      * a JSON Answer object with the leak data row or in data.
+    """
     sql = "SELECT * from leak_data WHERE ticket_id = %s"
     t0 = time.time()
     db = get_db()
@@ -545,10 +682,15 @@ async def get_leak_data_by_ticket_id(ticket_id: str,
           tags=["Leak Data"],
           response_model=Answer)
 async def new_leak_data(row: LeakData,
-                        api_key: APIKey = Depends(validate_api_key)
+                        api_key: APIKey = Depends(validate_api_key_header)
                         ) -> Answer:
     """
     INSERT a new leak_data row into the leak_data table.
+
+    # Parameters
+      * row: a leakData object. If that data already exists, it will not be inserted again.
+    # Returns
+      * a JSON Answer object containing the ID of the inserted leak_data row.
     """
     sql = """INSERT into leak_data
              (leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id,
@@ -577,10 +719,16 @@ async def new_leak_data(row: LeakData,
          tags=["Leak Data"],
          response_model=Answer)
 async def update_leak_data(row: LeakData,
-                           api_key: APIKey = Depends(validate_api_key)
+                           api_key: APIKey = Depends(validate_api_key_header)
                            ) -> Answer:
     """
     UPDATE leak_data row in the leak_data table.
+
+    # Parameters
+      * row : a leakData object with all the relevant information. Should you not want to update a specific field,
+        do not specify it in the LeakData object.
+    # Returns
+      * a JSON Answer object containing the ID of the inserted leak_data row.
     """
     sql = """UPDATE leak_data SET
                 leak_id = %s,
@@ -616,15 +764,27 @@ async def update_leak_data(row: LeakData,
         return Answer(error=str(ex), data=[])
 
 
+# ############################################################################################################
+# CSV file importing
 @app.post("/import/csv/{leak_id}",
-          tags=["Leak"],
+          tags=["CSV import"],
           response_model=Answer)
 async def import_csv(leak_id: int, _file: UploadFile = File(...),
-                     api_key: APIKey = Depends(validate_api_key)
+                     api_key: APIKey = Depends(validate_api_key_header)
                      ) -> Answer:
     """
     Import a CSV file into the DB. You **need** to specify a ?leak_id=<int> parameter so that the CSV file may be
     linked to a leak_id. Failure to provide a leak_id will result in the file not being imported into the DB.
+
+    # Parameters
+      * leak_id : int. As a GET parameter. This allows the DB to link the leak data (CSV file) to the leak_id entry in
+        in the leak table.
+      * _file: a file which must be uploaded via HTML forms/multipart.
+
+    # Returns
+      * a JSON Answer object where the data: field is the **deduplicated** CSV file (i.e. lines which were already
+        imported as part of that leak (same username, same password, same domain) will not be returned.
+        In other words, data: [] contains the rows from the CSV file which did not yet exist in the DB.
     """
 
     t0 = time.time()
@@ -683,10 +843,10 @@ async def import_csv(leak_id: int, _file: UploadFile = File(...),
           leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id, email_verified, 
           password_verified_ok, ip, domain, browser , malware_name, infected_machine, dg
           )
-          VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ) 
-          ON CONFLICT ON CONSTRAINT constr_unique_leak_data_leak_id_email_password_domain 
-          DO UPDATE SET  count_seen = leak_data.count_seen + 1 
-          RETURNING id
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ) 
+        ON CONFLICT ON CONSTRAINT constr_unique_leak_data_leak_id_email_password_domain 
+        DO UPDATE SET  count_seen = leak_data.count_seen + 1 
+        RETURNING id
         """
         try:
             cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
