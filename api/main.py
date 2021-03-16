@@ -386,7 +386,7 @@ async def get_reporters(api_key: APIKey = Depends(validate_api_key_header)) -> A
 @app.get('/source_name',
          tags=["Reference data"],
          response_model=Answer)
-async def get_reporters(api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
+async def get_sources(api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
     """
     Get the all names of sources of leaks (sorted, unique) - i.e. "SpyCloud", "HaveIBeenPwned", etc..
 
