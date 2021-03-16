@@ -35,13 +35,15 @@ class BaseParser:
         pass
 
     def parse_file(self, fname: Path, leak_id: int = None, csv_dialect=None) -> pd.DataFrame:
-        """Parse file (non-recursive) and return either None (in case of errors) or a DataFrame with the contents.
+        """Parse file (non-recursive) and returns a DataFrame with the contents.
         Overwrite this method in YOUR Parser subclass.
 
-        Returns:
+        # Parameters
+          * fname: a Path object with the filename of the CSV file which should be parsed.
+          * leak_id: the leak_id in the DB which is associated with that CSV dump file.
+        # Returns
             a DataFrame
             number of errors while parsing
-            :rtype: tuple
         """
         logging.debug("Parsing file %s...", fname)
         print("Parsing file %s..." % fname)
@@ -63,9 +65,9 @@ class BaseParser:
 
         except Exception as ex:
             logging.error("could not pandas.read_csv(%s). Reason: %s. Skipping file." % (fname, str(ex)))
-            return None
+            raise ex        # pass it on
 
-    def normalize_data(self, df: pd.DataFrame, leak_id: str=None) -> pd.DataFrame:
+    def normalize_data(self, df: pd.DataFrame, leak_id: int = None) -> pd.DataFrame:
         # replace NaN with None
         return df.where(pd.notnull(df), None)
 

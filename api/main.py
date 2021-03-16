@@ -221,7 +221,7 @@ async def get_user_by_email_and_password(email: EmailStr,
         return Answer(error=str(ex), data=[])
 
 
-@app.get('/exists/by_email/{email}')
+@app.get('/exists/by_email/{email}', response_model=Answer)
 async def check_user_by_email(email: EmailStr,
                               api_key: APIKey = Depends(validate_api_key)
                               ) -> Answer:
@@ -252,7 +252,7 @@ async def check_user_by_email(email: EmailStr,
         return Answer(error=str(ex), data=[])
 
 
-@app.get('/exists/by_password/{password}')
+@app.get('/exists/by_password/{password}', response_model=Answer)
 async def check_user_by_password(password: str,
                                  api_key: APIKey = Depends(validate_api_key)
                                  ) -> Answer:
@@ -271,7 +271,7 @@ async def check_user_by_password(password: str,
         return Answer(error=str(ex), data=[])
 
 
-@app.get('/exists/by_domain/{domain}')
+@app.get('/exists/by_domain/{domain}', response_model=Answer)
 async def check_user_by_domain(domain: str,
                                api_key: APIKey = Depends(validate_api_key)) -> Answer:
     sql = """SELECT count(*) from leak_data where domain=%s"""
@@ -319,7 +319,7 @@ async def check_file(filename: str) -> bool:
     return True  # XXX FIXME Implement
 
 
-@app.get("/leak/all", tags=["Leak"])
+@app.get("/leak/all", tags=["Leak"], response_model=Answer)
 async def get_all_leaks(api_key: APIKey = Depends(validate_api_key)) -> Answer:
     """Fetch all leaks."""
     t0 = time.time()
@@ -336,7 +336,8 @@ async def get_all_leaks(api_key: APIKey = Depends(validate_api_key)) -> Answer:
         return Answer(error=str(ex), data=[])
 
 
-@app.get("/leak_data/{leak_id}", tags=["Leak Data"])
+@app.get("/leak_data/{leak_id}", tags=["Leak Data"],
+         response_model=Answer)
 async def get_leak_data_by_leak(leak_id: int, api_key: APIKey = Depends(validate_api_key)) -> Answer:
     """Fetch all leak data entries of a given leak_id."""
     t0 = time.time()
@@ -353,7 +354,9 @@ async def get_leak_data_by_leak(leak_id: int, api_key: APIKey = Depends(validate
         return Answer(error=str(ex), data=[])
 
 
-@app.get("/leak/{_id}", tags=["Leak"], description='Get the leak info by its ID.')
+@app.get("/leak/{_id}", tags=["Leak"],
+         description='Get the leak info by its ID.',
+         response_model=Answer)
 @app.get("/leak/by_id/{_id}", tags=["Leak"], description='Alias endpoint for /leak/{id}.')
 async def get_leak_by_id(_id: int,
                          api_key: APIKey = Depends(validate_api_key)
@@ -373,7 +376,9 @@ async def get_leak_by_id(_id: int,
         return Answer(error=str(ex), data=[])
 
 
-@app.get("/leak/by_ticket_id/{ticket_id}", tags=["Leak"])
+@app.get("/leak/by_ticket_id/{ticket_id}",
+        tags=["Leak"],
+        response_model = Answer)
 async def get_leak_by_ticket_id(ticket_id: str,
                                 api_key: APIKey = Depends(validate_api_key)
                                 ) -> Answer:
@@ -392,7 +397,9 @@ async def get_leak_by_ticket_id(ticket_id: str,
         return Answer(error=str(ex), data=[])
 
 
-@app.get("/leak/by_summary/{summary}", tags=["Leak"])
+@app.get("/leak/by_summary/{summary}",
+         tags=["Leak"],
+         response_model=Answer)
 async def get_leak_by_summary(summary: str,
                               api_key: APIKey = Depends(validate_api_key)
                               ) -> Answer:
@@ -411,7 +418,9 @@ async def get_leak_by_summary(summary: str,
         return Answer(error=str(ex), data=[])
 
 
-@app.get("/leak/by_reporter/{reporter}", tags=["Leak"])
+@app.get("/leak/by_reporter/{reporter}",
+         tags=["Leak"],
+         response_model=Answer)
 async def get_leak_by_reporter(reporter: str,
                                api_key: APIKey = Depends(validate_api_key)
                                ) -> Answer:
@@ -430,7 +439,9 @@ async def get_leak_by_reporter(reporter: str,
         return Answer(error=str(ex), data=[])
 
 
-@app.get("/leak/by_source/{source_name}", tags=["Leak"])
+@app.get("/leak/by_source/{source_name}",
+         tags=["Leak"],
+         response_model=Answer)
 async def get_leak_by_source(source_name: str,
                              api_key: APIKey = Depends(validate_api_key)
                              ) -> Answer:
@@ -449,7 +460,9 @@ async def get_leak_by_source(source_name: str,
         return Answer(error=str(ex), data=[])
 
 
-@app.post("/leak/", tags=["Leak"])
+@app.post("/leak/",
+          tags=["Leak"],
+          response_model=Answer)
 async def new_leak(leak: Leak,
                    api_key: APIKey = Depends(validate_api_key)
                    ) -> Answer:
@@ -476,7 +489,9 @@ async def new_leak(leak: Leak,
         return Answer(error=str(ex), data=[])
 
 
-@app.put("/leak/", tags=["Leak"])
+@app.put("/leak/",
+         tags=["Leak"],
+         response_model=Answer)
 async def update_leak(leak: Leak,
                       api_key: APIKey = Depends(validate_api_key)
                       ) -> Answer:
@@ -505,7 +520,9 @@ async def update_leak(leak: Leak,
         return Answer(error=str(ex), data=[])
 
 
-@app.get("/leak_data/by_ticket_id/{ticket_id}", tags=["Leak Data"])
+@app.get("/leak_data/by_ticket_id/{ticket_id}",
+         tags=["Leak Data"],
+         response_model=Answer)
 async def get_leak_data_by_ticket_id(ticket_id: str,
                                      api_key: APIKey = Depends(validate_api_key)
                                      ) -> Answer:
@@ -524,7 +541,9 @@ async def get_leak_data_by_ticket_id(ticket_id: str,
         return Answer(error=str(ex), data=[])
 
 
-@app.post("/leak_data/", tags=["Leak Data"])
+@app.post("/leak_data/",
+          tags=["Leak Data"],
+          response_model=Answer)
 async def new_leak_data(row: LeakData,
                         api_key: APIKey = Depends(validate_api_key)
                         ) -> Answer:
@@ -554,7 +573,9 @@ async def new_leak_data(row: LeakData,
         return Answer(error=str(ex), data=[])
 
 
-@app.put("/leak_data/", tags=["Leak Data"])
+@app.put("/leak_data/",
+         tags=["Leak Data"],
+         response_model=Answer)
 async def update_leak_data(row: LeakData,
                            api_key: APIKey = Depends(validate_api_key)
                            ) -> Answer:
@@ -595,7 +616,9 @@ async def update_leak_data(row: LeakData,
         return Answer(error=str(ex), data=[])
 
 
-@app.post("/import/csv/{leak_id}", tags=["Leak"])
+@app.post("/import/csv/{leak_id}",
+          tags=["Leak"],
+          response_model=Answer)
 async def import_csv(leak_id: int, _file: UploadFile = File(...),
                      api_key: APIKey = Depends(validate_api_key)
                      ) -> Answer:
