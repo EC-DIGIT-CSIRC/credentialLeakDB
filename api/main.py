@@ -7,29 +7,27 @@ License: see LICENSE
 """
 
 # system / base packages
-import os
-from tempfile import SpooledTemporaryFile
-import time
-import shutil
 import logging
+import os
+import shutil
+import time
 from pathlib import Path
+from tempfile import SpooledTemporaryFile
+from typing import List
 
 # database, ASGI, etc.
+import pandas as pd
 import psycopg2
 import psycopg2.extras
-from fastapi import FastAPI, HTTPException, File, UploadFile, Depends, Security, Request
+import uvicorn
+from fastapi import FastAPI, HTTPException, File, UploadFile, Depends, Security
 # from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.security.api_key import APIKeyHeader, APIKey
-import uvicorn
 from pydantic import EmailStr
-from typing import List
-import pandas as pd
 
 # packages from this code repo
 from api.models import Leak, LeakData, Answer, AnswerMeta
 from importer.parser import BaseParser
-
-
 
 ###############################################################################
 # API key stuff
@@ -45,14 +43,18 @@ DSN = "host=%s dbname=%s user=%s" % (os.getenv('DBHOST', 'localhost'), os.getenv
 
 VER = "0.5"
 
-app = FastAPI()  # root_path='/api/v1')
+app = FastAPI(title="CredentialLeakDB", version=VER, )  # root_path='/api/v1')
+
 
 #############
 # DB specific functions
 @app.on_event('startup')
 def get_db():
-    """Opens a new database connection if there is none yet for the
-    current application context.  """
+    """
+    Open a new database connection if there is none yet for the
+    current application context.
+
+    :returns: the DB handle."""
     global db_conn
 
     if not db_conn:
@@ -72,7 +74,11 @@ def close_db():
 
 
 def connect_db(dsn: str):
-    """Connects to the specific database."""
+    """Connects to the specific database.
+
+    :param dsn: the database connection string.
+    :returns: the DB connection handle
+    """
     try:
         conn = psycopg2.connect(dsn)
         conn.set_session(autocommit=True)
@@ -81,21 +87,24 @@ def connect_db(dsn: str):
     logging.info("connection to DB established")
     return conn
 
+
 # =====================================================================
 # security / authentication
 def fetch_valid_api_keys() -> List[str]:
     """Fetch the list of valid API keys from a DB or a config file.
-    @:returns List of strings - the API keys
+
+    :returns: List of strings - the API keys
     """
-    return [ "random-test-api-key", "another-example-api-key"]
+    return ["random-test-api-key", "another-example-api-key"]
+
 
 def is_valid_api_key(key: str) -> bool:
     """
     Validate a given key if it is in the list of allowed API keys *or* if the source IP where the
     request is coming from in in a list of valid IP addresses.
 
-    @:param the API key
-    @:returns boolean: YES/NO
+    :param key: the API key
+    :returns: boolean: YES/NO
     """
 
     valid_api_keys = fetch_valid_api_keys()
@@ -110,6 +119,12 @@ def is_valid_api_key(key: str) -> bool:
 
 
 def validate_api_key(api_key_header: str = Security(api_key_header)):
+    """
+    Validate if a given API key is present in the HTTP header.
+
+    :param api_key_header: the required HTTP Header
+    :returns: the api_key_header again, if it is valid. Otherwise, raise an HTTPException and return 403 to the user.
+    """
     if not api_key_header:
         raise HTTPException(status_code=403,
                             detail="need API key. Please get in contact with the admins of this site in order get your API key.")
@@ -117,7 +132,7 @@ def validate_api_key(api_key_header: str = Security(api_key_header)):
         return api_key_header
     else:
         raise HTTPException(
-            status_code=403,    # HTTP FORBIDDEN
+            status_code=403,  # HTTP FORBIDDEN
             detail="Could not validate the provided credentials. Please get in contact with the admins of this site in order get your API key."
         )
 
@@ -130,18 +145,33 @@ def validate_api_key(api_key_header: str = Security(api_key_header)):
          summary="Run a ping test, to check if the service is running",
          tags=["Tests"])
 async def ping():
+    """A simple ping / liveliness test endpoint. No API Key required."""
     return {"message": "pong"}
 
 
 @app.get("/")
 async def root(api_key: APIKey = Depends(validate_api_key)):
+    """A simple hello world endpoint. This one requires an API key."""
     return {"message": "Hello World"}  # , "root_path": request.scope.get("root_path")}
 
 
-@app.get('/user/{email}')
+@app.get('/user/{email}', response_model=Answer)
 async def get_user_by_email(email: EmailStr,
                             api_key: APIKey = Depends(validate_api_key)) -> Answer:
-    sql = """SELECT * from leak_data where email=%s"""
+    """
+    Get the all credential leaks in the DB of a given user specified by his email address.
+
+    Parameters
+    ----------
+    email: string
+
+       the email address of the user (case insensitive).
+
+    Returns
+    ----------
+    A JSON Answer object with rows being an array of answers, or [] in case there was no data in the DB
+    """
+    sql = """SELECT * from leak_data where upper(email)=upper(%s)"""
     t0 = time.time()
     db = get_db()
     try:
@@ -156,10 +186,28 @@ async def get_user_by_email(email: EmailStr,
 
 
 @app.get('/user_and_password/{email}/{password}')
-async def get_user_by_email_and_password(email: EmailStr, password: str,
+async def get_user_by_email_and_password(email: EmailStr,
+                                         password: str,
                                          api_key: APIKey = Depends(validate_api_key)
                                          ) -> Answer:
-    sql = """SELECT * from leak_data where email=%s and password=%s"""
+    """
+    Get the all credential leaks in the DB of a given user given by the combination email + password.
+    Note that both email and password must match (where email is case insensitive, the password *is case sensitive*).
+
+    # Parameters
+      * email: string. The email address of the user (**case insensitive**, since email is usually case insensitive).
+      * password: string. The (hashed or plaintext) password (**note: this is case sensitive**)
+
+    # Returns
+      * A JSON Answer object with rows being an array of answers, or [] in case there was no data in the DB
+
+    # Example
+    ``foo@example.com`` and ``12345`` -->
+
+    ``{ "meta": { ... }, "data": [ { "id": 14, "leak_id": 1, "email": "aaron@example.com", "password": "12345", ...,  ], "error": null }``
+
+    """
+    sql = """SELECT * from leak_data where upper(email)=upper(%s) and password=%s"""
     t0 = time.time()
     db = get_db()
     try:
@@ -177,13 +225,26 @@ async def get_user_by_email_and_password(email: EmailStr, password: str,
 async def check_user_by_email(email: EmailStr,
                               api_key: APIKey = Depends(validate_api_key)
                               ) -> Answer:
-    sql = """SELECT count(*) from leak_data where email=%s"""
+    """
+    Check if a certain email address was present in any leak.
+
+    # Parameters
+    * email: string. The email address of the user (**case insensitive**, since email is usually case insensitive).
+
+    # Returns
+    * A JSON Answer object with rows being an array of answers, or [] in case there was no data in the DB
+
+    # Example
+    ``foo@example.com`` -->
+    ``{ "meta": { "version": "0.5", "duration": 0.002, "count": 1 }, "data": [ { "count": 1 } ], "error": null }``
+    """
+    sql = """SELECT count(*) from leak_data where upper(email)=upper(%s)"""
     t0 = time.time()
     db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (email,))
-        rows = cur.fetchone()
+        rows = cur.fetchall()
         t1 = time.time()
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
@@ -235,9 +296,9 @@ async def store_file(orig_filename: str, _file: SpooledTemporaryFile,
                      ) -> str:
     """
     Stores a SpooledTemporaryFile to a permanent location and returns the path to it
-    @param orig_filename:  the filename according to multipart
-    @param _file: the SpooledTemporary File
-    @param upload_path: where the uploaded file should be stored permanently
+    @param: orig_filename:  the filename according to multipart
+    @param: _file: the SpooledTemporary File
+    @param: upload_path: where the uploaded file should be stored permanently
     @return: full path to the stored file
     """
     # Unfortunately we need to really shutil.copyfileobj() the file object to disk, even though we already have a
@@ -607,8 +668,8 @@ async def import_csv(leak_id: int, _file: UploadFile = File(...),
         try:
             cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
             cur.execute(sql, (r['leak_id'], r['email'], r['password'], r['password_plain'], r['password_hashed'],
-                r['hash_algo'], r['ticket_id'], r['email_verified'], r['password_verified_ok'], r['ip'],
-                r['domain'], r['browser'], r['malware_name'], r['infected_machine'], r['dg']))
+                              r['hash_algo'], r['ticket_id'], r['email_verified'], r['password_verified_ok'], r['ip'],
+                              r['domain'], r['browser'], r['malware_name'], r['infected_machine'], r['dg']))
             leak_data_id = int(cur.fetchone()['id'])
             inserted_ids.append(leak_data_id)
             i += 1
