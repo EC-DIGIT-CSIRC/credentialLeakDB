@@ -38,13 +38,12 @@ CREATE TABLE public.leak (
 
 ALTER TABLE public.leak OWNER TO credentialleakdb;
 
-ALTER TABLE public.leak OWNER TO credentialleakdb;
-
 --
 -- Name: COLUMN leak.breach_ts; Type: COMMENT; Schema: public; Owner: credentialleakdb
 --
 
 COMMENT ON COLUMN public.leak.breach_ts IS 'If known, the timestamp when the breach happened.';
+
 
 --
 -- Name: COLUMN leak.source_publish_ts; Type: COMMENT; Schema: public; Owner: credentialleakdb
@@ -101,11 +100,19 @@ CREATE TABLE public.leak_data (
     browser text,
     malware_name text,
     infected_machine text,
-	DG text NOT NULL
+    dg text NOT NULL,
+    count_seen integer DEFAULT 1
 );
 
 
 ALTER TABLE public.leak_data OWNER TO credentialleakdb;
+
+--
+-- Name: COLUMN leak_data.password; Type: COMMENT; Schema: public; Owner: credentialleakdb
+--
+
+COMMENT ON COLUMN public.leak_data.password IS 'Either the encrypted or unencrypted password. If the unencrypted password is available, that is what is going to be in this field.';
+
 
 --
 -- Name: COLUMN leak_data.hash_algo; Type: COMMENT; Schema: public; Owner: credentialleakdb
@@ -120,15 +127,19 @@ COMMENT ON COLUMN public.leak_data.hash_algo IS 'If we can determine the hashing
 
 COMMENT ON COLUMN public.leak_data.malware_name IS 'If the password was leaked via a credential stealer malware, then the malware name goes here.';
 
-COMMENT ON COLUMN public.leak_data.infected_machine  IS 'The infected machine (some ID for the machine)';
-COMMENT ON COLUMN public.leak_data.DG  IS 'The affected DG';
+
+--
+-- Name: COLUMN leak_data.infected_machine; Type: COMMENT; Schema: public; Owner: credentialleakdb
+--
+
+COMMENT ON COLUMN public.leak_data.infected_machine IS 'The infected machine (some ID for the machine)';
 
 
 --
--- Name: COLUMN leak_data.password; Type: COMMENT; Schema: public; Owner: credentialleakdb
+-- Name: COLUMN leak_data.dg; Type: COMMENT; Schema: public; Owner: credentialleakdb
 --
 
-COMMENT ON COLUMN public.leak_data.password IS 'Either the encrypted or unencrypted password. If the unencrypted password is available, that is what is going to be in this field.';
+COMMENT ON COLUMN public.leak_data.dg IS 'The affected DG';
 
 
 --
@@ -193,21 +204,24 @@ ALTER TABLE ONLY public.leak_data ALTER COLUMN id SET DEFAULT nextval('public.le
 -- Data for Name: leak; Type: TABLE DATA; Schema: public; Owner: credentialleakdb
 --
 
--- example:
--- COPY public.leak (id, breach_ts, source_publish_ts, ingestion_ts, summary, ticket_id, reporter_name, source_name) FROM stdin;
--- 1	2020-11-05 00:00:00+01	2020-11-05 00:00:00+01	2020-12-02 00:02:05.371812+01	Russian Password Stealer	\N	\N	\N
--- 2	2020-11-05 00:00:00+01	2020-11-05 00:00:00+01	2020-12-02 00:02:39.609522+01	Reincubate	\N	\N	\N
--- 3	2020-11-05 00:00:00+01	2020-11-05 00:00:00+01	2020-12-02 00:02:53.816163+01	Taurus Stealer	\N	\N	\N
--- 4	2020-11-05 00:00:00+01	2020-11-05 00:00:00+01	2020-12-02 00:03:34.302622+01	Azorult Botnet	\N	\N	\N
--- 5	2020-11-05 00:00:00+01	2020-11-05 00:00:00+01	2020-12-02 00:03:48.068866+01	Smoke Stealer	\N	\N	\N
--- 6	\N	\N	2021-02-14 01:45:04.36858+01	COMB	\N	\N	\N
--- \.
+COPY public.leak (id, breach_ts, source_publish_ts, ingestion_ts, summary, ticket_id, reporter_name, source_name) FROM stdin;
+2	2021-03-06 23:40:47.266962+01	2021-03-06 23:40:47.266962+01	2021-03-06 23:40:47.266962+01	COMB	CSIRC-102	aaron	independen research
+3	2021-03-06 23:41:10.245034+01	2021-03-06 23:41:10.245034+01	2021-03-06 23:41:10.245034+01	cit0day	CSIRC-103	aaron	HaveIBeenPwned
+1	2021-03-08 13:58:41.179+01	2021-03-08 13:58:41.179+01	2021-03-06 23:40:20.116348+01	CIT0DAY-2	CSIRC-99999	aaron	HaveIBennPwned
+\.
+
 
 --
 -- Data for Name: leak_data; Type: TABLE DATA; Schema: public; Owner: credentialleakdb
 --
 
-COPY public.leak_data (id, leak_id, email, password_hashed, hash_algo, password_plain, email_verified, password_verified_ok, ip, domain, browser, ticket_id, malware_name, password) FROM stdin;
+COPY public.leak_data (id, leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id, email_verified, password_verified_ok, ip, domain, browser, malware_name, infected_machine, dg, count_seen) FROM stdin;
+1	1	aaron@example.com	12345	12345	\N	\N	CISRC-199	f	f	1.2.3.4	example.com	Google Chrome	\N	local_laptop	DIGIT	25
+2	1	sarah@example.com	123456	123456	\N	\N	CISRC-199	f	f	1.2.3.5	example.com	Firefox	\N	sarahs_laptop	DIGIT	8
+3	1	ben@example.com	ohk7do7gil6O	ohk7do7gil6O	4aa7985dad6e1f02238c2e2afc521c4d3dd30650656cd07bf0b7cfd3cd1190b7	sha256	CISRC-199	f	f	1.2.3.5	example.com	Firefox	\N	WORKSTATION	DIGIT	8
+4	1	david@example.com	24b3f998468a9da4105e6c78f5444532cde99d53c011715754194c3b4f3e37b4	\N	24b3f998468a9da4105e6c78f5444532cde99d53c011715754194c3b4f3e37b4	sha256	CISRC-199	f	f	8.8.8.8	example.com	Firefox	\N	Macbook Pro	DIGIT	8
+5	2	lauri@example.com	Vie5kuuwiroo	Vie5kuuwiroo	\N	\N	CISRC-200	t	t	9.9.9.9	example.com	Firefox	\N	Raspberry PI 3+	DIGIT	8
+6	2	natasha@example.com	1235kuuwiroo	1235kuuwiroo	\N	\N	CISRC-201	t	t	9.9.9.9	example.com	Firefox	\N	Raspberry PI 3+	DIGIT	2
 \.
 
 
@@ -215,14 +229,22 @@ COPY public.leak_data (id, leak_id, email, password_hashed, hash_algo, password_
 -- Name: leak_data_id_seq; Type: SEQUENCE SET; Schema: public; Owner: credentialleakdb
 --
 
-SELECT pg_catalog.setval('public.leak_data_id_seq', 1, true);
+SELECT pg_catalog.setval('public.leak_data_id_seq', 7, true);
 
 
 --
 -- Name: leak_id_seq; Type: SEQUENCE SET; Schema: public; Owner: credentialleakdb
 --
--- example:
-SELECT pg_catalog.setval('public.leak_id_seq', 6, true);
+
+SELECT pg_catalog.setval('public.leak_id_seq', 4, true);
+
+
+--
+-- Name: leak_data constr_unique_leak_data_leak_id_email_password_domain; Type: CONSTRAINT; Schema: public; Owner: credentialleakdb
+--
+
+ALTER TABLE ONLY public.leak_data
+    ADD CONSTRAINT constr_unique_leak_data_leak_id_email_password_domain UNIQUE (leak_id, email, password, domain);
 
 
 --
@@ -239,6 +261,41 @@ ALTER TABLE ONLY public.leak_data
 
 ALTER TABLE ONLY public.leak
     ADD CONSTRAINT leak_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: idx_leak_data_dg; Type: INDEX; Schema: public; Owner: credentialleakdb
+--
+
+CREATE INDEX idx_leak_data_dg ON public.leak_data USING btree (dg);
+
+
+--
+-- Name: idx_leak_data_email; Type: INDEX; Schema: public; Owner: credentialleakdb
+--
+
+CREATE INDEX idx_leak_data_email ON public.leak_data USING btree (upper(email));
+
+
+--
+-- Name: idx_leak_data_email_password_machine; Type: INDEX; Schema: public; Owner: credentialleakdb
+--
+
+CREATE INDEX idx_leak_data_email_password_machine ON public.leak_data USING btree (email, password, infected_machine);
+
+
+--
+-- Name: idx_leak_data_malware_name; Type: INDEX; Schema: public; Owner: credentialleakdb
+--
+
+CREATE INDEX idx_leak_data_malware_name ON public.leak_data USING btree (malware_name);
+
+
+--
+-- Name: idx_leak_data_unique_leak_id_email_password_domain; Type: INDEX; Schema: public; Owner: credentialleakdb
+--
+
+CREATE UNIQUE INDEX idx_leak_data_unique_leak_id_email_password_domain ON public.leak_data USING btree (leak_id, email, password, domain);
 
 
 --
