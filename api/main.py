@@ -20,7 +20,7 @@ import pandas as pd
 import psycopg2
 import psycopg2.extras
 import uvicorn
-from fastapi import FastAPI, HTTPException, File, UploadFile, Depends, Security
+from fastapi import FastAPI, HTTPException, File, UploadFile, Depends, Security, Response
 # from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.security.api_key import APIKeyHeader, APIKey
 from pydantic import EmailStr
@@ -193,8 +193,10 @@ async def root(api_key: APIKey = Depends(validate_api_key_header)):
 
 @app.get('/user/{email}',
          tags=["General queries"],
+         status_code=200,
          response_model=Answer)
 async def get_user_by_email(email: EmailStr,
+                            response: Response,
                             api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
     """
     Get the all credential leaks in the DB of a given user specified by his email address.
@@ -212,6 +214,8 @@ async def get_user_by_email(email: EmailStr,
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (email,))
         rows = cur.fetchall()
+        if len(rows) == 0:      # return 404 in case no data was found
+            response.status_code = 404
         t1 = time.time()
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
@@ -221,9 +225,11 @@ async def get_user_by_email(email: EmailStr,
 
 @app.get('/user_and_password/{email}/{password}',
          tags=["General queries"],
+         status_code=200,
          response_model=Answer)
 async def get_user_by_email_and_password(email: EmailStr,
                                          password: str,
+                                         response: Response,
                                          api_key: APIKey = Depends(validate_api_key_header)
                                          ) -> Answer:
     """
@@ -250,6 +256,8 @@ async def get_user_by_email_and_password(email: EmailStr,
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (email, password))
         rows = cur.fetchall()
+        if len(rows) == 0:      # return 404 in case no data was found
+            response.status_code = 404
         t1 = time.time()
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)

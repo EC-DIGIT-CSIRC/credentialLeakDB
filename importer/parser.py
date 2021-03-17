@@ -13,7 +13,13 @@ debug = True
 
 
 def peek_into_file(fname: Path) -> csv.Dialect:
-    """Peek into a file in order to determine the dialect for pandas.read_csv() / csv functions."""
+    '''
+    Peek into a file in order to determine the dialect for pandas.read_csv() / csv functions.
+
+    :param fname: a Path object for the filename
+    :return: a csv.Dialect
+    '''
+
     with fname.open(mode='r') as f:
         sniffer = csv.Sniffer()
         logging.debug("has apikeyheader: %s", sniffer.has_header(f.readline()))
@@ -68,6 +74,13 @@ class BaseParser:
             raise ex        # pass it on
 
     def normalize_data(self, df: pd.DataFrame, leak_id: int = None) -> pd.DataFrame:
+        '''
+        Normalize the given data / data frame
+
+        :param df: a pandas df with the leak_data
+        :param leak_id: foreign key to the leak table
+        :return: a pandas df
+        '''
         # replace NaN with None
         return df.where(pd.notnull(df), None)
 
