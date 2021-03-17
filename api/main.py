@@ -367,8 +367,10 @@ async def check_by_domain(domain: str,
 # Reference data (reporter, source, etc) starts here
 @app.get('/reporter',
          tags=["Reference data"],
+         status_code = 200,
          response_model=Answer)
-async def get_reporters(api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
+async def get_reporters(response: Response,
+                        api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
     """
     Get the all reporter_name entries (sorted, unique).
 
@@ -384,6 +386,8 @@ async def get_reporters(api_key: APIKey = Depends(validate_api_key_header)) -> A
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql)
         rows = cur.fetchall()
+        if len(rows) == 0:      # return 404 in case no data was found
+            response.status_code = 404
         t1 = time.time()
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
@@ -393,8 +397,10 @@ async def get_reporters(api_key: APIKey = Depends(validate_api_key_header)) -> A
 
 @app.get('/source_name',
          tags=["Reference data"],
+         status_code = 200,
          response_model=Answer)
-async def get_sources(api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
+async def get_sources(response: Response,
+                      api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
     """
     Get the all names of sources of leaks (sorted, unique) - i.e. "SpyCloud", "HaveIBeenPwned", etc..
 
@@ -410,6 +416,8 @@ async def get_sources(api_key: APIKey = Depends(validate_api_key_header)) -> Ans
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql)
         rows = cur.fetchall()
+        if len(rows) == 0:      # return 404 in case no data was found
+            response.status_code = 404
         t1 = time.time()
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
@@ -420,8 +428,12 @@ async def get_sources(api_key: APIKey = Depends(validate_api_key_header)) -> Ans
 # ##############################################################################
 # Leak table starts here
 
-@app.get("/leak/all", tags=["Leak"], response_model=Answer)
-async def get_all_leaks(api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
+@app.get("/leak/all",
+         tags=["Leak"],
+         status_code = 200,
+         response_model=Answer)
+async def get_all_leaks(response: Response,
+                        api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
     """Fetch all leaks.
 
     # Parameters
@@ -437,6 +449,8 @@ async def get_all_leaks(api_key: APIKey = Depends(validate_api_key_header)) -> A
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql)
         rows = cur.fetchall()
+        if len(rows) == 0:      # return 404 in case no data was found
+            response.status_code = 404
         t1 = time.time()
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
@@ -446,8 +460,10 @@ async def get_all_leaks(api_key: APIKey = Depends(validate_api_key_header)) -> A
 
 @app.get("/leak/{_id}", tags=["Leak"],
          description='Get the leak info by its ID.',
+         status_code = 200,
          response_model=Answer)
 async def get_leak_by_id(_id: int,
+                         response: Response,
                          api_key: APIKey = Depends(validate_api_key_header)
                          ) -> Answer:
     """Fetch a leak by its ID"""
@@ -458,6 +474,8 @@ async def get_leak_by_id(_id: int,
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (_id,))
         rows = cur.fetchall()
+        if len(rows) == 0:      # return 404 in case no data was found
+            response.status_code = 404
         t1 = time.time()
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
@@ -467,8 +485,10 @@ async def get_leak_by_id(_id: int,
 
 @app.get("/leak/by_ticket_id/{ticket_id}",
          tags = ["Leak"],
+         status_code = 200,
          response_model = Answer)
 async def get_leak_by_ticket_id(ticket_id: str,
+                                response: Response,
                                 api_key: APIKey = Depends(validate_api_key_header)
                                 ) -> Answer:
     """Fetch a leak by its ticket system id"""
@@ -479,6 +499,8 @@ async def get_leak_by_ticket_id(ticket_id: str,
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (ticket_id,))
         rows = cur.fetchall()
+        if len(rows) == 0:      # return 404 in case no data was found
+            response.status_code = 404
         t1 = time.time()
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
@@ -488,8 +510,10 @@ async def get_leak_by_ticket_id(ticket_id: str,
 
 @app.get("/leak/by_summary/{summary}",
          tags=["Leak"],
+         status_code = 200,
          response_model=Answer)
 async def get_leak_by_summary(summary: str,
+                              response: Response,
                               api_key: APIKey = Depends(validate_api_key_header)
                               ) -> Answer:
     """Fetch a leak by summary"""
@@ -500,6 +524,8 @@ async def get_leak_by_summary(summary: str,
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (summary,))
         rows = cur.fetchall()
+        if len(rows) == 0:      # return 404 in case no data was found
+            response.status_code = 404
         t1 = time.time()
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
@@ -509,8 +535,10 @@ async def get_leak_by_summary(summary: str,
 
 @app.get("/leak/by_reporter/{reporter}",
          tags=["Leak"],
+         status_code = 200,
          response_model=Answer)
 async def get_leak_by_reporter(reporter: str,
+                               response: Response,
                                api_key: APIKey = Depends(validate_api_key_header)
                                ) -> Answer:
     """Fetch a leak by its reporteri. """
@@ -521,6 +549,8 @@ async def get_leak_by_reporter(reporter: str,
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (reporter,))
         rows = cur.fetchall()
+        if len(rows) == 0:      # return 404 in case no data was found
+            response.status_code = 404
         t1 = time.time()
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
@@ -530,8 +560,10 @@ async def get_leak_by_reporter(reporter: str,
 
 @app.get("/leak/by_source/{source_name}",
          tags=["Leak"],
+         status_code = 200,
          response_model=Answer)
 async def get_leak_by_source(source_name: str,
+                             response: Response,
                              api_key: APIKey = Depends(validate_api_key_header)
                              ) -> Answer:
     """Fetch all leaks by their source (i.e. *who* collected the leak data (spycloud, HaveIBeenPwned, etc.).
@@ -550,6 +582,8 @@ async def get_leak_by_source(source_name: str,
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (source_name,))
         rows = cur.fetchall()
+        if len(rows) == 0:      # return 404 in case no data was found
+            response.status_code = 404
         t1 = time.time()
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
@@ -560,8 +594,10 @@ async def get_leak_by_source(source_name: str,
 @app.post("/leak/",
           tags=["Leak"],
           description="INSERT a new leak into the DB",
+          status_code = 201,
           response_model=Answer)
 async def new_leak(leak: Leak,
+                   response: Response,
                    api_key: APIKey = Depends(validate_api_key_header)
                    ) -> Answer:
     """
@@ -586,6 +622,8 @@ async def new_leak(leak: Leak,
         cur.execute(sql, (leak.summary, leak.ticket_id, leak.reporter_name, leak.source_name, leak.breach_ts,
                           leak.source_publish_ts,))
         rows = cur.fetchall()
+        if len(rows) == 0:      # return 400 in case the INSERT failed.
+            response.status_code = 400
         t1 = time.time()
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
@@ -595,8 +633,10 @@ async def new_leak(leak: Leak,
 
 @app.put("/leak/",
          tags=["Leak"],
+         status_code = 200,
          response_model=Answer)
 async def update_leak(leak: Leak,
+                      response: Response,
                       api_key: APIKey = Depends(validate_api_key_header)
                       ) -> Answer:
     """
@@ -622,6 +662,8 @@ async def update_leak(leak: Leak,
         cur.execute(sql, (leak.summary, leak.ticket_id, leak.reporter_name,
                           leak.source_name, leak.breach_ts, leak.source_publish_ts, leak.id))
         rows = cur.fetchall()
+        if len(rows) == 0:      # return 400 in case the INSERT failed.
+            response.status_code = 400
         t1 = time.time()
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
@@ -632,9 +674,13 @@ async def update_leak(leak: Leak,
 # ############################################################################################################
 # Leak Data starts here
 
-@app.get("/leak_data/{leak_id}", tags=["Leak Data"],
+@app.get("/leak_data/{leak_id}",
+         tags=["Leak Data"],
+         status_code = 200,
          response_model=Answer)
-async def get_leak_data_by_leak(leak_id: int, api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
+async def get_leak_data_by_leak(leak_id: int,
+                                response: Response,
+                                api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
     """
     Fetch all leak data entries of a given leak_id.
 
@@ -652,6 +698,8 @@ async def get_leak_data_by_leak(leak_id: int, api_key: APIKey = Depends(validate
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (leak_id,))
         rows = cur.fetchall()
+        if len(rows) == 0:      # return 404 in case no data was found
+            response.status_code = 404
         t1 = time.time()
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
@@ -661,8 +709,10 @@ async def get_leak_data_by_leak(leak_id: int, api_key: APIKey = Depends(validate
 
 @app.get("/leak_data/by_ticket_id/{ticket_id}",
          tags=["Leak Data"],
+         status_code = 200,
          response_model=Answer)
 async def get_leak_data_by_ticket_id(ticket_id: str,
+                                     response: Response,
                                      api_key: APIKey = Depends(validate_api_key_header)
                                      ) -> Answer:
     """Fetch a leak row (leak_data table) by its ticket system id
@@ -679,6 +729,8 @@ async def get_leak_data_by_ticket_id(ticket_id: str,
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (ticket_id,))
         rows = cur.fetchall()
+        if len(rows) == 0:      # return 404 in case no data was found
+            response.status_code = 404
         t1 = time.time()
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
@@ -688,8 +740,10 @@ async def get_leak_data_by_ticket_id(ticket_id: str,
 
 @app.post("/leak_data/",
           tags=["Leak Data"],
+          status_code = 201,
           response_model=Answer)
 async def new_leak_data(row: LeakData,
+                        response: Response,
                         api_key: APIKey = Depends(validate_api_key_header)
                         ) -> Answer:
     """
@@ -716,6 +770,8 @@ async def new_leak_data(row: LeakData,
                           row.ticket_id, row.email_verified, row.password_verified_ok, row.ip, row.domain, row.browser,
                           row.malware_name, row.infected_machine, row.dg))
         rows = cur.fetchall()
+        if len(rows) == 0:      # return 400 in case the INSERT failed.
+            response.status_code = 400
         t1 = time.time()
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
@@ -725,8 +781,10 @@ async def new_leak_data(row: LeakData,
 
 @app.put("/leak_data/",
          tags=["Leak Data"],
+         status_code = 200,
          response_model=Answer)
 async def update_leak_data(row: LeakData,
+                           response: Response,
                            api_key: APIKey = Depends(validate_api_key_header)
                            ) -> Answer:
     """
@@ -765,6 +823,8 @@ async def update_leak_data(row: LeakData,
                           row.ticket_id, row.email_verified, row.password_verified_ok, row.ip, row.domain, row.browser,
                           row.malware_name, row.infected_machine, row.dg, row.id))
         rows = cur.fetchall()
+        if len(rows) == 0:      # return 400 in case the INSERT failed.
+            response.status_code = 400
         t1 = time.time()
         d = t1 - t0
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
@@ -776,8 +836,11 @@ async def update_leak_data(row: LeakData,
 # CSV file importing
 @app.post("/import/csv/{leak_id}",
           tags=["CSV import"],
+          status_code = 200,
           response_model=Answer)
-async def import_csv(leak_id: int, _file: UploadFile = File(...),
+async def import_csv(leak_id: int,
+                     response: Response,
+                     _file: UploadFile = File(...),
                      api_key: APIKey = Depends(validate_api_key_header)
                      ) -> Answer:
     """
@@ -809,6 +872,7 @@ async def import_csv(leak_id: int, _file: UploadFile = File(...),
         rows = cur.fetchone()
         nr_results = int(rows['count'])
         if nr_results != 1:
+            response.status_code = 404
             return Answer(error="Leak ID %s not found" % leak_id, data=[])
     except Exception as ex:
         return Answer(error=str(ex), data=[])
