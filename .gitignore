@@ -1,6 +1,7 @@
 # config secrets etc.
 ENV
 .env
+config.py
 
 # python venvs
 .venv

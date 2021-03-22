@@ -28,6 +28,7 @@ from pydantic import EmailStr
 # packages from this code repo
 from api.models import Leak, LeakData, Answer, AnswerMeta
 from importer.parser import BaseParser
+from api.config import config
 
 ###############################################################################
 # API key stuff
@@ -95,7 +96,8 @@ def fetch_valid_api_keys() -> List[str]:
 
     :returns: List of strings - the API keys
     """
-    return ["random-test-api-key", "another-example-api-key"]
+
+    return config['api_keys']
 
 
 def is_valid_api_key(key: str) -> bool:
@@ -217,7 +219,7 @@ async def get_user_by_email(email: EmailStr,
         if len(rows) == 0:      # return 404 in case no data was found
             response.status_code = 404
         t1 = time.time()
-        d = t1 - t0
+        d = round(t1 - t0, 3)
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data=[])
@@ -259,7 +261,7 @@ async def get_user_by_email_and_password(email: EmailStr,
         if len(rows) == 0:      # return 404 in case no data was found
             response.status_code = 404
         t1 = time.time()
-        d = t1 - t0
+        d = round(t1 - t0, 3)
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data=[])
@@ -292,7 +294,7 @@ async def check_user_by_email(email: EmailStr,
         cur.execute(sql, (email,))
         rows = cur.fetchall()
         t1 = time.time()
-        d = t1 - t0
+        d = round(t1 - t0, 3)
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data=[])
@@ -327,7 +329,7 @@ async def check_user_by_password(password: str,
         cur.execute(sql, (password, password, password))
         rows = cur.fetchall()
         t1 = time.time()
-        d = t1 - t0
+        d = round(t1 - t0, 3)
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data=[])
@@ -356,7 +358,7 @@ async def check_by_domain(domain: str,
         cur.execute(sql, (domain,))
         rows = cur.fetchall()
         t1 = time.time()
-        d = t1 - t0
+        d = round(t1 - t0, 3)
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data=[])
@@ -389,7 +391,7 @@ async def get_reporters(response: Response,
         if len(rows) == 0:      # return 404 in case no data was found
             response.status_code = 404
         t1 = time.time()
-        d = t1 - t0
+        d = round(t1 - t0, 3)
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data=[])
@@ -419,7 +421,7 @@ async def get_sources(response: Response,
         if len(rows) == 0:      # return 404 in case no data was found
             response.status_code = 404
         t1 = time.time()
-        d = t1 - t0
+        d = round(t1 - t0, 3)
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data=[])
@@ -452,7 +454,7 @@ async def get_all_leaks(response: Response,
         if len(rows) == 0:      # return 404 in case no data was found
             response.status_code = 404
         t1 = time.time()
-        d = t1 - t0
+        d = round(t1 - t0, 3)
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data=[])
@@ -477,7 +479,7 @@ async def get_leak_by_id(_id: int,
         if len(rows) == 0:      # return 404 in case no data was found
             response.status_code = 404
         t1 = time.time()
-        d = t1 - t0
+        d = round(t1 - t0, 3)
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data=[])
@@ -502,7 +504,7 @@ async def get_leak_by_ticket_id(ticket_id: str,
         if len(rows) == 0:      # return 404 in case no data was found
             response.status_code = 404
         t1 = time.time()
-        d = t1 - t0
+        d = round(t1 - t0, 3)
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data=[])
@@ -527,7 +529,7 @@ async def get_leak_by_summary(summary: str,
         if len(rows) == 0:      # return 404 in case no data was found
             response.status_code = 404
         t1 = time.time()
-        d = t1 - t0
+        d = round(t1 - t0, 3)
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data=[])
@@ -552,7 +554,7 @@ async def get_leak_by_reporter(reporter: str,
         if len(rows) == 0:      # return 404 in case no data was found
             response.status_code = 404
         t1 = time.time()
-        d = t1 - t0
+        d = round(t1 - t0, 3)
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data=[])
@@ -585,7 +587,7 @@ async def get_leak_by_source(source_name: str,
         if len(rows) == 0:      # return 404 in case no data was found
             response.status_code = 404
         t1 = time.time()
-        d = t1 - t0
+        d = round(t1 - t0, 3)
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data=[])
@@ -612,7 +614,6 @@ async def new_leak(leak: Leak,
     sql = """INSERT into leak
              (summary, ticket_id, reporter_name, source_name, breach_ts, source_publish_ts, ingestion_ts)
              VALUES (%s, %s, %s, %s, %s, %s, now())
-             ON CONFLICT DO NOTHING
              RETURNING id
         """
     t0 = time.time()
@@ -625,7 +626,7 @@ async def new_leak(leak: Leak,
         if len(rows) == 0:      # return 400 in case the INSERT failed.
             response.status_code = 400
         t1 = time.time()
-        d = t1 - t0
+        d = round(t1 - t0, 3)
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data=[])
@@ -665,7 +666,7 @@ async def update_leak(leak: Leak,
         if len(rows) == 0:      # return 400 in case the INSERT failed.
             response.status_code = 400
         t1 = time.time()
-        d = t1 - t0
+        d = round(t1 - t0, 3)
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data=[])
@@ -701,7 +702,7 @@ async def get_leak_data_by_leak(leak_id: int,
         if len(rows) == 0:      # return 404 in case no data was found
             response.status_code = 404
         t1 = time.time()
-        d = t1 - t0
+        d = round(t1 - t0, 3)
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data=[])
@@ -732,7 +733,7 @@ async def get_leak_data_by_ticket_id(ticket_id: str,
         if len(rows) == 0:      # return 404 in case no data was found
             response.status_code = 404
         t1 = time.time()
-        d = t1 - t0
+        d = round(t1 - t0, 3)
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data=[])
@@ -773,7 +774,7 @@ async def new_leak_data(row: LeakData,
         if len(rows) == 0:      # return 400 in case the INSERT failed.
             response.status_code = 400
         t1 = time.time()
-        d = t1 - t0
+        d = round(t1 - t0, 3)
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data=[])
@@ -826,7 +827,7 @@ async def update_leak_data(row: LeakData,
         if len(rows) == 0:      # return 400 in case the INSERT failed.
             response.status_code = 400
         t1 = time.time()
-        d = t1 - t0
+        d = round(t1 - t0, 3)
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(error=str(ex), data=[])
@@ -932,7 +933,7 @@ async def import_csv(leak_id: int,
             return Answer(error=str(ex), data=[])
 
     t1 = time.time()
-    d = t1 - t0
+    d = round(t1 - t0, 3)
 
     # now get the data of all the IDs / dedup
     try:
