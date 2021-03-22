@@ -2,6 +2,7 @@
 ENV
 .env
 config.py
+api/config.py
 
 # python venvs
 .venv
