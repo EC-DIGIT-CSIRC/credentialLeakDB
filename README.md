@@ -48,3 +48,10 @@ export DBHOST=localhost
 ```bash
 export PYTHONPATH=$(pwd); uvicorn --reload --host 0.0.0.0 --port $PORT api.main:app
 ```
+
+## Configuration.
+
+Please copy the file ``config.SAMPLE.py`` to ``api/config.py`` and adjust accordingly.
+Here you can set API keys etc.
+
+
