@@ -33,7 +33,7 @@ jobs:
         # sudo -u postgres pg_ctlcluster 12 main start
         sudo -u postgres createdb credentialleakdb
         sudo -u postgres createuser -s credentialleakdb
-        psql credentialleakdb < db.sql
+        sudo -u postgres psql credentialleakdb < db.sql
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
