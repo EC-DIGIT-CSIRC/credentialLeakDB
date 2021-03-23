@@ -30,11 +30,17 @@ go back to more normalization. For now, however, this seems to be enough.
 
 ## Installation
 
-1. Install Postgresql 
+1. Install Postgresql:
+```bash 
+# in Ubuntu:
+apt install postgresql-12
+```
+
 2. as user postgres:
 ```bash
 createdb credentialleakdb
 createuser credentialleakdb
+psql -c "ALTER ROLE credentialleakdb WITH PASSWORD '<insert some random password here>'" template1
 ```
 3. ``psql credentialleakdb < db.sql``
 4. set the env vars: 
@@ -42,6 +48,7 @@ createuser credentialleakdb
 export PORT=8080
 export DBNAME=credentialleakdb
 export DBUSER=credentialleakdb
+export DBPASSWORD=... <insert the password you gave the user> ...
 export DBHOST=localhost
 ```
 5. start the program from the main directory:

@@ -54,4 +54,4 @@ jobs:
         uvicorn --host 127.0.0.1 --port 8080 --reload api.main:app &
     - name: Test with pytest
       run: |
-        python -m pytest
+        python -m pytest -vv
