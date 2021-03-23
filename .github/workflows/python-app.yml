@@ -51,7 +51,7 @@ jobs:
         export DBUSER=credentialleakdb
         export DBNAME=credentialleakdb
         export DBPASSWORD="1234testForUnitTesting"
-        uvicorn --host 127.0.0.1 --port 8080 --reload api.main:app
+        uvicorn --host 127.0.0.1 --port 8080 --reload api.main:app &
     - name: Test with pytest
       run: |
         python -m pytest
