@@ -34,6 +34,9 @@ jobs:
         sudo -u postgres createdb credentialleakdb
         sudo -u postgres createuser -s credentialleakdb
         sudo -u postgres psql credentialleakdb < db.sql
+    - name: prepare environment and mocking
+      run: |
+        cp config.SAMPLE.py api/config.py
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
