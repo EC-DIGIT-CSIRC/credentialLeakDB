@@ -45,7 +45,6 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Start the RESTful API server
       run: |
-        source venv/bin/activate
         export PORT=8080
         export DBHOST=localhost
         export DBUSER=credentialleakdb
