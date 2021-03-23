@@ -34,6 +34,7 @@ jobs:
         sudo -u postgres createdb credentialleakdb
         sudo -u postgres createuser -s credentialleakdb
         sudo -u postgres psql credentialleakdb < db.sql
+        sudo -u postgres psql -c "ALTER role credentialleakdb WITH PASSWORD '1234testForUnitTesting'"
     - name: prepare environment and mocking
       run: |
         cp config.SAMPLE.py api/config.py
@@ -49,6 +50,7 @@ jobs:
         export DBHOST=localhost
         export DBUSER=credentialleakdb
         export DBNAME=credentialleakdb
+        export DBPASSWORD="1234testForUnitTesting"
         uvicorn --host 127.0.0.1 --port 8080 --reload api.main:app
     - name: Test with pytest
       run: |
