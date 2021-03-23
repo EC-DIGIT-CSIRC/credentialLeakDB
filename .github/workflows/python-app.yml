@@ -28,7 +28,7 @@ jobs:
     - name: set up demo database
       run: |
         sudo apt install postgresql-12 
-        pg_ctlcluster 12 main start
+        sudu -u postgres pg_ctlcluster 12 main start
         sudo service postgresql start
         # sudo -u postgres pg_ctlcluster 12 main start
         sudo -u postgres createdb credentialleakdb
