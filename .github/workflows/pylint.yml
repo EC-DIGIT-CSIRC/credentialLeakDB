@@ -18,7 +18,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install pylint
         pip install -r requirements.txt
-   - name: prepare environment & mocking
+    - name: prepare environment and mocking
       run: |
         cp config.SAMPLE.py api/config.py
     - name: Analysing the code with pylint
