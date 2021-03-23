@@ -130,14 +130,14 @@ def validate_api_key_header(apikeyheader: str = Security(api_key_header)):
     """
     if not apikeyheader:
         raise HTTPException(status_code=403,
-                            detail="""need API key. Please get in contact with the admins of this 
+                            detail="""need API key. Please get in contact with the admins of this
                             site in order get your API key.""")
     if is_valid_api_key(apikeyheader):
         return apikeyheader
     else:
         raise HTTPException(
             status_code=403,  # HTTP FORBIDDEN
-            detail="""Could not validate the provided credentials. Please get in contact with the admins of this 
+            detail="""Could not validate the provided credentials. Please get in contact with the admins of this
             site in order get your API key."""
         )
 
@@ -365,12 +365,11 @@ async def check_by_domain(domain: str,
         return Answer(error=str(ex), data=[])
 
 
-
 # ##############################################################################
 # Reference data (reporter, source, etc) starts here
 @app.get('/reporter',
          tags=["Reference data"],
-         status_code = 200,
+         status_code=200,
          response_model=Answer)
 async def get_reporters(response: Response,
                         api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
@@ -400,7 +399,7 @@ async def get_reporters(response: Response,
 
 @app.get('/source_name',
          tags=["Reference data"],
-         status_code = 200,
+         status_code=200,
          response_model=Answer)
 async def get_sources(response: Response,
                       api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
@@ -433,7 +432,7 @@ async def get_sources(response: Response,
 
 @app.get("/leak/all",
          tags=["Leak"],
-         status_code = 200,
+         status_code=200,
          response_model=Answer)
 async def get_all_leaks(response: Response,
                         api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
@@ -463,7 +462,7 @@ async def get_all_leaks(response: Response,
 
 @app.get("/leak/{_id}", tags=["Leak"],
          description='Get the leak info by its ID.',
-         status_code = 200,
+         status_code=200,
          response_model=Answer)
 async def get_leak_by_id(_id: int,
                          response: Response,
@@ -488,7 +487,7 @@ async def get_leak_by_id(_id: int,
 
 @app.get("/leak/by_ticket_id/{ticket_id}",
          tags = ["Leak"],
-         status_code = 200,
+         status_code=200,
          response_model = Answer)
 async def get_leak_by_ticket_id(ticket_id: str,
                                 response: Response,
@@ -513,7 +512,7 @@ async def get_leak_by_ticket_id(ticket_id: str,
 
 @app.get("/leak/by_summary/{summary}",
          tags=["Leak"],
-         status_code = 200,
+         status_code=200,
          response_model=Answer)
 async def get_leak_by_summary(summary: str,
                               response: Response,
@@ -538,7 +537,7 @@ async def get_leak_by_summary(summary: str,
 
 @app.get("/leak/by_reporter/{reporter}",
          tags=["Leak"],
-         status_code = 200,
+         status_code=200,
          response_model=Answer)
 async def get_leak_by_reporter(reporter: str,
                                response: Response,
@@ -563,7 +562,7 @@ async def get_leak_by_reporter(reporter: str,
 
 @app.get("/leak/by_source/{source_name}",
          tags=["Leak"],
-         status_code = 200,
+         status_code=200,
          response_model=Answer)
 async def get_leak_by_source(source_name: str,
                              response: Response,
@@ -597,7 +596,7 @@ async def get_leak_by_source(source_name: str,
 @app.post("/leak/",
           tags=["Leak"],
           description="INSERT a new leak into the DB",
-          status_code = 201,
+          status_code=201,
           response_model=Answer)
 async def new_leak(leak: Leak,
                    response: Response,
@@ -635,7 +634,7 @@ async def new_leak(leak: Leak,
 
 @app.put("/leak/",
          tags=["Leak"],
-         status_code = 200,
+         status_code=200,
          response_model=Answer)
 async def update_leak(leak: Leak,
                       response: Response,
@@ -678,7 +677,7 @@ async def update_leak(leak: Leak,
 
 @app.get("/leak_data/{leak_id}",
          tags=["Leak Data"],
-         status_code = 200,
+         status_code=200,
          response_model=Answer)
 async def get_leak_data_by_leak(leak_id: int,
                                 response: Response,
@@ -711,7 +710,7 @@ async def get_leak_data_by_leak(leak_id: int,
 
 @app.get("/leak_data/by_ticket_id/{ticket_id}",
          tags=["Leak Data"],
-         status_code = 200,
+         status_code=200,
          response_model=Answer)
 async def get_leak_data_by_ticket_id(ticket_id: str,
                                      response: Response,
@@ -742,7 +741,7 @@ async def get_leak_data_by_ticket_id(ticket_id: str,
 
 @app.post("/leak_data/",
           tags=["Leak Data"],
-          status_code = 201,
+          status_code=201,
           response_model=Answer)
 async def new_leak_data(row: LeakData,
                         response: Response,
@@ -783,7 +782,7 @@ async def new_leak_data(row: LeakData,
 
 @app.put("/leak_data/",
          tags=["Leak Data"],
-         status_code = 200,
+         status_code=200,
          response_model=Answer)
 async def update_leak_data(row: LeakData,
                            response: Response,
@@ -838,7 +837,7 @@ async def update_leak_data(row: LeakData,
 # CSV file importing
 @app.post("/import/csv/{leak_id}",
           tags=["CSV import"],
-          status_code = 200,
+          status_code=200,
           response_model=Answer)
 async def import_csv(leak_id: int,
                      response: Response,
@@ -891,9 +890,9 @@ async def import_csv(leak_id: int,
         return Answer(error=str(ex), data=[])
 
     df = p.normalize_data(df, leak_id=leak_id)
-    """ 
+    """
     Now, after normalization, the df is in the format:
-      leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id, email_verified, 
+      leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id, email_verified,
          password_verified_ok, ip, domain, browser , malware_name, infected_machine, dg
          
     Example
