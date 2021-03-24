@@ -13,7 +13,12 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-
+    env:
+      PORT: 8080
+      DBHOST: localhost
+      DBUSER: credentialleakdb
+      DBPASSWORD: 1234testForUnitTesting
+      DBNAME: credentialleakdb
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python 3.9
@@ -38,6 +43,11 @@ jobs:
     - name: prepare environment and mocking
       run: |
         cp config.SAMPLE.py api/config.py
+        echo "PORT=$PORT" > ENV
+        echo "DBHOST=$DBHOST" >> ENV
+        echo "DBUSER=$DBUSER" >> ENV
+        echo "DBPASSWORD=$DBPASSWORD" >> ENV
+        echo "DBNAME=$DBNAME" >> ENV
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -46,22 +56,8 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Start the RESTful API server
       run: |
-        export PORT=8080
-        export DBHOST=localhost
-        export DBUSER=credentialleakdb
-        export DBPASSWORD="1234testForUnitTesting"
-        export DBNAME=credentialleakdb
-        echo "PORT=$PORT" > ENV
-        echo "DBHOST=$DBHOST" >> ENV
-        echo "DBUSER=$DBUSER" >> ENV
-        echo "DBPASSWORD=$DBPASSWORD" >> ENV
-        echo "DBNAME=$DBNAME" >> ENV
-        uvicorn --env-file ENV --host 127.0.0.1 --port 8080 --reload api.main:app &
+        uvicorn --host 127.0.0.1 --port 8080 --reload api.main:app &
+        # uvicorn --env-file ENV --host 127.0.0.1 --port 8080 --reload api.main:app &
     - name: Test with pytest
       run: |
-        export PORT=8080
-        export DBHOST=localhost
-        export DBUSER=credentialleakdb
-        export DBPASSWORD="1234testForUnitTesting"
-        export DBNAME=credentialleakdb
         python -m pytest -vv
