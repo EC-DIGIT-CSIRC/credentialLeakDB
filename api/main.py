@@ -41,7 +41,9 @@ api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=True)
 
 db_conn = None
 DSN = "host=%s dbname=%s user=%s password=%s" % (os.getenv('DBHOST', 'localhost'),
-                                                 os.getenv('DBNAME'), os.getenv('DBUSER'), os.getenv('DBPASSWORD'))
+                                                 os.getenv('DBNAME', 'credentialleakdb'),
+                                                 os.getenv('DBUSER', 'credentialleakdb'),
+                                                 os.getenv('DBPASSWORD'))
 
 VER = "0.5"
 
