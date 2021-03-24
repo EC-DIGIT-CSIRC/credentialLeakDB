@@ -60,9 +60,9 @@ def test_root_invalid_auth():
 def test_get_user_by_email():
     email = urllib.parse.quote("aaron@example.com")
     response = client.get("/user/%s" % email, headers = VALID_AUTH)
-    assert response.status_code == 200
     data = response.json()
     assert "meta" in response.text and "data" in response.text and data['meta']['count'] >= 1
+    assert response.status_code == 200
 
 def test_get_nonexistent_user_by_email():
     email = urllib.parse.quote("aaron@doesnotexist.com")
