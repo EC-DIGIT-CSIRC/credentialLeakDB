@@ -49,9 +49,14 @@ jobs:
         export PORT=8080
         export DBHOST=localhost
         export DBUSER=credentialleakdb
-        export DBNAME=credentialleakdb
         export DBPASSWORD="1234testForUnitTesting"
-        uvicorn --host 127.0.0.1 --port 8080 --reload api.main:app &
+        export DBNAME=credentialleakdb
+        echo "PORT=$PORT" > ENV
+        echo "DBHOST=$DBHOST" >> ENV
+        echo "DBUSER=$DBUSER" >> ENV
+        echo "DBPASSWORD=$DBPASSWORD" >> ENV
+        echo "DBNAME=$DBNAME" >> ENV
+        uvicorn --env-file ENV --host 127.0.0.1 --port 8080 --reload api.main:app &
     - name: Test with pytest
       run: |
         python -m pytest -vv
