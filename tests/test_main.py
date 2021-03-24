@@ -85,7 +85,7 @@ def test_get_nonexistent_user_by_email_and_password():
     email = urllib.parse.quote("aaron@example.com")
     passwd = "123456"
     response = client.get("/user_and_password/%s/%s" % (email, passwd), headers = VALID_AUTH)
-    assert response.status_code != 200
+    assert response.status_code == 200
     data = response.json()
     assert "meta" in response.text and "data" in response.text and data['meta']['count'] == 0
 
@@ -101,7 +101,7 @@ def test_check_user_by_email():
 def test_check_nonexistent_user_by_email():
     email = urllib.parse.quote("aaron@doesnotexist.com")
     response = client.get("/exists/by_email/%s" % email, headers = VALID_AUTH)
-    assert response.status_code != 200
+    assert response.status_code == 200
     data = response.json()
     assert "meta" in response.text and "data" in response.text and data['meta']['count'] == 0
 
