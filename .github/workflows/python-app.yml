@@ -37,9 +37,9 @@ jobs:
         sudo service postgresql start
         # sudo -u postgres pg_ctlcluster 12 main start
         sudo -u postgres createdb credentialleakdb
-        sudo -u postgres createuser -s credentialleakdb
-        sudo -u postgres psql credentialleakdb < db.sql
-        sudo -u postgres psql -c "ALTER role credentialleakdb WITH PASSWORD '1234testForUnitTesting'"
+        sudo -u postgres createuser -s $DBUSER
+        sudo -u postgres psql $DBNAME < db.sql
+        sudo -u postgres psql -c "ALTER role $DBUSER WITH PASSWORD '$DBPASSWORD'"
     - name: prepare environment and mocking
       run: |
         cp config.SAMPLE.py api/config.py
