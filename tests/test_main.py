@@ -51,7 +51,7 @@ def test_root_auth():
     assert response.json() == {"message": "Hello World"}
 
 
-def test_root_invalid_auth():
+def test_root_INVALID_auth():
     response = client.get("/", headers = INVALID_AUTH)
     assert response.status_code == 403
 
@@ -64,7 +64,7 @@ def test_get_user_by_email():
     assert "meta" in response.text and "data" in response.text and data['meta']['count'] >= 1
 
 
-def test_get_nonexistent_user_by_email():
+def test_get_nonexistent_user_by_INVALID_email():
     email = urllib.parse.quote("aaron@doesnotexist.com")
     response = client.get("/user/%s" % email, headers = VALID_AUTH)
     assert response.status_code != 200
@@ -81,11 +81,11 @@ def test_get_user_by_email_and_password():
     assert "meta" in response.text and "data" in response.text and data['meta']['count'] >= 1
 
 
-def test_get_nonexistent_user_by_email_and_password():
+def test_get_nonexistent_user_by_email_and_INVALID_password():
     email = urllib.parse.quote("aaron@example.com")
-    passwd = "123456"
+    passwd = "12345XXXXXXXXXX"
     response = client.get("/user_and_password/%s/%s" % (email, passwd), headers = VALID_AUTH)
-    assert response.status_code == 200
+    assert response.status_code == 404
     data = response.json()
     assert "meta" in response.text and "data" in response.text and data['meta']['count'] == 0
 
@@ -98,10 +98,65 @@ def test_check_user_by_email():
     assert "meta" in response.text and "data" in response.text and data['meta']['count'] >= 1
 
 
-def test_check_nonexistent_user_by_email():
+def test_check_nonexistent_user_by_INVALID_email():
     email = urllib.parse.quote("aaron@doesnotexist.com")
     response = client.get("/exists/by_email/%s" % email, headers = VALID_AUTH)
     assert response.status_code == 200
     data = response.json()
-    assert "meta" in response.text and "data" in response.text and data['meta']['count'] == 0
+    print(data)
+    assert "meta" in response.text and "data" in response.text and data['data'][0]['count'] == 0
+
+
+def test_check_user_by_password():
+    password = "12345"
+    response = client.get("/exists/by_password/%s" % password, headers = VALID_AUTH)
+    assert response.status_code == 200
+    data = response.json()
+    assert "meta" in response.text and "data" in response.text and data['meta']['count'] >= 1
+
+
+def test_check_nonexistent_user_by_INVALID_password():
+    password = 'DOESNOTEXIST@59w47YTISJGw496UASGJSATARSASJKGJSAKGASRG'
+    response = client.get("/exists/by_password/%s" % password, headers = VALID_AUTH)
+    assert response.status_code == 200
+    data = response.json()
+    assert "meta" in response.text and "data" in response.text and data['data'][0]['count'] == 0
+
+
+def test_check_user_by_domain():
+    domain = "example.com"
+    response = client.get("/exists/by_domain/%s" % domain, headers = VALID_AUTH)
+    assert response.status_code == 200
+    data = response.json()
+    assert "meta" in response.text and "data" in response.text and data['meta']['count'] >= 1
+
+
+def test_check_nonexistent_user_by_INVALID_domain():
+    domain = "example.com-foobar-2esugksti2uwasgjskhsjhsa.net"
+    response = client.get("/exists/by_domain/%s" % domain, headers = VALID_AUTH)
+    assert response.status_code == 200
+    data = response.json()
+    assert "meta" in response.text and "data" in response.text and data['data'][0]['count'] == 0
+
+
+def test_get_reporters():
+    response = client.get("/reporter/", headers = VALID_AUTH)
+    assert response.status_code == 200
+    data = response.json()
+    assert "meta" in response.text and \
+           "data" in response.text and \
+           data['meta']['count'] >= 1 and \
+           data['data'][0]['reporter_name'] == 'aaron'
+
+
+def test_get_sources():
+    response = client.get("/source_name/", headers = VALID_AUTH)
+    assert response.status_code == 200
+    data = response.json()
+    answerset = set((i['source_name'] for i in data['data']))
+    print(answerset)
+    assert "meta" in response.text and \
+           "data" in response.text and \
+           data['meta']['count'] >= 1 and \
+           "HaveIBeenPwned" in answerset
 
