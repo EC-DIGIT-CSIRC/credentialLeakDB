@@ -200,20 +200,23 @@ ALTER TABLE ONLY public.leak ALTER COLUMN id SET DEFAULT nextval('public.leak_id
 ALTER TABLE ONLY public.leak_data ALTER COLUMN id SET DEFAULT nextval('public.leak_data_id_seq'::regclass);
 
 
+SELECT pg_catalog.setval('public.leak_id_seq', 1, true);
 --
 -- Data for Name: leak; Type: TABLE DATA; Schema: public; Owner: credentialleakdb
 --
 
 COPY public.leak (id, breach_ts, source_publish_ts, ingestion_ts, summary, ticket_id, reporter_name, source_name) FROM stdin;
+1	2021-03-08 13:58:41.179+01	2021-03-08 13:58:41.179+01	2021-03-06 23:40:20.116348+01	CIT0DAY-2	CSIRC-99999	aaron	HaveIBennPwned
 2	2021-03-06 23:40:47.266962+01	2021-03-06 23:40:47.266962+01	2021-03-06 23:40:47.266962+01	COMB	CSIRC-102	aaron	independen research
 3	2021-03-06 23:41:10.245034+01	2021-03-06 23:41:10.245034+01	2021-03-06 23:41:10.245034+01	cit0day	CSIRC-103	aaron	HaveIBeenPwned
-1	2021-03-08 13:58:41.179+01	2021-03-08 13:58:41.179+01	2021-03-06 23:40:20.116348+01	CIT0DAY-2	CSIRC-99999	aaron	HaveIBennPwned
 \.
 
 
 --
 -- Data for Name: leak_data; Type: TABLE DATA; Schema: public; Owner: credentialleakdb
 --
+
+SELECT pg_catalog.setval('public.leak_data_id_seq', 1, true);
 
 COPY public.leak_data (id, leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id, email_verified, password_verified_ok, ip, domain, browser, malware_name, infected_machine, dg, count_seen) FROM stdin;
 1	1	aaron@example.com	12345	12345	\N	\N	CISRC-199	f	f	1.2.3.4	example.com	Google Chrome	\N	local_laptop	DIGIT	25
