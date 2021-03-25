@@ -153,10 +153,30 @@ def test_get_sources():
     response = client.get("/source_name/", headers = VALID_AUTH)
     assert response.status_code == 200
     data = response.json()
-    answerset = set((i['source_name'] for i in data['data']))
+    answerset = set(i['source_name'] for i in data['data'])
     print(answerset)
     assert "meta" in response.text and \
            "data" in response.text and \
            data['meta']['count'] >= 1 and \
            "HaveIBeenPwned" in answerset
+
+
+def test_new_leak():
+    test_data = {
+        "ticket_id": "CSIRC-202",
+        "summary": "a test leak, please ignore",
+        "reporter_name": "aaron",
+        "source_name": "spycloud",
+        "breach_ts": "2021-03-24T16:08:33.405Z",
+        "source_publish_ts": "2021-03-24T16:08:33.405Z"
+    }
+    response = client.post("/leak/", json=test_data, headers = VALID_AUTH)
+    assert response.status_code == 201
+    data = response.json()
+    assert "meta" in response.text and \
+           "data" in response.text and \
+           data['meta']['count'] >= 1 and \
+           data['data'][0]['id'] >= 1
+
+
 
