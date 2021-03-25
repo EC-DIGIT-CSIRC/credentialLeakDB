@@ -170,7 +170,7 @@ def test_new_leak():
         "breach_ts": "2021-03-24T16:08:33.405Z",
         "source_publish_ts": "2021-03-24T16:08:33.405Z"
     }
-    response = client.post("/leak/", json=test_data, headers = VALID_AUTH)
+    response = client.post("/leak/", json = test_data, headers = VALID_AUTH)
     assert response.status_code == 201
     data = response.json()
     assert "meta" in response.text and \
@@ -179,6 +179,80 @@ def test_new_leak():
            data['data'][0]['id'] >= 1
 
 
+def test_update_leak():
+    test_data = {
+        "ticket_id": "CSIRC-202",
+        "summary": "an UPDATE-able test leak, please ignore",
+        "reporter_name": "aaron",
+        "source_name": "spycloud",
+        "breach_ts": "2021-01-01T00:00:00.000Z",
+        "source_publish_ts": "2021-01-02T00:00:00.000Z",
+    }
+    response = client.post("/leak/", json = test_data, headers = VALID_AUTH)
+    assert response.status_code == 201
+    data = response.json()
+    assert "meta" in response.text and \
+           "data" in response.text and \
+           data['meta']['count'] >= 1 and \
+           data['data'][0]['id'] >= 1
+    id = data['data'][0]['id']
+
+    # now UPDATE it
+    test_data['summary'] = "We UPDATED the test leak now!"
+    test_data['id'] = id
+    response = client.put('/leak/', json = test_data, headers = VALID_AUTH)
+    assert response.status_code == 200
+
+    # fetch the results and see if it's really updated
+    response = client.get('/leak/%s' % (id,), headers = VALID_AUTH)
+    assert response.status_code == 200
+    assert response.json()['data'][0]['summary'] == "We UPDATED the test leak now!"
+
+
+def test_update_INVALID_leak():
+    test_data = {
+        "id": -1,
+        "ticket_id": "CSIRC-202",
+        "summary": "trying to update a leak which does NOT EXIST",
+        "reporter_name": "aaron",
+        "source_name": "spycloud",
+        "breach_ts": "2021-01-01T00:00:00.000Z",
+        "source_publish_ts": "2021-01-02T00:00:00.000Z",
+    }
+    response = client.put('/leak/', json = test_data, headers = VALID_AUTH)
+    assert response.status_code == 400
+    assert response.json()['data'] == []
+
+
+# #################################################################################
+# leak_data
+
+def test_get_leak_data_by_leak():
+    leak_id = 1  # we know this exists by the db.sql INSERT
+    response = client.get('/leak_data/%s' % (leak_id,), headers = VALID_AUTH)
+    assert response.status_code == 200
+    data = response.json()
+    assert data['meta']['count'] >= 1
+    assert data['data'][0]['email'] == 'aaron@example.com'
+
+
+def test_get_leak_data_by_INVALID_leak():
+    leak_id = -1  # we know this does not exist
+    response = client.get('/leak_data/%s' % (leak_id,), headers = VALID_AUTH)
+    assert response.status_code == 404
+    data = response.json()
+    assert data['meta']['count'] == 0
+    assert data['data'] == []
+
+
+def test_get_leak_data_by_ticket_id():
+    ticket_id = 'CISRC-199'  # we know this exists by the db.sql INSERT
+    response = client.get('/leak_data/by_ticket_id/%s' % (ticket_id,), headers = VALID_AUTH)
+    assert response.status_code == 200
+    data = response.json()
+    assert data['meta']['count'] >= 1
+    assert data['data'][0]['email'] == 'aaron@example.com'
+    assert data['data'][1]['email'] == 'sarah@example.com'
 
 def test_update_leak():
     test_data = {
