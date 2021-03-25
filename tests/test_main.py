@@ -180,3 +180,32 @@ def test_new_leak():
 
 
 
+def test_update_leak():
+    test_data = {
+        "ticket_id": "CSIRC-202",
+        "summary": "an UPDATE-able test leak, please ignore",
+        "reporter_name": "aaron",
+        "source_name": "spycloud",
+        "breach_ts": "2021-01-01T00:00:00.000Z",
+        "source_publish_ts": "2021-01-02T00:00:00.000Z",
+    }
+    response = client.post("/leak/", json=test_data, headers = VALID_AUTH)
+    assert response.status_code == 201
+    data = response.json()
+    assert "meta" in response.text and \
+           "data" in response.text and \
+           data['meta']['count'] >= 1 and \
+           data['data'][0]['id'] >= 1
+    id = data['data'][0]['id']
+
+    # now UPDATE it
+    test_data['summary'] = "We UPDATED the test leak now!"
+    test_data['id'] = id
+    response = client.put('/leak/', json=test_data, headers=VALID_AUTH)
+    assert response.status_code == 200
+
+    # fetch the results and see if it's really updated
+    response = client.get('/leak/%s' %(id,), headers=VALID_AUTH)
+    assert response.status_code == 200
+    assert response.json()['data'][0]['summary'] == "We UPDATED the test leak now!"
+
