@@ -25,6 +25,11 @@ SQL structure: [db.sql](db.sql)
 The EER diagram __intentionally__ got simplified a lot. If we are going to store billions of repeated ``text`` datatype records, we can 
 go back to more normalization. For now, however, this seems to be enough.
 
+
+![EER Diagram](EER.png)
+
+
+
 ### Meaning of the fields
 
 
@@ -78,9 +83,6 @@ Indexes:
 Foreign-key constraints:
     "leak_data_leak_id_fkey" FOREIGN KEY (leak_id) REFERENCES leak(id)
 ```    
-
-![EER Diagram](EER.png)
-
 
 
 # Usage of the API
