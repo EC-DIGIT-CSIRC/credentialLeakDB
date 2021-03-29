@@ -29,7 +29,7 @@ go back to more normalization. For now, however, this seems to be enough.
 
 
       Column       |           Type           | Collation | Nullable |             Default              | Storage  | Stats target |                                                    Description                                                    
--------------------+--------------------------+-----------+----------+----------------------------------+----------+--------------+-------------------------------------------------------------------------------------------------------------------
+-------------------|--------------------------|-----------|----------|----------------------------------|----------|--------------|-------------------------------------------------------------------------------------------------------------------
  id                | integer                  |           | not null | nextval('leak_id_seq'::regclass) | plain    |              | 
  breach_ts         | timestamp with time zone |           |          |                                  | plain    |              | If known, the timestamp when the breach happened.
  source_publish_ts | timestamp with time zone |           |          |                                  | plain    |              | The timestamp according when the source (e.g. spycloud) published the data.
@@ -45,7 +45,7 @@ Referenced by:
  
                                                                                                                     Table "public.leak_data"
         Column        |  Type   | Collation | Nullable |                Default                | Storage  | Stats target |                                                            Description                                                             
-----------------------+---------+-----------+----------+---------------------------------------+----------+--------------+------------------------------------------------------------------------------------------------------------------------------------
+----------------------|---------|-----------|----------|---------------------------------------|----------|--------------|------------------------------------------------------------------------------------------------------------------------------------
  id                   | integer |           | not null | nextval('leak_data_id_seq'::regclass) | plain    |              | 
  leak_id              | integer |           | not null |                                       | plain    |              | 
  email                | text    |           | not null |                                       | extended |              | 
