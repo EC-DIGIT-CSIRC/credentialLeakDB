@@ -28,16 +28,16 @@ go back to more normalization. For now, however, this seems to be enough.
 ### Meaning of the fields
 
 
-|      Column       |           Type           | Collation | Nullable |             Default              | Storage  | Stats target |                                                    Description                                                    
-|------------------ | ------------------------ | --------- | -------- | -------------------------------- | -------- | ------------ | ----------------------------------------------------------------------------------------------------------------- |
-| id                | integer                  |           | not null | nextval('leak_id_seq'::regclass) | plain    |              | |
-| breach_ts         | timestamp with time zone |           |          |                                  | plain    |              | If known, the timestamp when the breach happened. |
-| source_publish_ts | timestamp with time zone |           |          |                                  | plain    |              | The timestamp according when the source (e.g. spycloud) published the data. |
-| ingestion_ts      | timestamp with time zone |           | not null |                                  | plain    |              | The timestamp when we ingested the data. |
-| summary           | text                     |           | not null |                                  | extended |              | A short summary (slug) of the leak. Used for displaying it somewhere |
-| ticket_id         | text                     |           |          |                                  | extended |              | |
-| reporter_name     | text                     |           |          |                                  | extended |              | The name of the reporter where we got the notification from. E.g. CERT-eu, Spycloud, etc... Who sent us the data? |
-| source_name       | text                     |           |          |                                  | extended |              | The name of the source where this leak came from. Either the name of a collection or some other name. |
+|      Column       |           Type           | Collation | Nullable |  Description          |                                          
+|------------------ | ------------------------ | --------- | -------- | ----------------------------------------------------------------------------------------------------------------- |
+| id                | integer                  |           | not null | |
+| breach_ts         | timestamp with time zone |           |          | If known, the timestamp when the breach happened. |
+| source_publish_ts | timestamp with time zone |           |          | The timestamp according when the source (e.g. spycloud) published the data. |
+| ingestion_ts      | timestamp with time zone |           | not null | The timestamp when we ingested the data. |
+| summary           | text                     |           | not null | A short summary (slug) of the leak. Used for displaying it somewhere |
+| ticket_id         | text                     |           |          |  |
+| reporter_name     | text                     |           |          | The name of the reporter where we got the notification from. E.g. CERT-eu, Spycloud, etc... Who sent us the data? |
+| source_name       | text                     |           |          | The name of the source where this leak came from. Either the name of a collection or some other name. |
 
 Indexes:
     "leak_pkey" PRIMARY KEY, btree (id)
