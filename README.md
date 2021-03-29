@@ -68,7 +68,7 @@ Referenced by:
  browser              | text    |           |          | The browser, in case the client PC has a password stealer. | 
  malware_name         | text    |           |          | f the password was leaked via a password stealer malware, then the malware name goes here. |
  infected_machine     | text    |           |          | The infected machine (some ID for the machine) |
- dg                   | text    |           | not null | The affected DG
+ dg                   | text    |           | not null | The affected DG (in other organisations, this would be called "department")
  count_seen           | integer |           |          | How often did we already see this unique combination (leak, email, password, domain). I.e. this is a duplicate counter.  | 
 
 ```
