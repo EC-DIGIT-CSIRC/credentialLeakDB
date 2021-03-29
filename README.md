@@ -32,6 +32,7 @@ go back to more normalization. For now, however, this seems to be enough.
 
 ### Meaning of the fields
 
+#### Table ``leak``
 
 |      Column       |           Type           | Collation | Nullable |  Description          |                                          
 |------------------ | ------------------------ | --------- | -------- | ----------------------------------------------------------------------------------------------------------------- |
@@ -50,6 +51,8 @@ Indexes:
 Referenced by:
     TABLE "leak_data" CONSTRAINT "leak_data_leak_id_fkey" FOREIGN KEY (leak_id) REFERENCES leak(id)
  ```
+ 
+ #### Table ``leak_data``
                                                                                                                     
 |        Column        |  Type   | Collation | Nullable |  Description                                                             
 --------------------- | ------- | --------- | -------- | -----------------------------------------------------------------------------------------------------------------------------------
