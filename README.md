@@ -36,9 +36,9 @@ go back to more normalization. For now, however, this seems to be enough.
 
 |      Column       |           Type           | Collation | Nullable |  Description          |                                          
 |------------------ | ------------------------ | --------- | -------- | ----------------------------------------------------------------------------------------------------------------- |
-| ``id``                | integer                  |           | not null | internal ID , primary key. Auto-generated. |
+| ``id``                | integer                  |           | not null | _primary key. Auto-generated_. |
 | ``breach_ts``         | timestamp with time zone |           |          | If known, the timestamp when the breach happened. |
-| ``source_publish_ts`` | timestamp with time zone |           |          | The timestamp according when the source (e.g. spycloud) published the data. |
+| ``source_publish_ts`` | timestamp with time zone |           |          | The timestamp according when the source (f.ex. Spycloud) published the data. |
 | ``ingestion_ts``      | timestamp with time zone |           | not null | The timestamp when we ingested the data. |
 | ``summary``           | text                     |           | not null | A short summary (slug) of the leak. Used for displaying it somewhere |
 | ``ticket_id``         | text                     |           |          |  |
@@ -56,8 +56,8 @@ Referenced by:
                                                                                                                     
 |        Column        |  Type   | Collation | Nullable |  Description                                                             
 --------------------- | ------- | --------- | -------- | -----------------------------------------------------------------------------------------------------------------------------------
- ``id``                   | integer |           | not null | primary key, auto-generated. | 
- ``leak_id``              | integer |           | not null | references a leak(id) | 
+ ``id``                   | integer |           | not null | _primary key, auto-generated_. | 
+ ``leak_id``              | integer |           | not null | references a ``leak(id)`` | 
  ``email``                | text    |           | not null | The email address associated with the leak. | 
  ``password``             | text    |           | not null | Either the encrypted or unencrypted password. If the unencrypted password is available, that is what is going to be in this field. |
  ``password_plain``       | text    |           |          | The plaintext password, if known. |
