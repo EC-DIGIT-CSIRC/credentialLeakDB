@@ -36,14 +36,14 @@ go back to more normalization. For now, however, this seems to be enough.
 
 |      Column       |           Type           | Collation | Nullable |  Description          |                                          
 |------------------ | ------------------------ | --------- | -------- | ----------------------------------------------------------------------------------------------------------------- |
-| id                | integer                  |           | not null | internal ID , primary key. Auto-generated. |
-| breach_ts         | timestamp with time zone |           |          | If known, the timestamp when the breach happened. |
-| source_publish_ts | timestamp with time zone |           |          | The timestamp according when the source (e.g. spycloud) published the data. |
-| ingestion_ts      | timestamp with time zone |           | not null | The timestamp when we ingested the data. |
-| summary           | text                     |           | not null | A short summary (slug) of the leak. Used for displaying it somewhere |
-| ticket_id         | text                     |           |          |  |
-| reporter_name     | text                     |           |          | The name of the reporter where we got the notification from. E.g. CERT-eu, Spycloud, etc... Who sent us the data? |
-| source_name       | text                     |           |          | The name of the source where this leak came from. Either the name of a collection or some other name. |
+| ``id``                | integer                  |           | not null | internal ID , primary key. Auto-generated. |
+| ``breach_ts``         | timestamp with time zone |           |          | If known, the timestamp when the breach happened. |
+| ``source_publish_ts`` | timestamp with time zone |           |          | The timestamp according when the source (e.g. spycloud) published the data. |
+| ``ingestion_ts``      | timestamp with time zone |           | not null | The timestamp when we ingested the data. |
+| ``summary``           | text                     |           | not null | A short summary (slug) of the leak. Used for displaying it somewhere |
+| ``ticket_id``         | text                     |           |          |  |
+| ``reporter_name``     | text                     |           |          | The name of the reporter where we got the notification from. E.g. CERT-eu, Spycloud, etc... Who sent us the data? |
+| ``source_name``       | text                     |           |          | The name of the source where this leak came from. Either the name of a collection or some other name. |
 
 ```
 Indexes:
@@ -56,23 +56,23 @@ Referenced by:
                                                                                                                     
 |        Column        |  Type   | Collation | Nullable |  Description                                                             
 --------------------- | ------- | --------- | -------- | -----------------------------------------------------------------------------------------------------------------------------------
- id                   | integer |           | not null | primary key, auto-generated. | 
- leak_id              | integer |           | not null | references a leak(id) | 
- email                | text    |           | not null | The email address associated with the leak. | 
- password             | text    |           | not null | Either the encrypted or unencrypted password. If the unencrypted password is available, that is what is going to be in this field. |
- password_plain       | text    |           |          | The plaintext password, if known. |
- password_hashed      | text    |           |          | The hashed password, if known. |
- hash_algo            | text    |           |          | If we can determine the hashing algo and the password_hashed field is set, for example "md5" or "sha1" |
- ticket_id            | text    |           |          | References the ticket systems' ticket ID associated with handling this credential leak . This ticket could contain infos on how we contacted the affected user. | 
- email_verified       | boolean |           |          | If the email address was verified if it does exist and is active | 
- password_verified_ok | boolean |           |          | Was that password still valid / active? | 
- ip                   | inet    |           |          | IP address of the client PC in case of a password stealer. | 
- domain               | text    |           |          | Domain address of the user's email address. | 
- browser              | text    |           |          | If the password was leaked via a password stealer malware, then the browser of the user goes here. Otherwise empty. | 
- malware_name         | text    |           |          | If the password was leaked via a password stealer malware, then the malware name goes here. Otherwise empty. |
- infected_machine     | text    |           |          | If the password was leaked via a password stealer malware, then the infected (Windows) PC name (some ID for the machine) goes here. |
- dg                   | text    |           | not null | The affected DG (in other organisations, this would be called "department")
- count_seen           | integer |           |          | How often did we already see this unique combination (leak, email, password, domain). I.e. this is a duplicate counter.  | 
+ ``id``                   | integer |           | not null | primary key, auto-generated. | 
+ ``leak_id``              | integer |           | not null | references a leak(id) | 
+ ``email``                | text    |           | not null | The email address associated with the leak. | 
+ ``password``             | text    |           | not null | Either the encrypted or unencrypted password. If the unencrypted password is available, that is what is going to be in this field. |
+ ``password_plain``       | text    |           |          | The plaintext password, if known. |
+ ``password_hashed``      | text    |           |          | The hashed password, if known. |
+ ``hash_algo``            | text    |           |          | If we can determine the hashing algo and the password_hashed field is set, for example "md5" or "sha1" |
+ ``ticket_id``            | text    |           |          | References the ticket systems' ticket ID associated with handling this credential leak . This ticket could contain infos on how we contacted the affected user. | 
+ ``email_verified``       | boolean |           |          | If the email address was verified if it does exist and is active | 
+ ``password_verified_ok`` | boolean |           |          | Was that password still valid / active? | 
+ ``ip``                   | inet    |           |          | IP address of the client PC in case of a password stealer. | 
+ ``domain``               | text    |           |          | Domain address of the user's email address. | 
+ ``browser``              | text    |           |          | If the password was leaked via a password stealer malware, then the browser of the user goes here. Otherwise empty. | 
+ ``malware_name``         | text    |           |          | If the password was leaked via a password stealer malware, then the malware name goes here. Otherwise empty. |
+ ``infected_machine``     | text    |           |          | If the password was leaked via a password stealer malware, then the infected (Windows) PC name (some ID for the machine) goes here. |
+ ``dg``                   | text    |           | not null | The affected DG (in other organisations, this would be called "department")
+ ``count_seen``           | integer |           |          | How often did we already see this unique combination (leak, email, password, domain). I.e. this is a duplicate counter.  | 
 
 ```
 Indexes:
