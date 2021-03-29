@@ -27,6 +27,82 @@ go back to more normalization. For now, however, this seems to be enough.
 
 ![EER Diagram](EER.png)
 
+# Usage of the API
+
+Here is how to use the API endpoints: you can start the server (follow the instructions below) and go to ``$servername/docs`` where $servername is of course the domain / IP address you installed it under. The ``docs/`` endpoint hosts a swagger / OpenAPI 3 
+
+## GET parameters
+
+These are pretty self-explanatory thanks to the swagger UI.
+
+## POST and PUT
+
+For HTTP POST (a.k.a INSERT into DB) you will need to provide the following JSON info:
+
+### leak object
+```json
+{
+  "id": 0,
+  "ticket_id": "string",
+  "summary": "string",
+  "reporter_name": "string",
+  "source_name": "string",
+  "breach_ts": "2021-03-29T12:21:56.370Z",
+  "source_publish_ts": "2021-03-29T12:21:56.370Z"
+}
+
+```
+
+The ``id`` field *only* needs to be filled out when PUTing data there (a.k.a UPDATE statement). Otherwise please leave it out when POSTing a new leak_data row.
+The id is the internal automatically generated primary key (ID) and will be assigned. So when you use the ``HTTP POST /leak`` endpoint, please leave out ``id``. The answer will be a JSON array with a dict with the id inside, such as:
+
+```json
+{
+  "meta": {
+    "version": "0.5",
+    "duration": 0.006,
+    "count": 1
+  },
+  "data": [
+    {
+      "id": 18
+    }
+  ],
+  "error": null
+}
+```
+
+Meaning: the version of the API was 0.5, the query duration was 0.006 sec (6 millisec), one answer. The ``data`` array contains one element: id=18. Meaning, the ID of the inserted leak object was 18. You can now reference this in the leak_data object insertion.
+
+### leak_data object
+
+Same as the leak object, here the ``id`` field *only* needs to be filled out when PUTing data there (a.k.a UPDATE statement). Otherwise please leave it out when POSTing a new leak_data row. **Note well**: the leak_id field needs to be filled out in this case. You **first** have to create leak object and then afterwards the leak_data object.
+
+```json
+{
+  "id": 0,
+  "leak_id": 0,
+  "email": "user@example.com",
+  "password": "string",
+  "password_plain": "string",
+  "password_hashed": "string",
+  "hash_algo": "string",
+  "ticket_id": "string",
+  "email_verified": true,
+  "password_verified_ok": true,
+  "ip": "string",
+  "domain": "string",
+  "browser": "string",
+  "malware_name": "string",
+  "infected_machine": "string",
+  "dg": "string"
+}
+```
+
+## ``import/csv/`` endpoint
+
+Also pretty self-explanatory. You need to first create a leak object, give it's ID as a GET-style parameter and upload the CSV in spycloud format via the Form.
+
 
 ## Installation
 
