@@ -17,6 +17,7 @@ Think: our own, internal HaveIBeenPwned database.
 
 ## Documentation
 
+### Database structure
 Search in Confluence for "credentialLeakDB" in the Automation space.
 
 SQL structure: [db.sql](db.sql)
@@ -24,8 +25,59 @@ SQL structure: [db.sql](db.sql)
 The EER diagram __intentionally__ got simplified a lot. If we are going to store billions of repeated ``text`` datatype records, we can 
 go back to more normalization. For now, however, this seems to be enough.
 
+### Meaning of the fields
+
+
+      Column       |           Type           | Collation | Nullable |             Default              | Storage  | Stats target |                                                    Description                                                    
+-------------------+--------------------------+-----------+----------+----------------------------------+----------+--------------+-------------------------------------------------------------------------------------------------------------------
+ id                | integer                  |           | not null | nextval('leak_id_seq'::regclass) | plain    |              | 
+ breach_ts         | timestamp with time zone |           |          |                                  | plain    |              | If known, the timestamp when the breach happened.
+ source_publish_ts | timestamp with time zone |           |          |                                  | plain    |              | The timestamp according when the source (e.g. spycloud) published the data.
+ ingestion_ts      | timestamp with time zone |           | not null |                                  | plain    |              | The timestamp when we ingested the data.
+ summary           | text                     |           | not null |                                  | extended |              | A short summary (slug) of the leak. Used for displaying it somewhere
+ ticket_id         | text                     |           |          |                                  | extended |              | 
+ reporter_name     | text                     |           |          |                                  | extended |              | The name of the reporter where we got the notification from. E.g. CERT-eu, Spycloud, etc... Who sent us the data?
+ source_name       | text                     |           |          |                                  | extended |              | The name of the source where this leak came from. Either the name of a collection or some other name.
+Indexes:
+    "leak_pkey" PRIMARY KEY, btree (id)
+Referenced by:
+    TABLE "leak_data" CONSTRAINT "leak_data_leak_id_fkey" FOREIGN KEY (leak_id) REFERENCES leak(id)
+ 
+                                                                                                                    Table "public.leak_data"
+        Column        |  Type   | Collation | Nullable |                Default                | Storage  | Stats target |                                                            Description                                                             
+----------------------+---------+-----------+----------+---------------------------------------+----------+--------------+------------------------------------------------------------------------------------------------------------------------------------
+ id                   | integer |           | not null | nextval('leak_data_id_seq'::regclass) | plain    |              | 
+ leak_id              | integer |           | not null |                                       | plain    |              | 
+ email                | text    |           | not null |                                       | extended |              | 
+ password             | text    |           | not null |                                       | extended |              | Either the encrypted or unencrypted password. If the unencrypted password is available, that is what is going to be in this field.
+ password_plain       | text    |           |          |                                       | extended |              | 
+ password_hashed      | text    |           |          |                                       | extended |              | 
+ hash_algo            | text    |           |          |                                       | extended |              | If we can determine the hashing algo and the password_hashed field is set
+ ticket_id            | text    |           |          |                                       | extended |              | 
+ email_verified       | boolean |           |          | false                                 | plain    |              | 
+ password_verified_ok | boolean |           |          | false                                 | plain    |              | 
+ ip                   | inet    |           |          |                                       | main     |              | 
+ domain               | text    |           |          |                                       | extended |              | 
+ browser              | text    |           |          |                                       | extended |              | 
+ malware_name         | text    |           |          |                                       | extended |              | If the password was leaked via a credential stealer malware, then the malware name goes here.
+ infected_machine     | text    |           |          |                                       | extended |              | The infected machine (some ID for the machine)
+ dg                   | text    |           | not null |                                       | extended |              | The affected DG
+ count_seen           | integer |           |          | 1                                     | plain    |              | 
+Indexes:
+    "leak_data_pkey" PRIMARY KEY, btree (id)
+    "constr_unique_leak_data_leak_id_email_password_domain" UNIQUE CONSTRAINT, btree (leak_id, email, password, domain)
+    "idx_leak_data_unique_leak_id_email_password_domain" UNIQUE, btree (leak_id, email, password, domain)
+    "idx_leak_data_dg" btree (dg)
+    "idx_leak_data_email" btree (upper(email))
+    "idx_leak_data_email_password_machine" btree (email, password, infected_machine)
+    "idx_leak_data_malware_name" btree (malware_name)
+Foreign-key constraints:
+    "leak_data_leak_id_fkey" FOREIGN KEY (leak_id) REFERENCES leak(id)
+    
 
 ![EER Diagram](EER.png)
+
+
 
 # Usage of the API
 
