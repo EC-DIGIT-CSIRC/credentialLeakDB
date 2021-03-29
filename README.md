@@ -30,7 +30,7 @@ go back to more normalization. For now, however, this seems to be enough.
 
 |      Column       |           Type           | Collation | Nullable |  Description          |                                          
 |------------------ | ------------------------ | --------- | -------- | ----------------------------------------------------------------------------------------------------------------- |
-| id                | integer                  |           | not null | |
+| id                | integer                  |           | not null | internal ID , primary key. Auto-generated. |
 | breach_ts         | timestamp with time zone |           |          | If known, the timestamp when the breach happened. |
 | source_publish_ts | timestamp with time zone |           |          | The timestamp according when the source (e.g. spycloud) published the data. |
 | ingestion_ts      | timestamp with time zone |           | not null | The timestamp when we ingested the data. |
@@ -39,31 +39,34 @@ go back to more normalization. For now, however, this seems to be enough.
 | reporter_name     | text                     |           |          | The name of the reporter where we got the notification from. E.g. CERT-eu, Spycloud, etc... Who sent us the data? |
 | source_name       | text                     |           |          | The name of the source where this leak came from. Either the name of a collection or some other name. |
 
+```
 Indexes:
     "leak_pkey" PRIMARY KEY, btree (id)
 Referenced by:
     TABLE "leak_data" CONSTRAINT "leak_data_leak_id_fkey" FOREIGN KEY (leak_id) REFERENCES leak(id)
- 
-                                                                                                                    Table "public.leak_data"
-        Column        |  Type   | Collation | Nullable |                Default                | Storage  | Stats target |                                                            Description                                                             
---------------------- | ------- | --------- | -------- | ------------------------------------- | -------- | ------------ | -----------------------------------------------------------------------------------------------------------------------------------
- id                   | integer |           | not null | nextval('leak_data_id_seq'::regclass) | plain    |              | 
- leak_id              | integer |           | not null |                                       | plain    |              | 
- email                | text    |           | not null |                                       | extended |              | 
- password             | text    |           | not null |                                       | extended |              | Either the encrypted or unencrypted password. If the unencrypted password is available, that is what is going to be in this field.
- password_plain       | text    |           |          |                                       | extended |              | 
- password_hashed      | text    |           |          |                                       | extended |              | 
- hash_algo            | text    |           |          |                                       | extended |              | If we can determine the hashing algo and the password_hashed field is set
- ticket_id            | text    |           |          |                                       | extended |              | 
- email_verified       | boolean |           |          | false                                 | plain    |              | 
- password_verified_ok | boolean |           |          | false                                 | plain    |              | 
- ip                   | inet    |           |          |                                       | main     |              | 
- domain               | text    |           |          |                                       | extended |              | 
- browser              | text    |           |          |                                       | extended |              | 
- malware_name         | text    |           |          |                                       | extended |              | If the password was leaked via a credential stealer malware, then the malware name goes here.
- infected_machine     | text    |           |          |                                       | extended |              | The infected machine (some ID for the machine)
- dg                   | text    |           | not null |                                       | extended |              | The affected DG
- count_seen           | integer |           |          | 1                                     | plain    |              | 
+ ```
+                                                                                                                    
+|        Column        |  Type   | Collation | Nullable |  Description                                                             
+--------------------- | ------- | --------- | -------- | -----------------------------------------------------------------------------------------------------------------------------------
+ id                   | integer |           | not null | primary key, auto-generated. | 
+ leak_id              | integer |           | not null | references a leak(id) | 
+ email                | text    |           | not null | The email address associated with the leak. | 
+ password             | text    |           | not null | Either the encrypted or unencrypted password. If the unencrypted password is available, that is what is going to be in this field. |
+ password_plain       | text    |           |          | The plaintext password, if known. |
+ password_hashed      | text    |           |          | The hashed password, if known. |
+ hash_algo            | text    |           |          | If we can determine the hashing algo and the password_hashed field is set, for example "md5" or "sha1" |
+ ticket_id            | text    |           |          | References the ticket systems' ticket ID associated with handling this credential leak . This ticket could contain infos on how we contacted the affected user. | 
+ email_verified       | boolean |           |          | If the email address was verified if it does exist and is active | 
+ password_verified_ok | boolean |           |          | Was that password still valid / active? | 
+ ip                   | inet    |           |          | IP address of the client PC in case of a password stealer. | 
+ domain               | text    |           |          | Domain address of the user's email address. | 
+ browser              | text    |           |          | The browser, in case the client PC has a password stealer. | 
+ malware_name         | text    |           |          | f the password was leaked via a password stealer malware, then the malware name goes here. |
+ infected_machine     | text    |           |          | The infected machine (some ID for the machine) |
+ dg                   | text    |           | not null | The affected DG
+ count_seen           | integer |           |          | How often did we already see this unique combination (leak, email, password, domain). I.e. this is a duplicate counter.  | 
+
+```
 Indexes:
     "leak_data_pkey" PRIMARY KEY, btree (id)
     "constr_unique_leak_data_leak_id_email_password_domain" UNIQUE CONSTRAINT, btree (leak_id, email, password, domain)
@@ -74,7 +77,7 @@ Indexes:
     "idx_leak_data_malware_name" btree (malware_name)
 Foreign-key constraints:
     "leak_data_leak_id_fkey" FOREIGN KEY (leak_id) REFERENCES leak(id)
-    
+```    
 
 ![EER Diagram](EER.png)
 
