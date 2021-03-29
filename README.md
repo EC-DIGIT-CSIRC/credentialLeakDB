@@ -6,7 +6,7 @@
 
 A database structure to store leaked credentials. 
 
-Think: our own, internal HaveIBeenPwned database.
+Think: our own, internal [HaveIBeenPwned](https://haveibeenpwned.com/) database.
 
 ## Why?
 
