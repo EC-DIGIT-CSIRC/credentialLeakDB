@@ -67,7 +67,7 @@ Referenced by:
  domain               | text    |           |          | Domain address of the user's email address. | 
  browser              | text    |           |          | If the password was leaked via a password stealer malware, then the browser of the user goes here. Otherwise empty. | 
  malware_name         | text    |           |          | If the password was leaked via a password stealer malware, then the malware name goes here. Otherwise empty. |
- infected_machine     | text    |           |          | The infected machine (some ID for the machine) |
+ infected_machine     | text    |           |          | If the password was leaked via a password stealer malware, then the infected (Windows) PC name (some ID for the machine) goes here. |
  dg                   | text    |           | not null | The affected DG (in other organisations, this would be called "department")
  count_seen           | integer |           |          | How often did we already see this unique combination (leak, email, password, domain). I.e. this is a duplicate counter.  | 
 
