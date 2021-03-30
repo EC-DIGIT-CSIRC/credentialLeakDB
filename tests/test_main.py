@@ -1,5 +1,4 @@
 import urllib.parse
-import json
 
 from fastapi.testclient import TestClient
 
@@ -37,7 +36,7 @@ def test_is_valid_api_key():
     assert is_valid_api_key(VALID_AUTH['x-api-key'])
 
 
-def test_is_INvalid_api_key():
+def test_is_INVALID_api_key():
     assert not is_valid_api_key(INVALID_AUTH['x-api-key'])
 
 
@@ -195,16 +194,16 @@ def test_update_leak():
            "data" in response.text and \
            data['meta']['count'] >= 1 and \
            data['data'][0]['id'] >= 1
-    id = data['data'][0]['id']
+    _id = data['data'][0]['id']
 
     # now UPDATE it
     test_data['summary'] = "We UPDATED the test leak now!"
-    test_data['id'] = id
+    test_data['id'] = _id
     response = client.put('/leak/', json = test_data, headers = VALID_AUTH)
     assert response.status_code == 200
 
     # fetch the results and see if it's really updated
-    response = client.get('/leak/%s' % (id,), headers = VALID_AUTH)
+    response = client.get('/leak/%s' % (_id,), headers = VALID_AUTH)
     assert response.status_code == 200
     assert response.json()['data'][0]['summary'] == "We UPDATED the test leak now!"
 
@@ -222,6 +221,39 @@ def test_update_INVALID_leak():
     response = client.put('/leak/', json = test_data, headers = VALID_AUTH)
     assert response.status_code == 400
     assert response.json()['data'] == []
+
+# By summary
+def test_get_leak_by_summary():
+    summary = "COMB"
+    response = client.get('/leak/by_summary/%s' % (summary,), headers = VALID_AUTH)
+    assert response.status_code == 200
+    data = response.json()
+    assert data['meta']['count'] >= 1
+    assert data['data'][0]['summary'] == summary
+    assert data['data'][0]['reporter_name'] == 'aaron'
+
+def test_get_leak_by_INVALID_summary():
+    summary = "COMB-XXX-DOESNETEXIST"
+    response = client.get('/leak/by_summary/%s' % (summary,), headers = VALID_AUTH)
+    assert response.status_code == 404
+    data = response.json()
+    assert data['meta']['count'] == 0
+
+# By ticket_id
+def test_get_leak_by_ticket_id():
+    ticket_id = "CSIRC-102"     # we know that exists based on the db.sql import
+    response = client.get('/leak/by_ticket_id/%s' % (ticket_id,), headers = VALID_AUTH)
+    assert response.status_code == 200
+    data = response.json()
+    assert data['meta']['count'] >= 1
+    assert data['data'][0]['summary'] == "COMB"
+
+def test_get_leak_by_INVALID_ticket_id():
+    ticket_id = "COMB-XXX-DOESNETEXIST"
+    response = client.get('/leak/by_ticket_id/%s' % (ticket_id,), headers = VALID_AUTH)
+    assert response.status_code == 404
+    data = response.json()
+    assert data['meta']['count'] == 0
 
 
 # #################################################################################
@@ -254,32 +286,78 @@ def test_get_leak_data_by_ticket_id():
     assert data['data'][0]['email'] == 'aaron@example.com'
     assert data['data'][1]['email'] == 'sarah@example.com'
 
-def test_update_leak():
-    test_data = {
-        "ticket_id": "CSIRC-202",
-        "summary": "an UPDATE-able test leak, please ignore",
-        "reporter_name": "aaron",
-        "source_name": "spycloud",
-        "breach_ts": "2021-01-01T00:00:00.000Z",
-        "source_publish_ts": "2021-01-02T00:00:00.000Z",
-    }
-    response = client.post("/leak/", json=test_data, headers = VALID_AUTH)
+
+def insert_leak_data(d: dict) -> int:
+    """ generic test function for INSERTing a leak_data row given by d.
+
+    @:param d: a row as dict
+    @:returns ID: ID of the newly inserted row
+    @:rtype: int
+    """
+    response = client.post("/leak_data/", json=d, headers=VALID_AUTH)
     assert response.status_code == 201
     data = response.json()
-    assert "meta" in response.text and \
-           "data" in response.text and \
+    assert "meta" in data and \
+           "data" in data and \
            data['meta']['count'] >= 1 and \
            data['data'][0]['id'] >= 1
-    id = data['data'][0]['id']
+    return data['data'][0]['id']
+
+
+def test_new_leak_data():
+    """ INSERT a new leak_data row."""
+    test_data = {
+        "leak_id": 1,
+        "email": "aaron2@example.com",
+        "password": "000000",
+        "password_plain": "000000",
+        "password_hashed": "d232105eb59a344df4b54db1c24009b1",
+        "hash_algo": "md5",
+        "ticket_id": "CSIRC-102",
+        "email_verified": False,
+        "password_verified_ok": False,
+        "ip": "5.6.7.8",
+        "domain": "example.com",
+        "browser": "Chrome",
+        "malware_name": "n/a",
+        "infected_machine": "n/a",
+        "dg": "DIGIT"
+    }
+    _id = insert_leak_data(test_data)
+    assert _id >= 0
+
+
+# XXXXXXXXXXXX
+def test_update_leak_data():
+    test_data = {
+        "leak_id": 1,
+        "email": "aaron3@example.com",
+        "password": "000000",
+        "password_plain": "000000",
+        "password_hashed": "d232105eb59a344df4b54db1c24009b1",
+        "hash_algo": "md5",
+        "ticket_id": "CSIRC-102",
+        "email_verified": False,
+        "password_verified_ok": False,
+        "ip": "5.6.7.8",
+        "domain": "example.com",
+        "browser": "Chrome",
+        "malware_name": "n/a",
+        "infected_machine": "n/a",
+        "dg": "DIGIT"
+    }
+    # create my own leak_data row
+    _id = insert_leak_data(test_data)
 
     # now UPDATE it
-    test_data['summary'] = "We UPDATED the test leak now!"
-    test_data['id'] = id
-    response = client.put('/leak/', json=test_data, headers=VALID_AUTH)
+    test_data['id'] = _id
+    test_data['email'] = "aaron4@example.com",
+    response = client.put('/leak/', json = test_data, headers = VALID_AUTH)
     assert response.status_code == 200
 
     # fetch the results and see if it's really updated
-    response = client.get('/leak/%s' %(id,), headers=VALID_AUTH)
+    response = client.get('/leak/%s' % (_id,), headers = VALID_AUTH)
     assert response.status_code == 200
-    assert response.json()['data'][0]['summary'] == "We UPDATED the test leak now!"
+    assert response.json()['data'][0]['email'] == "aaron4@example.com"
+
 

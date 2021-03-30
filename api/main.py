@@ -128,7 +128,7 @@ def validate_api_key_header(apikeyheader: str = Security(api_key_header)):
     Validate if a given API key is present in the HTTP apikeyheader.
 
     :param apikeyheader: the required HTTP Header
-    :returns: the apikey apikeyheader again, if it is valid. Otherwise, raise an HTTPException and return 403 to the user.
+    :returns: the apikey apikeyheader again, if it is valid. Otherwise, raise an HTTPException and return 403.
     """
     if not apikeyheader:
         raise HTTPException(status_code=403,
@@ -251,7 +251,8 @@ async def get_user_by_email_and_password(email: EmailStr,
     # Example
     ``foo@example.com`` and ``12345`` -->
 
-    ``{ "meta": { ... }, "data": [ { "id": 14, "leak_id": 1, "email": "aaron@example.com", "password": "12345", ...,  ], "error": null }``
+    ``{ "meta": { ... }, "data": [ { "id": 14, "leak_id": 1, "email": "aaron@example.com", "password": "12345", ...,  ],
+        "error": null }``
 
     """
     sql = """SELECT * from leak_data where upper(email)=upper(%s) and password=%s"""
@@ -326,7 +327,8 @@ async def check_user_by_password(password: str,
 
     # Example
     ``12345`` -->
-    ``{ "meta": { ... }, "data": [ { "id": 14, "leak_id": 1, "email": "aaron@example.com", "password": "12345", ...,  ], "error": null }``
+    ``{ "meta": { ... }, "data": [ { "id": 14, "leak_id": 1, "email": "aaron@example.com", "password": "12345",
+        ...,  ], "error": null }``
     """
     # can do better... use the hashid library?
 
@@ -834,6 +836,9 @@ async def update_leak_data(row: LeakData,
     db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        print(cur.mogrify(sql, (row.leak_id, row.email, row.password, row.password_plain, row.password_hashed, row.hash_algo,
+                          row.ticket_id, row.email_verified, row.password_verified_ok, row.ip, row.domain, row.browser,
+                          row.malware_name, row.infected_machine, row.dg, row.id)))
         cur.execute(sql, (row.leak_id, row.email, row.password, row.password_plain, row.password_hashed, row.hash_algo,
                           row.ticket_id, row.email_verified, row.password_verified_ok, row.ip, row.domain, row.browser,
                           row.malware_name, row.infected_machine, row.dg, row.id))
