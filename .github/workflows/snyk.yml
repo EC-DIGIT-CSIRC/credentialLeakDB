@@ -1,21 +1,35 @@
-#- name:  Install Dependencies - Snyk
-#  run: |
-#    pip install -r requirements.txt
-#- name: Snyk Security Scan
-#
-#  uses: snyk/actions/python@master
-#
-#  # continue-on-error: true
-#
-#  env:
-#    SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-#  with:
-#    # https://support.snyk.io/hc/en-us/articles/360003812578-Our-full-CLI-reference
-#    # args: --command=pipenv run --severity-threshold=high --fail-on=all --file=*req*.txt --dev --org=digits2 --debug
-#    args: --command=python --severity-threshold=high --fail-on=all --file=requirements-dev.txt --package-manager=pip --dev --org=digits2 --debug -skip-unresolved
 
-- name: SonarCloud Scan
-  uses: SonarSource/sonarcloud-github-action@master
-  env:
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-    SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+name: sonarcloud
+
+on:
+  push:
+    branches: [ main, release/* ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  sonarcloud:
+    runs-on: ubuntu-latest
+    steps:
+    #- name:  Install Dependencies - Snyk
+    #  run: |
+    #    pip install -r requirements.txt
+    #- name: Snyk Security Scan
+    #
+    #  uses: snyk/actions/python@master
+    #
+    #  # continue-on-error: true
+    #
+    #  env:
+    #    SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+    #  with:
+    #    # https://support.snyk.io/hc/en-us/articles/360003812578-Our-full-CLI-reference
+    #    # args: --command=pipenv run --severity-threshold=high --fail-on=all --file=*req*.txt --dev --org=digits2 --debug
+    #    args: --command=python --severity-threshold=high --fail-on=all --file=requirements-dev.txt --package-manager=pip --dev --org=digits2 --debug -skip-unresolved
+
+  - name: SonarCloud Scan
+      uses: SonarSource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
