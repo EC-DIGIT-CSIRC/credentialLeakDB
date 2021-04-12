@@ -7,8 +7,7 @@ api/config.py
 # python venvs
 .venv
 venv
-old
-cache
+
 
 # real data directories, don't upload to github ;-)
 importer/real_data
@@ -27,3 +26,7 @@ poetry.lock
 */.pytest_cache
 __pycache__/
 */__pycache__/
+old
+cache
+.coverage
+

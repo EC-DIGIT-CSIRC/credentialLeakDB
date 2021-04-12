@@ -13,7 +13,12 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-
+    env:
+      PORT: 8080
+      DBHOST: localhost
+      DBUSER: credentialleakdb
+      DBPASSWORD: 1234testForUnitTesting
+      DBNAME: credentialleakdb
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python 3.9
@@ -32,12 +37,17 @@ jobs:
         sudo service postgresql start
         # sudo -u postgres pg_ctlcluster 12 main start
         sudo -u postgres createdb credentialleakdb
-        sudo -u postgres createuser -s credentialleakdb
-        sudo -u postgres psql credentialleakdb < db.sql
-        sudo -u postgres psql -c "ALTER role credentialleakdb WITH PASSWORD '1234testForUnitTesting'"
+        sudo -u postgres createuser -s $DBUSER
+        sudo -u postgres psql $DBNAME < db.sql
+        sudo -u postgres psql -c "ALTER role $DBUSER WITH PASSWORD '$DBPASSWORD'"
     - name: prepare environment and mocking
       run: |
         cp config.SAMPLE.py api/config.py
+        echo "PORT=$PORT" > ENV
+        echo "DBHOST=$DBHOST" >> ENV
+        echo "DBUSER=$DBUSER" >> ENV
+        echo "DBPASSWORD=$DBPASSWORD" >> ENV
+        echo "DBNAME=$DBNAME" >> ENV
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -46,12 +56,8 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Start the RESTful API server
       run: |
-        export PORT=8080
-        export DBHOST=localhost
-        export DBUSER=credentialleakdb
-        export DBNAME=credentialleakdb
-        export DBPASSWORD="1234testForUnitTesting"
         uvicorn --host 127.0.0.1 --port 8080 --reload api.main:app &
+        # uvicorn --env-file ENV --host 127.0.0.1 --port 8080 --reload api.main:app &
     - name: Test with pytest
       run: |
         python -m pytest -vv

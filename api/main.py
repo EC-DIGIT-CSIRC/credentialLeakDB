@@ -41,7 +41,9 @@ api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=True)
 
 db_conn = None
 DSN = "host=%s dbname=%s user=%s password=%s" % (os.getenv('DBHOST', 'localhost'),
-                                                 os.getenv('DBNAME'), os.getenv('DBUSER'), os.getenv('DBPASSWORD'))
+                                                 os.getenv('DBNAME', 'credentialleakdb'),
+                                                 os.getenv('DBUSER', 'credentialleakdb'),
+                                                 os.getenv('DBPASSWORD'))
 
 VER = "0.5"
 
@@ -270,8 +272,10 @@ async def get_user_by_email_and_password(email: EmailStr,
 
 @app.get('/exists/by_email/{email}',
          tags=["General queries"],
+         status_code=200,
          response_model=Answer)
 async def check_user_by_email(email: EmailStr,
+                              response: Response,
                               api_key: APIKey = Depends(validate_api_key_header)
                               ) -> Answer:
     """
@@ -294,6 +298,8 @@ async def check_user_by_email(email: EmailStr,
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (email,))
         rows = cur.fetchall()
+        if len(rows) == 0:      # return 404 in case no data was found
+            response.status_code = 404
         t1 = time.time()
         d = round(t1 - t0, 3)
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
@@ -303,8 +309,10 @@ async def check_user_by_email(email: EmailStr,
 
 @app.get('/exists/by_password/{password}',
          tags=["General queries"],
+         status_code=200,
          response_model=Answer)
 async def check_user_by_password(password: str,
+                                 response: Response,
                                  api_key: APIKey = Depends(validate_api_key_header)
                                  ) -> Answer:
     """
@@ -329,6 +337,8 @@ async def check_user_by_password(password: str,
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (password, password, password))
         rows = cur.fetchall()
+        if len(rows) == 0:      # return 404 in case no data was found
+            response.status_code = 404
         t1 = time.time()
         d = round(t1 - t0, 3)
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
@@ -338,8 +348,10 @@ async def check_user_by_password(password: str,
 
 @app.get('/exists/by_domain/{domain}',
          tags=["General queries"],
+         status_code=200,
          response_model=Answer)
 async def check_by_domain(domain: str,
+                          response: Response,
                           api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
     """
     Check if a given domain appears in some leak.
@@ -358,6 +370,8 @@ async def check_by_domain(domain: str,
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (domain,))
         rows = cur.fetchall()
+        if len(rows) == 0:      # return 404 in case no data was found
+            response.status_code = 404
         t1 = time.time()
         d = round(t1 - t0, 3)
         return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
