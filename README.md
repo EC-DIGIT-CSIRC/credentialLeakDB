@@ -51,6 +51,11 @@ export DBUSER=credentialleakdb
 export DBPASSWORD=... <insert the password you gave the user> ...
 export DBHOST=localhost
 ```
+5. Create a virtual environment if it does not exist yet:
+   ```bash
+   createenv --python=python3.7 venv
+   source venv/bin/activate
+   ```
 5. start the program from the main directory:
 ```bash
 export PYTHONPATH=$(pwd); uvicorn --reload --host 0.0.0.0 --port $PORT api.main:app
