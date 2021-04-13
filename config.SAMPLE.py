@@ -4,7 +4,7 @@ an existing file!!!
 Edit that file there and add a random string to the list.
 Communicate that random string to the API key user.
 
-Then reload the server (or it gets reloaded automatically)
+Then reload the server (or it gets reloaded automatically).
 """
 
 
