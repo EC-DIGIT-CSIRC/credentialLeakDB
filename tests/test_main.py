@@ -375,5 +375,5 @@ def test_import_csv():
     fixtures_file= "./tests/fixtures/data.csv"
     f = open(fixtures_file,  "rb")
     response = client.post('/import/csv/%s' %(99,), files = {"_file": f}, headers = VALID_AUTH)
-    assert response.ok
+    assert response.status_code == 200
 
