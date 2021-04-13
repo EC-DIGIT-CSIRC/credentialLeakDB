@@ -8,7 +8,7 @@ from credentialLeakDB.api.main import *
 VALID_AUTH = {'x-api-key': 'random-test-api-key'}
 INVALID_AUTH = {'x-api-key': 'random-test-api-XXX'}
 
-client = TestClient(app)     # ,  base_url='http://localhost:8080/')
+client = TestClient(app)  # ,  base_url='http://localhost:8080/')
 
 
 def test_ping():
@@ -18,7 +18,7 @@ def test_ping():
 
 
 def test_get_db():
-   assert get_db() != None
+    assert get_db() != None
 
 
 def test_close_db():
@@ -223,6 +223,7 @@ def test_update_INVALID_leak():
     assert response.status_code == 400
     assert response.json()['data'] == []
 
+
 # By summary
 def test_get_leak_by_summary():
     summary = "COMB"
@@ -233,6 +234,7 @@ def test_get_leak_by_summary():
     assert data['data'][0]['summary'] == summary
     assert data['data'][0]['reporter_name'] == 'aaron'
 
+
 def test_get_leak_by_INVALID_summary():
     summary = "COMB-XXX-DOESNETEXIST"
     response = client.get('/leak/by_summary/%s' % (summary,), headers = VALID_AUTH)
@@ -240,14 +242,16 @@ def test_get_leak_by_INVALID_summary():
     data = response.json()
     assert data['meta']['count'] == 0
 
+
 # By ticket_id
 def test_get_leak_by_ticket_id():
-    ticket_id = "CSIRC-102"     # we know that exists based on the db.sql import
+    ticket_id = "CSIRC-102"  # we know that exists based on the db.sql import
     response = client.get('/leak/by_ticket_id/%s' % (ticket_id,), headers = VALID_AUTH)
     assert response.status_code == 200
     data = response.json()
     assert data['meta']['count'] >= 1
     assert data['data'][0]['summary'] == "COMB"
+
 
 def test_get_leak_by_INVALID_ticket_id():
     ticket_id = "COMB-XXX-DOESNETEXIST"
@@ -295,7 +299,7 @@ def insert_leak_data(d: dict) -> int:
     @:returns ID: ID of the newly inserted row
     @:rtype: int
     """
-    response = client.post("/leak_data/", json=d, headers=VALID_AUTH)
+    response = client.post("/leak_data/", json = d, headers = VALID_AUTH)
     assert response.status_code == 201
     data = response.json()
     assert "meta" in data and \
@@ -350,16 +354,15 @@ def test_update_leak_data():
     # create my own leak_data row
     _id = insert_leak_data(test_data)
 
-
     # now UPDATE it
     random_str2 = uuid.uuid4()
     email2 = "aaron-%s@example.com" % random_str2
 
     test_data['id'] = _id
-    test_data.update({ "email": email2 })
+    test_data.update({"email": email2})
     response = client.put('/leak_data/', json = test_data, headers = VALID_AUTH)
     assert response.status_code == 200
-    print("after UPDATE: response = %r" %response.json())
+    print("after UPDATE: response = %r" % response.json())
 
     # fetch the results and see if it's really updated
     response = client.get('/leak_data/%s' % (_id,), headers = VALID_AUTH)
@@ -367,4 +370,10 @@ def test_update_leak_data():
     print("data: %r" % response.json()['data'])
     assert response.json()['data'][0]['email'] == email2
 
+
+def test_import_csv():
+    fixtures_file= "./tests/fixtures/data.csv"
+    f = open(fixtures_file,  "rb")
+    response = client.post('/import/csv/%s' %(99,), files = {"_file": f}, headers = VALID_AUTH)
+    assert response.ok
 
