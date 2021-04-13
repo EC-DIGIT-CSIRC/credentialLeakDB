@@ -4,6 +4,10 @@
 [![flak8 and pytest](https://github.com/EC-DIGIT-CSIRC/credentialLeakDB/actions/workflows/python-app.yml/badge.svg)](https://github.com/EC-DIGIT-CSIRC/credentialLeakDB/actions/workflows/python-app.yml)
 [![CodeQL](https://github.com/EC-DIGIT-CSIRC/credentialLeakDB/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/EC-DIGIT-CSIRC/credentialLeakDB/actions/workflows/codeql-analysis.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=digits2_credentialLeakDB&metric=alert_status&token=cee9c8232570fa1000ab4770feb571fd3e85ff39)](https://sonarcloud.io/dashboard?id=digits2_credentialLeakDB)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=digits2_credentialLeakDB&metric=sqale_rating&token=cee9c8232570fa1000ab4770feb571fd3e85ff39)](https://sonarcloud.io/dashboard?id=digits2_credentialLeakDB)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=digits2_credentialLeakDB&metric=reliability_rating&token=cee9c8232570fa1000ab4770feb571fd3e85ff39)](https://sonarcloud.io/dashboard?id=digits2_credentialLeakDB)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=digits2_credentialLeakDB&metric=security_rating&token=cee9c8232570fa1000ab4770feb571fd3e85ff39)](https://sonarcloud.io/dashboard?id=digits2_credentialLeakDB)
+
 
 A database structure to store leaked credentials. 
 
