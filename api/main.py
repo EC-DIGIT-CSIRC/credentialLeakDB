@@ -956,7 +956,7 @@ async def import_csv(leak_id: int,
     t1 = time.time()
     d = round(t1 - t0, 3)
     num_deduped = len(inserted_ids)
-    logging.info("inserted %d rows, %d duplicates, %d new rows" % (i, i - num_deduped))
+    logging.info("inserted %d rows, %d duplicates, %d new rows" % (i, i - num_deduped, num_deduped))
 
     # now get the data of all the IDs / dedup
     try:
