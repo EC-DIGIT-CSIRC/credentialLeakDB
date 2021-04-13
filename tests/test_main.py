@@ -1,4 +1,5 @@
 import urllib.parse
+import uuid
 
 from fastapi.testclient import TestClient
 
@@ -17,7 +18,7 @@ def test_ping():
 
 
 def test_get_db():
-    assert True
+   assert get_db() != None
 
 
 def test_close_db():
@@ -327,11 +328,11 @@ def test_new_leak_data():
     assert _id >= 0
 
 
-# XXXXXXXXXXXX
 def test_update_leak_data():
+    random_str = uuid.uuid4()
     test_data = {
         "leak_id": 1,
-        "email": "aaron3@example.com",
+        "email": "aaron%s@example.com" % (random_str,),
         "password": "000000",
         "password_plain": "000000",
         "password_hashed": "d232105eb59a344df4b54db1c24009b1",
@@ -349,20 +350,21 @@ def test_update_leak_data():
     # create my own leak_data row
     _id = insert_leak_data(test_data)
 
-    # now UPDATE it
-    test_data['id'] = _id
-    test_data.update({ "email": "aaron4@example.com"})
-    print("throwing this at the API:")
-    print(test_data)
-    print(80*"=")
-    response = client.put('/leak_data/', json = test_data, headers = VALID_AUTH)
-    print("STATUS CODE: %s" % response.status_code)
-    assert response.status_code == 200
 
-    print(80*"= OK ")
+    # now UPDATE it
+    random_str2 = uuid.uuid4()
+    email2 = "aaron-%s@example.com" % random_str2
+
+    test_data['id'] = _id
+    test_data.update({ "email": email2 })
+    response = client.put('/leak_data/', json = test_data, headers = VALID_AUTH)
+    assert response.status_code == 200
+    print("after UPDATE: response = %r" %response.json())
+
     # fetch the results and see if it's really updated
     response = client.get('/leak_data/%s' % (_id,), headers = VALID_AUTH)
     assert response.status_code == 200
-    assert response.json()['data'][0]['email'] == "aaron4@example.com"
+    print("data: %r" % response.json()['data'])
+    assert response.json()['data'][0]['email'] == email2
 
 
