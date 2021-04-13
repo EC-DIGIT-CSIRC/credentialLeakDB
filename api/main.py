@@ -22,7 +22,7 @@ import psycopg2.extras
 import uvicorn
 from fastapi import FastAPI, HTTPException, File, UploadFile, Depends, Security, Response
 # from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from fastapi.security.api_key import APIKeyHeader, APIKey
+from fastapi.security.api_key import APIKeyHeader, APIKey, Request
 from pydantic import EmailStr
 
 # packages from this code repo
@@ -691,29 +691,29 @@ async def update_leak(leak: Leak,
 # ############################################################################################################
 # Leak Data starts here
 
-@app.get("/leak_data/{leak_id}",
+@app.get("/leak_data/{leak_data_id}",
          tags=["Leak Data"],
          status_code=200,
          response_model=Answer)
-async def get_leak_data_by_leak(leak_id: int,
-                                response: Response,
-                                api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
+async def get_leak_data_by_id(leak_data_id: int,
+                              response: Response,
+                              api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
     """
-    Fetch all leak data entries of a given leak_id.
+    Fetch all leak data entries of a given id.
 
     # Parameters
-        * leak_id: integer, the DB internal leak_id.
+        * leak_data_id: integer, the DB internal leak_data_id.
 
     # Returns
      * A JSON Answer object with the corresponding leak data (i.e. actual usernames, passwords) from the `leak_data`
-       table which are contained within the specified leak (leak_id).
+       table which are contained within the specified leak (leak_data_id).
     """
     t0 = time.time()
-    sql = "SELECT * from leak_data where leak_id=%s"
+    sql = "SELECT * from leak_data where id=%s"
     db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute(sql, (leak_id,))
+        cur.execute(sql, (leak_data_id,))
         rows = cur.fetchall()
         if len(rows) == 0:      # return 404 in case no data was found
             response.status_code = 404
@@ -775,7 +775,7 @@ async def new_leak_data(row: LeakData,
              (leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id,
              email_verified, password_verified_ok, ip, domain, browser, malware_name, infected_machine, dg)
              VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-             ON CONFLICT DO NOTHING
+             ON CONFLICT ON CONSTRAINT constr_unique_leak_data_leak_id_email_password_domain DO UPDATE SET email=%s
              RETURNING id
         """
     t0 = time.time()
@@ -785,7 +785,7 @@ async def new_leak_data(row: LeakData,
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (row.leak_id, row.email, row.password, row.password_plain, row.password_hashed, row.hash_algo,
                           row.ticket_id, row.email_verified, row.password_verified_ok, row.ip, row.domain, row.browser,
-                          row.malware_name, row.infected_machine, row.dg))
+                          row.malware_name, row.infected_machine, row.dg, row.email))
         rows = cur.fetchall()
         if len(rows) == 0:      # return 400 in case the INSERT failed.
             response.status_code = 400
@@ -801,6 +801,7 @@ async def new_leak_data(row: LeakData,
          status_code=200,
          response_model=Answer)
 async def update_leak_data(row: LeakData,
+                           request: Request,
                            response: Response,
                            api_key: APIKey = Depends(validate_api_key_header)
                            ) -> Answer:
@@ -808,8 +809,8 @@ async def update_leak_data(row: LeakData,
     UPDATE leak_data row in the leak_data table.
 
     # Parameters
-      * row : a leakData object with all the relevant information. Should you not want to update a specific field,
-        do not specify it in the LeakData object.
+      * row : a leakData object with all the relevant information. Please note that you **have to** supply all fields,
+        even if you do not plan to update them. In other words: you might have to GET / the leak_data object first.
     # Returns
       * a JSON Answer object containing the ID of the inserted leak_data row.
     """
@@ -836,12 +837,15 @@ async def update_leak_data(row: LeakData,
     db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        print(cur.mogrify(sql, (row.leak_id, row.email, row.password, row.password_plain, row.password_hashed, row.hash_algo,
-                          row.ticket_id, row.email_verified, row.password_verified_ok, row.ip, row.domain, row.browser,
-                          row.malware_name, row.infected_machine, row.dg, row.id)))
+        print("HTTP request: '%r'" % request )
+        print("SQL command:")
+        # print(cur.mogrify(sql, (row.leak_id, row.email, row.password, row.password_plain, row.password_hashed, row.hash_algo,
+        #                    row.ticket_id, row.email_verified, row.password_verified_ok, row.ip, row.domain, row.browser,
+        #                    row.malware_name, row.infected_machine, row.dg, row.id)))
         cur.execute(sql, (row.leak_id, row.email, row.password, row.password_plain, row.password_hashed, row.hash_algo,
                           row.ticket_id, row.email_verified, row.password_verified_ok, row.ip, row.domain, row.browser,
                           row.malware_name, row.infected_machine, row.dg, row.id))
+        db.commit()
         rows = cur.fetchall()
         if len(rows) == 0:      # return 400 in case the INSERT failed.
             response.status_code = 400

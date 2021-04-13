@@ -7,7 +7,7 @@ from credentialLeakDB.api.main import *
 VALID_AUTH = {'x-api-key': 'random-test-api-key'}
 INVALID_AUTH = {'x-api-key': 'random-test-api-XXX'}
 
-client = TestClient(app)
+client = TestClient(app)     # ,  base_url='http://localhost:8080/')
 
 
 def test_ping():
@@ -351,12 +351,16 @@ def test_update_leak_data():
 
     # now UPDATE it
     test_data['id'] = _id
-    test_data['email'] = "aaron4@example.com",
-    response = client.put('/leak/', json = test_data, headers = VALID_AUTH)
+    test_data.update({ "email": "aaron4@example.com"})
+    print("throwing this at the API:")
+    print(test_data)
+    print(80*"=")
+    response = client.put('/leak_data/', json = test_data, headers = VALID_AUTH)
     assert response.status_code == 200
 
+    print(80*"= OK ")
     # fetch the results and see if it's really updated
-    response = client.get('/leak/%s' % (_id,), headers = VALID_AUTH)
+    response = client.get('/leak_data/%s' % (_id,), headers = VALID_AUTH)
     assert response.status_code == 200
     assert response.json()['data'][0]['email'] == "aaron4@example.com"
 
