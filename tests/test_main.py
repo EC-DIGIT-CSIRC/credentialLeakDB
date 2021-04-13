@@ -356,6 +356,7 @@ def test_update_leak_data():
     print(test_data)
     print(80*"=")
     response = client.put('/leak_data/', json = test_data, headers = VALID_AUTH)
+    print("STATUS CODE: %s" % response.status_code)
     assert response.status_code == 200
 
     print(80*"= OK ")

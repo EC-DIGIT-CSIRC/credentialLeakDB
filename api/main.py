@@ -21,7 +21,6 @@ import psycopg2
 import psycopg2.extras
 import uvicorn
 from fastapi import FastAPI, HTTPException, File, UploadFile, Depends, Security, Response
-# from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.security.api_key import APIKeyHeader, APIKey, Request
 from pydantic import EmailStr
 
@@ -954,9 +953,10 @@ async def import_csv(leak_id: int,
             i += 1
         except Exception as ex:
             return Answer(error=str(ex), data=[])
-
     t1 = time.time()
     d = round(t1 - t0, 3)
+    num_deduped = len(inserted_ids)
+    logging.info("inserted %d rows, %d duplicates, %d new rows" % (i, i - num_deduped))
 
     # now get the data of all the IDs / dedup
     try:
