@@ -191,8 +191,9 @@ export DBHOST=localhost
 ```
 5. Create a virtual environment if it does not exist yet:
    ```bash
-   createenv --python=python3.7 venv
+   virtualenv --python=python3.7 venv
    source venv/bin/activate
+   pip install -r requirements.txt
    ```
 5. start the program from the main directory:
 ```bash
