@@ -7,6 +7,7 @@
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=digits2_credentialLeakDB&metric=sqale_rating&token=cee9c8232570fa1000ab4770feb571fd3e85ff39)](https://sonarcloud.io/dashboard?id=digits2_credentialLeakDB)
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=digits2_credentialLeakDB&metric=reliability_rating&token=cee9c8232570fa1000ab4770feb571fd3e85ff39)](https://sonarcloud.io/dashboard?id=digits2_credentialLeakDB)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=digits2_credentialLeakDB&metric=security_rating&token=cee9c8232570fa1000ab4770feb571fd3e85ff39)](https://sonarcloud.io/dashboard?id=digits2_credentialLeakDB)
+[![codecov](https://codecov.io/gh/EC-DIGIT-CSIRC/credentialLeakDB/branch/main/graph/badge.svg?token=SS5F8EXQON)](https://codecov.io/gh/EC-DIGIT-CSIRC/credentialLeakDB)
 
 
 A database structure to store leaked credentials. 
