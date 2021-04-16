@@ -475,31 +475,6 @@ async def get_all_leaks(response: Response,
         return Answer(error=str(ex), data=[])
 
 
-@app.get("/leak/{_id}", tags=["Leak"],
-         description='Get the leak info by its ID.',
-         status_code=200,
-         response_model=Answer)
-async def get_leak_by_id(_id: int,
-                         response: Response,
-                         api_key: APIKey = Depends(validate_api_key_header)
-                         ) -> Answer:
-    """Fetch a leak by its ID"""
-    t0 = time.time()
-    sql = "SELECT * from leak WHERE id = %s"
-    db = get_db()
-    try:
-        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute(sql, (_id,))
-        rows = cur.fetchall()
-        if len(rows) == 0:      # return 404 in case no data was found
-            response.status_code = 404
-        t1 = time.time()
-        d = round(t1 - t0, 3)
-        return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
-    except Exception as ex:
-        return Answer(error=str(ex), data=[])
-
-
 @app.get("/leak/by_ticket_id/{ticket_id}",
          tags = ["Leak"],
          status_code=200,
@@ -558,7 +533,7 @@ async def get_leak_by_reporter(reporter: str,
                                response: Response,
                                api_key: APIKey = Depends(validate_api_key_header)
                                ) -> Answer:
-    """Fetch a leak by its reporteri. """
+    """Fetch a leak by its reporter. """
     sql = "SELECT * from leak WHERE reporter_name = %s"
     t0 = time.time()
     db = get_db()
@@ -598,6 +573,31 @@ async def get_leak_by_source(source_name: str,
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (source_name,))
+        rows = cur.fetchall()
+        if len(rows) == 0:      # return 404 in case no data was found
+            response.status_code = 404
+        t1 = time.time()
+        d = round(t1 - t0, 3)
+        return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
+    except Exception as ex:
+        return Answer(error=str(ex), data=[])
+
+
+@app.get("/leak/{_id}", tags=["Leak"],
+         description='Get the leak info by its ID.',
+         status_code=200,
+         response_model=Answer)
+async def get_leak_by_id(_id: int,
+                         response: Response,
+                         api_key: APIKey = Depends(validate_api_key_header)
+                         ) -> Answer:
+    """Fetch a leak by its ID"""
+    t0 = time.time()
+    sql = "SELECT * from leak WHERE id = %s"
+    db = get_db()
+    try:
+        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(sql, (_id,))
         rows = cur.fetchall()
         if len(rows) == 0:      # return 404 in case no data was found
             response.status_code = 404
@@ -744,6 +744,31 @@ async def get_leak_data_by_ticket_id(ticket_id: str,
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (ticket_id,))
+        rows = cur.fetchall()
+        if len(rows) == 0:      # return 404 in case no data was found
+            response.status_code = 404
+        t1 = time.time()
+        d = round(t1 - t0, 3)
+        return Answer(meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
+    except Exception as ex:
+        return Answer(error=str(ex), data=[])
+
+
+@app.get("/leak/{_id}", tags=["Leak"],
+         description='Get the leak info by its ID.',
+         status_code=200,
+         response_model=Answer)
+async def get_leak_by_id(_id: int,
+                         response: Response,
+                         api_key: APIKey = Depends(validate_api_key_header)
+                         ) -> Answer:
+    """Fetch a leak by its ID"""
+    t0 = time.time()
+    sql = "SELECT * from leak WHERE id = %s"
+    db = get_db()
+    try:
+        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(sql, (_id,))
         rows = cur.fetchall()
         if len(rows) == 0:      # return 404 in case no data was found
             response.status_code = 404
