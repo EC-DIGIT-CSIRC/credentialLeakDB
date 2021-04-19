@@ -2,19 +2,44 @@ name: Codecov
 on: [push]
 jobs:
   run:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, debian-latest]
+    runs-on: ubuntu-latest
     env:
-      OS: ${{ matrix.os }}
-      PYTHON: '3.7'
+      PORT: 8080
+      DBHOST: localhost
+      DBUSER: credentialleakdb
+      DBPASSWORD: 1234testForUnitTesting
+      DBNAME: credentialleakdb
     steps:
-    - uses: actions/checkout@master
-    - name: Setup Python
-      uses: actions/setup-python@master
+    - uses: actions/checkout@v2
       with:
-        python-version: 3.7
+        fetch-depth: 0
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 pytest pytest-cov
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: set up demo database
+      run: |
+        sudo apt install postgresql-12 
+        sudo -u postgres pg_ctlcluster 12 main start
+        sudo service postgresql start
+        # sudo -u postgres pg_ctlcluster 12 main start
+        sudo -u postgres createdb credentialleakdb
+        sudo -u postgres createuser -s $DBUSER
+        sudo -u postgres psql $DBNAME < db.sql
+        sudo -u postgres psql -c "ALTER role $DBUSER WITH PASSWORD '$DBPASSWORD'"
+    - name: prepare environment and mocking
+      run: |
+        cp config.SAMPLE.py api/config.py
+        echo "PORT=$PORT" > ENV
+        echo "DBHOST=$DBHOST" >> ENV
+        echo "DBUSER=$DBUSER" >> ENV
+        echo "DBPASSWORD=$DBPASSWORD" >> ENV
+        echo "DBNAME=$DBNAME" >> ENV
     - name: Generate coverage report
       run: |
         pip install pytest
