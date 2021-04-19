@@ -222,7 +222,7 @@ async def get_user_by_email(email: EmailStr,
             response.status_code = 404
         t1 = time.time()
         d = round(t1 - t0, 3)
-        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows, errormsg = "")
+        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
         return Answer(success=False, errormsg =str(ex), data=[])
 
