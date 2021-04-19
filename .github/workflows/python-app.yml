@@ -69,7 +69,7 @@ jobs:
 
     - name: Snyk Security Scan
       uses: snyk/actions/python@master
-      # continue-on-error: true
+      # continue-on-errormsg: true
       env:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       with:

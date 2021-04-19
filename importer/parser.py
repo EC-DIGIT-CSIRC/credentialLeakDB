@@ -96,10 +96,10 @@ def prepare_db_structures(breach_title, reporter, collection=None, breach_ts=Non
     """
 
     if not breach_title:
-        logging.error("can't insert into DB when no breach title given")
+        logging.errormsg("can't insert into DB when no breach title given")
         return
     if not reporter:
-        logging.error("can't insert into DB when no reporter given")
+        logging.errormsg("can't insert into DB when no reporter given")
         return
 
     # first try to insert the collection, if we have one
@@ -109,7 +109,7 @@ def prepare_db_structures(breach_title, reporter, collection=None, breach_ts=Non
             cur.execute(sql, (collection, collection))
             collection_id = cur.fetchone()[0]
         except Exception as ex:
-            logging.error("could not insert/fetch collection, reason: %s. SQL=%s", str(ex), cur.mogrify(sql, (collection, collection)))
+            logging.errormsg("could not insert/fetch collection, reason: %s. SQL=%s", str(ex), cur.mogrify(sql, (collection, collection)))
     else:
         collection_id = None
 
@@ -119,7 +119,7 @@ def prepare_db_structures(breach_title, reporter, collection=None, breach_ts=Non
         cur.execute(sql, (reporter, ))
         reporter_id = cur.fetchone()[0]
     except Exception as ex:
-        logging.error("could not insert/fetch reporter, reason: %s. SQL=%s", str(ex), cur.mogrify(sql, (reporter,)))
+        logging.errormsg("could not insert/fetch reporter, reason: %s. SQL=%s", str(ex), cur.mogrify(sql, (reporter,)))
 
     # the actual leak
     leak_id = None
@@ -128,7 +128,7 @@ def prepare_db_structures(breach_title, reporter, collection=None, breach_ts=Non
         cur.execute(sql, (breach_title, reporter_id, ))
         leak_id = cur.fetchone()[0]
     except Exception as ex:
-        logging.error("could not insert to DB, reason: %s", str(ex))
+        logging.errormsg("could not insert to DB, reason: %s", str(ex))
 
     # and if we have a collection, do the n-to-m intersection tbl
     if leak_id and collection and collection_id:
@@ -136,7 +136,7 @@ def prepare_db_structures(breach_title, reporter, collection=None, breach_ts=Non
         try:
             cur.execute(sql, (collection_id, leak_id))
         except Exception as ex:
-            logging.error("could not insert/fetch into leak2collection, reason: %s. SQL=%s", str(ex), cur.mogrify(sql, (collection_id, leak_id,)))
+            logging.errormsg("could not insert/fetch into leak2collection, reason: %s. SQL=%s", str(ex), cur.mogrify(sql, (collection_id, leak_id,)))
 
     conn.commit()
     cur.close()

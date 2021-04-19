@@ -5,7 +5,7 @@ License: see LICENSE.
 """
 
 from pydantic import BaseModel, EmailStr
-from typing import Optional, Dict, Union, List
+from typing import Optional, Dict, List    # Union
 
 import datetime
 
@@ -48,17 +48,19 @@ class AnswerMeta(BaseModel):
 class Answer(BaseModel):
     meta: Optional[AnswerMeta]
     data: List[Dict]    # Union[Dict,List]
-    error: Optional[str]
+    success: bool
+    errormsg: Optional[str] = ""
 
 
 """ Example:
 Multiple answers:
-{ "meta": { "version": "rel-1.0", "duration": 0.78, "count": 3 }, "data": [ <dict>, <dict>, <dict> ], "error": "all OK" }
+{ "meta": { "version": "rel-1.0", "duration": 0.78, "count": 3 }, "data": [ <dict>, <dict>, <dict> ], "success": true,
+  "errormsg": "all OK" }
 
 No data:
-{ "meta": { "version": "rel-1.0", "duration": 0.78 , "count": 0 }, "data": [], "error": "all OK" }
+{ "meta": { "version": "rel-1.0", "duration": 0.78 , "count": 0 }, "data": [], "success": true, "errormsg": "all OK" }
 
 Single result:
 { "meta": { "version": "rel-1.0", "duration": 0.78 , "count": 1 }, "data": [ { "foo": "bar", "baz": 77 } ],
-  "error": "all OK" }
+  "success": true, "errormsg": "all OK" }
 """
