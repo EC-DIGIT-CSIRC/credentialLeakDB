@@ -39,3 +39,5 @@ urllib3==1.26.4
 uvicorn==0.13.3
 wrapt==1.12.1
 zipp==3.4.0
+coverage==5.5
+pytest-cov==2.11.1
