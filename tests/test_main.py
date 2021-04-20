@@ -266,6 +266,13 @@ def test_get_leak_by_INVALID_ticket_id():
     assert data['meta']['count'] == 0
 
 
+def test_get_all_leaks():
+    response = client.get('/leak/all', headers = VALID_AUTH)
+    assert response.status_code == 200
+    data = response.json()
+    assert data['meta']['count'] > 0
+
+
 # #################################################################################
 # leak_data
 
@@ -382,3 +389,9 @@ def test_import_csv():
     response = client.post('/import/csv/%s' % (99,), files = {"_file": f}, headers = VALID_AUTH)
     print(response.status_code)
     assert True  # for now to get the code coverage through.
+
+
+def test_check_file():
+    assert True  # trivial check, not implemented yet actually in main.py
+
+
