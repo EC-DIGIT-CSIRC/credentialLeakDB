@@ -299,8 +299,6 @@ async def check_user_by_email(email: EmailStr,
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (email,))
         rows = cur.fetchall()
-        if len(rows) == 0:      # return 404 in case no data was found
-            response.status_code = 404
         t1 = time.time()
         d = round(t1 - t0, 3)
         return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
@@ -339,8 +337,6 @@ async def check_user_by_password(password: str,
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (password, password, password))
         rows = cur.fetchall()
-        if len(rows) == 0:      # return 404 in case no data was found
-            response.status_code = 404
         t1 = time.time()
         d = round(t1 - t0, 3)
         return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
@@ -372,8 +368,6 @@ async def check_by_domain(domain: str,
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (domain,))
         rows = cur.fetchall()
-        if len(rows) == 0:      # return 404 in case no data was found
-            response.status_code = 404
         t1 = time.time()
         d = round(t1 - t0, 3)
         return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
