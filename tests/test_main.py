@@ -218,6 +218,10 @@ def test_update_leak():
     assert response.status_code == 200
     assert response.json()['data'][0]['summary'] == "We UPDATED the test leak now!"
 
+    # now try to fetch an invalid ID
+    response = client.get('/leak/%s' % (_id + 10000,), headers = VALID_AUTH)
+    assert response.status_code == 404
+
 
 def test_update_INVALID_leak():
     test_data = {
