@@ -23,6 +23,7 @@ class DBTestCases(unittest.TestCase):
         assert get_db() != None
 
     def test_close_db(self):
+        get_db()  # initialize connection
         assert close_db() == None
         get_db()  # re-initialize connection
 
@@ -273,6 +274,12 @@ def test_get_all_leaks():
     assert data['meta']['count'] > 0
 
 
+def test_get_leak_by_reporter():
+    response = client.get('leak/by_reporter/%s' % ("aaron",), headers = VALID_AUTH)
+    assert response.status_code == 200
+    data = response.json()
+    assert data['meta']['count'] > 0
+
 # #################################################################################
 # leak_data
 
@@ -393,5 +400,4 @@ def test_import_csv():
 
 def test_check_file():
     assert True  # trivial check, not implemented yet actually in main.py
-
 
