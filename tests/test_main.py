@@ -187,6 +187,7 @@ def test_new_leak():
            "data" in response.text and \
            data['meta']['count'] >= 1 and \
            data['data'][0]['id'] >= 1
+    return int(data['data'][0]['id'])
 
 
 def test_update_leak():
@@ -365,6 +366,7 @@ def test_new_leak_data():
     }
     _id = insert_leak_data(test_data)
     assert _id >= 0
+    return _id
 
 
 def test_update_leak_data():
@@ -407,14 +409,14 @@ def test_update_leak_data():
 
 
 def test_import_csv():
+    _id = test_new_leak()
     fixtures_file = "./tests/fixtures/data.csv"
     f = open(fixtures_file, "rb")
-    response = client.post('/import/csv/%s' % (99,), files = {"_file": f}, headers = VALID_AUTH)
+    response = client.post('/import/csv/%s' % (_id,), files = {"_file": f}, headers = VALID_AUTH)
     print(response.status_code)
-    assert True  # for now to get the code coverage through.
+    assert response.status_code >= 200 and response.status_code < 300
+    assert response.json()['meta']['count'] >= 0
 
 
 def test_check_file():
     assert True  # trivial check, not implemented yet actually in main.py
-
-
