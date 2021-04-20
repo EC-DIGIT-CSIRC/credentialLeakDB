@@ -24,15 +24,11 @@ class DBTestCases(unittest.TestCase):
 
     def test_close_db(self):
         get_db()  # initialize connection
-        assert close_db() == None
+        self.assertIsNone(close_db())
         get_db()  # re-initialize connection
 
     def test_connect_invalid_db(self):
         self.assertRaises(Exception, connect_db, 'SOME INVALID DSN')
-
-    def test_close_db(self):
-        assert close_db() == None
-        get_db()  # re-initialize connection
 
 
 def test_fetch_valid_api_keys():
