@@ -891,7 +891,7 @@ async def import_csv_with_leak_id(leak_id: int,
         nr_results = int(rows['count'])
         if nr_results != 1:
             response.status_code = 404
-            return Answer(errormsg = "Leak ID %s not found" % leak_id, data=[])
+            return Answer(success=False, errormsg = "Leak ID %s not found" % leak_id, data=[])
     except Exception as ex:
         return Answer(success=False, errormsg =str(ex), data=[])
 
@@ -927,7 +927,7 @@ async def import_csv_with_leak_id(leak_id: int,
 
     i = 0
     inserted_ids = []
-    for r in df.reset_index().to_dict(orient='rows'):
+    for r in df.reset_index().to_dict(orient='records'):
         sql = """
         INSERT into leak_data(
           leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id, email_verified, 
