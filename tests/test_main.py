@@ -39,16 +39,21 @@ def test_fetch_valid_api_keys():
     assert True
 
 
-def test_is_valid_api_key():
-    assert is_valid_api_key(VALID_AUTH['x-api-key'])
 
 
-def test_is_INVALID_api_key():
-    assert not is_valid_api_key(INVALID_AUTH['x-api-key'])
+class APIKeyTests(unittest.TestCase):
+    """Test API key functions"""
+    def test_validate_api_key_header(self):
+        self.assertRaises(Exception, validate_api_key_header, "")
 
+    def test_is_valid_api_key(self):
+        assert is_valid_api_key(VALID_AUTH['x-api-key'])
 
-def test_validate_api_key():
-    assert True
+    def test_is_INVALID_api_key(self):
+        assert not is_valid_api_key(INVALID_AUTH['x-api-key'])
+
+    def test_validate_api_key(self):
+        assert True
 
 
 def test_root_auth():
@@ -280,6 +285,7 @@ def test_get_leak_by_reporter():
     data = response.json()
     assert data['meta']['count'] > 0
 
+
 # #################################################################################
 # leak_data
 
@@ -400,4 +406,5 @@ def test_import_csv():
 
 def test_check_file():
     assert True  # trivial check, not implemented yet actually in main.py
+
 
