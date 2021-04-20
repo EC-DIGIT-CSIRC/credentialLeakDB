@@ -39,10 +39,9 @@ def test_fetch_valid_api_keys():
     assert True
 
 
-
-
 class APIKeyTests(unittest.TestCase):
     """Test API key functions"""
+
     def test_validate_api_key_header(self):
         self.assertRaises(Exception, validate_api_key_header, "")
 
@@ -281,6 +280,13 @@ def test_get_all_leaks():
 
 def test_get_leak_by_reporter():
     response = client.get('leak/by_reporter/%s' % ("aaron",), headers = VALID_AUTH)
+    assert response.status_code == 200
+    data = response.json()
+    assert data['meta']['count'] > 0
+
+
+def test_get_leak_by_source():
+    response = client.get('leak/by_source/%s' % ("spycloud",), headers = VALID_AUTH)
     assert response.status_code == 200
     data = response.json()
     assert data['meta']['count'] > 0
