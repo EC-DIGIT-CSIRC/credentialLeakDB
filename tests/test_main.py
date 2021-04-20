@@ -1,5 +1,6 @@
 import urllib.parse
 import uuid
+import unittest
 
 from fastapi.testclient import TestClient
 
@@ -17,16 +18,20 @@ def test_ping():
     assert response.json() == {"message": "pong"}
 
 
-def test_get_db():
-    assert get_db() != None
+class DBTestCases(unittest.TestCase):
+    def test_get_db(self):
+        assert get_db() != None
 
+    def test_close_db(self):
+        assert close_db() == None
+        get_db()  # re-initialize connection
 
-def test_close_db():
-    assert True
+    def test_connect_invalid_db(self):
+        self.assertRaises(Exception, connect_db, 'SOME INVALID DSN')
 
-
-def test_connect_db():
-    assert True
+    def test_close_db(self):
+        assert close_db() == None
+        get_db()  # re-initialize connection
 
 
 def test_fetch_valid_api_keys():
@@ -372,9 +377,8 @@ def test_update_leak_data():
 
 
 def test_import_csv():
-    fixtures_file= "./tests/fixtures/data.csv"
-    f = open(fixtures_file,  "rb")
-    response = client.post('/import/csv/%s' %(99,), files = {"_file": f}, headers = VALID_AUTH)
+    fixtures_file = "./tests/fixtures/data.csv"
+    f = open(fixtures_file, "rb")
+    response = client.post('/import/csv/%s' % (99,), files = {"_file": f}, headers = VALID_AUTH)
     print(response.status_code)
-    assert True     # for now to get the code coverage through.
-
+    assert True  # for now to get the code coverage through.

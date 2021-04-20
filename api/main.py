@@ -74,6 +74,7 @@ def close_db():
     if db_conn:
         db_conn.close()
         db_conn = None
+    return db_conn
 
 
 def connect_db(dsn: str):
