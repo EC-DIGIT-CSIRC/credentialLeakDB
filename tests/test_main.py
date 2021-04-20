@@ -408,7 +408,7 @@ def test_update_leak_data():
     assert response.json()['data'][0]['email'] == email2
 
 
-def test_import_csv():
+def test_import_csv_with_leak_id():
     _id = test_new_leak()
     fixtures_file = "./tests/fixtures/data.csv"
     f = open(fixtures_file, "rb")

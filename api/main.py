@@ -862,11 +862,11 @@ async def update_leak_data(row: LeakData,
           tags=["CSV import"],
           status_code=200,
           response_model=Answer)
-async def import_csv(leak_id: int,
-                     response: Response,
-                     _file: UploadFile = File(...),
-                     api_key: APIKey = Depends(validate_api_key_header)
-                     ) -> Answer:
+async def import_csv_with_leak_id(leak_id: int,
+                                  response: Response,
+                                  _file: UploadFile = File(...),
+                                  api_key: APIKey = Depends(validate_api_key_header)
+                                  ) -> Answer:
     """
     Import a CSV file into the DB. You **need** to specify a ?leak_id=<int> parameter so that the CSV file may be
     linked to a leak_id. Failure to provide a leak_id will result in the file not being imported into the DB.
