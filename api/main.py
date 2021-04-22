@@ -852,7 +852,33 @@ async def update_leak_data(row: LeakData,
 
 # ############################################################################################################
 # CSV file importing
-@app.post("/import/csv/{leak_id}",
+@app.post("/import/csv/spycloud/{parent_ticket_id}",
+          tags=["CSV import"],
+          status_code=200,
+          response_model=Answer)
+async def import_csv_spycloud(parent_ticket_id: int,
+                              response: Response,
+                              summary: str = None,
+                              _file: UploadFile = File(...),
+                              api_key: APIKey = Depends(validate_api_key_header)
+                              ) -> Answer:
+    """
+    Import a spycloud CSV file into the DB. Note that you do not need to specify a leak_id parameter here.
+    The API will automatically create a leak object in the DB for you and link it.
+
+    # Parameters
+      * parent_ticket_id: a ticket ID which allows us to link the leak object to the ticket
+      * _file: a file which must be uploaded via HTML forms/multipart.
+
+    # Returns
+      * a JSON Answer object where the data: field is the **deduplicated** CSV file (i.e. lines which were already
+        imported as part of that leak (same username, same password, same domain) will not be returned.
+        In other words, data: [] contains the rows from the CSV file which did not yet exist in the DB.
+    """
+    pass
+
+
+@app.post("/import/csv/by_leak/{leak_id}",
           tags=["CSV import"],
           status_code=200,
           response_model=Answer)
