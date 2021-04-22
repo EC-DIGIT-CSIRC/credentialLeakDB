@@ -11,7 +11,8 @@ import os
 from pathlib import Path
 from typing import List
 
-class VIPenricher():
+
+class VIPenricher:
     """Can determine if an Email Adress is a VIP. Super trivial code."""
 
     vips = []
@@ -24,7 +25,7 @@ class VIPenricher():
 
     def load_vips(self, path: Path()) -> List[str]:
         with open(path, 'r') as f:
-            self.vips =  [l.strip().upper() for l in f.readlines()]
+            self.vips = [x.strip().upper() for x in f.readlines()]
             return self.vips
 
     def is_vip(self, email: str) -> bool:
@@ -35,3 +36,19 @@ class VIPenricher():
 
     def __repr__(self):
         return ",".join(self.vips)
+
+
+class ExternalEnricher:
+    """Can determine if an Email Adress is an (organisation-) external email address. Also super trivial code."""
+
+    @staticmethod
+    def is_internal_email(email: str) -> bool:
+        email = email.lower()
+        if email and email.endswith('europa.eu') or email.endswith('jrc.it'):
+            return True
+        else:
+            return False
+
+    @staticmethod
+    def is_external_email(email: str) -> bool:
+        return not ExternalEnricher.is_internal_email(email)
