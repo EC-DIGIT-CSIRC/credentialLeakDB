@@ -408,7 +408,7 @@ def test_import_csv_with_leak_id():
     _id = test_new_leak()
     fixtures_file = "./tests/fixtures/data.csv"
     f = open(fixtures_file, "rb")
-    response = client.post('/import/csv/%s' % (_id,), files = {"_file": f}, headers = VALID_AUTH)
+    response = client.post('/import/csv/by_leak/%s' % (_id,), files = {"_file": f}, headers = VALID_AUTH)
     print(response.status_code)
     assert response.status_code >= 200 and response.status_code < 300
     assert response.json()['meta']['count'] >= 0
