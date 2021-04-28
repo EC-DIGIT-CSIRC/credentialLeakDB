@@ -2,6 +2,8 @@ import os
 import logging
 from ldap3 import Server, Connection, ALL
 
+from typing import List
+
 
 class CEDQuery:
     """ CEDQuery class. Encapsulates the LDAP connect and queries to CED.
@@ -9,12 +11,13 @@ class CEDQuery:
     """
 
     is_connected = False
+    conn = None
 
     def __init__(self):
         """ init() function. Automatically connects to LDAP (calls the connect_ldap() function). """
         if not self.is_connected:
             self.server = os.getenv('CED_SERVER')
-            self.port=os.getenv('CED_PORT')
+            self.port=int(os.getenv('CED_PORT'))
             self.user=os.getenv('CED_USER')
             self.password=os.getenv('CED_PASSWORD')
             self.base_dn=os.getenv('CED_BASEDN')
@@ -31,7 +34,7 @@ class CEDQuery:
             print("error connecting to CED. Reason: %s" %(str(ex)))
             return None
 
-    def search_by_mail(self, email: str):
+    def search_by_mail(self, email: str) -> List[dict]:
         attributes = ['cn', 'dg', 'uid', 'ecMoniker', 'employeeType', 'recordStatus', 'sn', 'givenName', 'mail']
         try:
             self.conn.search(self.base_dn, "(mail=%s)" %(email,), attributes=attributes)
@@ -40,6 +43,7 @@ class CEDQuery:
         logging.info("search_by_mail(): %s" %(self.conn.entries,))
         for entry in self.conn.entries:
             print(entry.entry_to_json())
+        return self.conn.entries
 
 
 if __name__ == "__main__":
@@ -48,5 +52,5 @@ if __name__ == "__main__":
     # for k,v in config.items():
     #        print(k,v)
     ced = CEDQuery()
-    ced.search_by_mail("Leon-Aaron.Kaplan@ext.ec.europa.eu")
+    print(ced.search_by_mail("Leon-Aaron.Kaplan@ext.ec.europa.eu"))
     print("hello world")
