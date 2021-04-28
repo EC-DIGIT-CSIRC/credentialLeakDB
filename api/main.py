@@ -849,6 +849,11 @@ async def update_leak_data(row: LeakData,
     except Exception as ex:
         return Answer(success=False, errormsg =str(ex), data=[])
 
+"""
+@app.post("/import/csv")
+async def import_csv_auto_mode(ticket_id=str, summary=None):
+      return (deduplicated data including the newly created leak_id)
+"""
 
 # ############################################################################################################
 # CSV file importing
