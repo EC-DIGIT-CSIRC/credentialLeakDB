@@ -11,7 +11,7 @@ import os
 from pathlib import Path
 from typing import List
 
-from modules.enrichers.ced import CEDQuery
+from credentialLeakDB.modules.enrichers.ced import CEDQuery
 
 class VIPenricher:
     """Can determine if an Email Adress is a VIP. Super trivial code."""

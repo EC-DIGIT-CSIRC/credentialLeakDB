@@ -41,3 +41,5 @@ wrapt==1.12.1
 zipp==3.4.0
 coverage==5.5
 pytest-cov==2.11.1
+ldap3==2.9
+pyasn1==0.4.8
