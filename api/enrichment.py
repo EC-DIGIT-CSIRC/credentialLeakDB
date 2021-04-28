@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 from typing import List
 
+from modules.enrichers.ced import CEDQuery
 
 class VIPenricher:
     """Can determine if an Email Adress is a VIP. Super trivial code."""
@@ -58,9 +59,15 @@ class LDAPEnricher:
     """LDAP Enricher can query LDAP and offers multiple functions such as email-> """
 
     def __init__(self):
-        pass
+        self.ced = CEDQuery()
 
     def email2DG(self, email: str) -> str:
+        try:
+            results = self.ced.search_by_mail(email)
+            print(results)
+        except Exception as ex:
+            print("could not query LDAP/CED. Reason: %s" % str(ex))
+            return None
         return "DIGIT"
 
     def
