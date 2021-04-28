@@ -52,3 +52,15 @@ class ExternalEnricher:
     @staticmethod
     def is_external_email(email: str) -> bool:
         return not ExternalEnricher.is_internal_email(email)
+
+
+class LDAPEnricher:
+    """LDAP Enricher can query LDAP and offers multiple functions such as email-> """
+
+    def __init__(self):
+        pass
+
+    def email2DG(self, email: str) -> str:
+        return "DIGIT"
+
+    def
