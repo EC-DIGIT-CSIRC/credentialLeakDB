@@ -13,6 +13,7 @@ from typing import List
 
 from credentialLeakDB.modules.enrichers.ced import CEDQuery
 
+
 class VIPenricher:
     """Can determine if an Email Adress is a VIP. Super trivial code."""
 
@@ -61,11 +62,29 @@ class LDAPEnricher:
     def __init__(self):
         self.ced = CEDQuery()
 
-    def email2DG(self, email: str) -> str:
+    def email2DG(self, email: str) -> List[str]:
         try:
             results = self.ced.search_by_mail(email)
-            print(results)
+            if results and results['attributes'] and results['attributes']['dg']:
+                return results['attributes']['dg']
         except Exception as ex:
             print("could not query LDAP/CED. Reason: %s" % str(ex))
             return None
-        return "DIGIT"
+
+    def email2userId(self, email: str) -> str:
+        try:
+            results = self.ced.search_by_mail(email)
+            if results and results['attributes'] and results['attributes']['ecMoniker']:
+                return results['attributes']['ecMoniker'][0]
+        except Exception as ex:
+            print("could not query LDAP/CED. Reason: %s" % str(ex))
+            return None
+
+    def email2status(self, email: str) -> str:
+        try:
+            results = self.ced.search_by_mail(email)
+            if results and results['attributes'] and results['attributes']['recordStatus']:
+                return results['attributes']['recordStatus'][0]
+        except Exception as ex:
+            print("could not query LDAP/CED. Reason: %s" % str(ex))
+            return None
