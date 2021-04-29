@@ -1,3 +1,4 @@
+import sys
 import os
 import logging
 from ldap3 import Server, Connection, ALL
@@ -52,5 +53,5 @@ if __name__ == "__main__":
     # for k,v in config.items():
     #        print(k,v)
     ced = CEDQuery()
-    print(ced.search_by_mail("Leon-Aaron.Kaplan@ext.ec.europa.eu"))
-    print("hello world")
+    email = sys.argv[1]
+    print(ced.search_by_mail(email))
