@@ -28,6 +28,8 @@ from pydantic import EmailStr
 from api.models import Leak, LeakData, Answer, AnswerMeta
 from importer.parser import BaseParser
 from api.config import config
+from api.enrichment import LDAPEnricher, ExternalEnricher
+
 
 ###############################################################################
 # API key stuff
@@ -993,6 +995,25 @@ async def import_csv_with_leak_id(leak_id: int,
         return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(inserted_ids)), data=data)
     except Exception as ex:
         return Answer(success=False, errormsg =str(ex), data=[])
+
+
+# ############################################################################################################
+# enrichers
+
+@app.get('/enrich/email_to_dg/{email}',
+         tags=["Enricher"],
+         status_code=200,
+         response_model=Answer)
+async def enrich_dg_by_email(email: EmailStr,
+                            response: Response,
+                            api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
+    t0 = time.time()
+    l = LDAPEnricher()
+    dg = l.email2DG()
+    t1 = time.time()
+    d = round(t1 - t0, 3)
+    return Answer(meta=AnswerMeta(version=VER, duration=d, count=1), data=[dg])
+
 
 
 if __name__ == "__main__":
