@@ -11,7 +11,7 @@ import os
 from pathlib import Path
 from typing import List
 
-from credentialLeakDB.modules.enrichers.ced import CEDQuery
+from modules.enrichers.ced import CEDQuery
 
 
 class VIPenricher:
