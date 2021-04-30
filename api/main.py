@@ -833,7 +833,7 @@ async def update_leak_data(row: LeakData,
     db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        print("HTTP request: '%r'" % request )
+        print("HTTP request: '%r'" % request)
         print("SQL command:")
         # print(cur.mogrify(sql, (row.leak_id, row.email, row.password, row.password_plain, row.password_hashed, row.hash_algo,
         #                    row.ticket_id, row.email_verified, row.password_verified_ok, row.ip, row.domain, row.browser,
@@ -856,6 +856,7 @@ async def update_leak_data(row: LeakData,
 async def import_csv_auto_mode(ticket_id=str, summary=None):
       return (deduplicated data including the newly created leak_id)
 """
+
 
 # ############################################################################################################
 # CSV file importing
@@ -944,7 +945,7 @@ async def import_csv_with_leak_id(leak_id: int,
     Now, after normalization, the df is in the format:
       leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id, email_verified,
          password_verified_ok, ip, domain, browser , malware_name, infected_machine, dg
-         
+
     Example
     -------
     [5 rows x 15 columns]
@@ -963,12 +964,12 @@ async def import_csv_with_leak_id(leak_id: int,
     for r in df.reset_index().to_dict(orient='records'):
         sql = """
         INSERT into leak_data(
-          leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id, email_verified, 
+          leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id, email_verified,
           password_verified_ok, ip, domain, browser , malware_name, infected_machine, dg
           )
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ) 
-        ON CONFLICT ON CONSTRAINT constr_unique_leak_data_leak_id_email_password_domain 
-        DO UPDATE SET  count_seen = leak_data.count_seen + 1 
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s )
+        ON CONFLICT ON CONSTRAINT constr_unique_leak_data_leak_id_email_password_domain
+        DO UPDATE SET  count_seen = leak_data.count_seen + 1
         RETURNING id
         """
         try:
@@ -1005,15 +1006,14 @@ async def import_csv_with_leak_id(leak_id: int,
          status_code=200,
          response_model=Answer)
 async def enrich_dg_by_email(email: EmailStr,
-                            response: Response,
-                            api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
+                             response: Response,
+                             api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
     t0 = time.time()
-    l = LDAPEnricher()
-    dg = l.email2DG()
+    le = LDAPEnricher()
+    dg = le.email2DG(email)
     t1 = time.time()
     d = round(t1 - t0, 3)
     return Answer(meta=AnswerMeta(version=VER, duration=d, count=1), data=[dg])
-
 
 
 if __name__ == "__main__":
