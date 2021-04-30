@@ -22,7 +22,12 @@ class CEDQuery:
             self.user=os.getenv('CED_USER')
             self.password=os.getenv('CED_PASSWORD')
             self.base_dn=os.getenv('CED_BASEDN')
-            self.is_connected = self.connect_ldap(self.server, self.port, self.user, self.password)
+            try:
+                self.connect_ldap(self.server, self.port, self.user, self.password)
+                self.is_connected = True
+            except Exception as ex:
+                print("could ot connect to LDAP. Reason: %s" % str(ex))
+                self.is_connected = False
 
     def connect_ldap(self, server="ldap.example.com", port=389, user=None, password=None):
         """ Connects to the CED LDAP server. Returns None on failure. """
