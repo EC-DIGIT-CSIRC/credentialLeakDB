@@ -3,6 +3,8 @@ import os
 import logging
 from ldap3 import Server, Connection, ALL
 
+import json
+
 from typing import List
 
 
@@ -47,9 +49,10 @@ class CEDQuery:
         except Exception as ex:
             print("could not search LDAP. error: %s" %str(ex))
         logging.info("search_by_mail(): %s" %(self.conn.entries,))
+        results = [] 
         for entry in self.conn.entries:
-            print(entry.entry_to_json())
-        return self.conn.entries
+            results.append(  json.loads(entry.entry_to_json()))
+        return results          # yeah, a list comprehension would be more pythonic
 
 
 if __name__ == "__main__":

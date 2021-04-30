@@ -65,8 +65,8 @@ class LDAPEnricher:
     def email2DG(self, email: str) -> List[str]:
         try:
             results = self.ced.search_by_mail(email)
-            if results and results['attributes'] and results['attributes']['dg']:
-                return results['attributes']['dg']
+            if results and results[0]['attributes'] and results[0]['attributes']['dg'][0]:
+                return results[0]['attributes']['dg'][0]
         except Exception as ex:
             print("could not query LDAP/CED. Reason: %s" % str(ex))
             return None
@@ -74,8 +74,8 @@ class LDAPEnricher:
     def email2userId(self, email: str) -> str:
         try:
             results = self.ced.search_by_mail(email)
-            if results and results['attributes'] and results['attributes']['ecMoniker']:
-                return results['attributes']['ecMoniker'][0]
+            if results and results[0]['attributes'] and results[0]['attributes']['ecMoniker'][0]:
+                return results[0]['attributes']['ecMoniker'][0]
         except Exception as ex:
             print("could not query LDAP/CED. Reason: %s" % str(ex))
             return None
@@ -83,8 +83,8 @@ class LDAPEnricher:
     def email2status(self, email: str) -> str:
         try:
             results = self.ced.search_by_mail(email)
-            if results and results['attributes'] and results['attributes']['recordStatus']:
-                return results['attributes']['recordStatus'][0]
+            if results and results[0]['attributes'] and results[0]['attributes']['recordStatus'][0]:
+                return results[0]['attributes']['recordStatus'][0]
         except Exception as ex:
             print("could not query LDAP/CED. Reason: %s" % str(ex))
             return None
