@@ -1015,11 +1015,11 @@ async def enrich_dg_by_email(email: EmailStr,
     d = round(t1 - t0, 3)
     if not retval:
         response.status_code=404
-        return Answer(success=False, errormsg="not found", meta=AnswerMeta(version=VER, 
+        return Answer(success=False, errormsg="not found", meta=AnswerMeta(version=VER,
             duration=d, count=0), data=[])
     else:
         response.status_code=200
-        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, 
+        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER,
             duration=d, count=1), data=[{"dg": retval}])
 
 
@@ -1027,7 +1027,7 @@ async def enrich_dg_by_email(email: EmailStr,
          tags=["Enricher"],
          status_code=200,
          response_model=Answer)
-async def enrich_dg_by_email(email: EmailStr,
+async def enrich_userid_by_email(email: EmailStr,
                              response: Response,
                              api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
     t0 = time.time()
@@ -1037,11 +1037,11 @@ async def enrich_dg_by_email(email: EmailStr,
     d = round(t1 - t0, 3)
     if not retval:
         response.status_code=404
-        return Answer(success=False, errormsg="not found", meta=AnswerMeta(version=VER, 
+        return Answer(success=False, errormsg="not found", meta=AnswerMeta(version=VER,
             duration=d, count=0), data=[])
     else:
         response.status_code=200
-        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, 
+        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER,
             duration=d, count=1), data=[{"ecMoniker": retval}])
 
 
