@@ -188,6 +188,15 @@ async def ping():
     return {"message": "pong"}
 
 
+@app.get("/timeout_test",
+         name="A simple timeout test",
+         summary="Call this and the GET request will sleep for 5 seconds",
+         tags=["Tests"])
+async def timeout_test():
+    """A simple timeout/ liveliness test endpoint. No API Key required."""
+    time.sleep(5)
+    return {"message": "OK"}
+
 @app.get("/", tags=["Tests"])
 async def root(api_key: APIKey = Depends(validate_api_key_header)):
     """A simple hello world endpoint. This one requires an API key."""
