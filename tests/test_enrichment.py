@@ -14,7 +14,7 @@ class TestVIPenrichment(unittest.TestCase):
 
     def test_load_vips_invalid_path(self):
         path = 'tests/fixtures/vips.txt-doesnotexist'
-        te = VIPenricher(path)      # will pass because there we catch the exception
+        te = VIPenricher(path)  # will pass because there we catch the exception
         self.assertRaises(Exception, te.load_vips, path)
 
 
@@ -31,3 +31,11 @@ class TestIsExternalEmail(unittest.TestCase):
         te = ExternalEnricher()
         assert te.is_external_email(email)
 
+
+class TestAbuseContactLookup(unittest.TestCase):
+    def test_lookup(self):
+        email = "aaron@example.com"
+        te = AbuseContactLookup()
+        assert email == te.lookup(email)
+        email = "aaron@example.ec.europa.eu"
+        assert "ec-digit-csirc@ec.europa.eu" == te.lookup(email)
