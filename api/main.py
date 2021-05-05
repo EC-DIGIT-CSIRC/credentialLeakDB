@@ -866,6 +866,13 @@ async def import_csv_auto_mode(ticket_id=str, summary=None):
       return (deduplicated data including the newly created leak_id)
 """
 
+def enrich_df(df: pd.DataFrame) -> pd.DataFrame:
+    enricher = LDAPEnricher()
+    for index in df.index:
+        key,email = df.loc[index, 'email']
+        dg = enricher.email2DG(email)
+        df.loc[index, 'dg'] = dg
+    return df
 
 # ############################################################################################################
 # CSV file importing
@@ -874,25 +881,129 @@ async def import_csv_auto_mode(ticket_id=str, summary=None):
           status_code=200,
           response_model=Answer)
 async def import_csv_spycloud(parent_ticket_id: int,
-                              response: Response,
-                              summary: str = None,
-                              _file: UploadFile = File(...),
-                              api_key: APIKey = Depends(validate_api_key_header)
-                              ) -> Answer:
+                                  response: Response,
+                                  summary: str = None,
+                                  _file: UploadFile = File(...),
+                                  api_key: APIKey = Depends(validate_api_key_header)
+                                  ) -> Answer:
     """
-    Import a spycloud CSV file into the DB. Note that you do not need to specify a leak_id parameter here.
-    The API will automatically create a leak object in the DB for you and link it.
+        Import a spycloud CSV file into the DB. Note that you do not need to specify a leak_id parameter here.
+        The API will automatically create a leak object in the DB for you and link it.
 
     # Parameters
-      * parent_ticket_id: a ticket ID which allows us to link the leak object to the ticket
-      * _file: a file which must be uploaded via HTML forms/multipart.
+          * parent_ticket_id: a ticket ID which allows us to link the leak object to the ticket
+          * _file: a file which must be uploaded via HTML forms/multipart.
 
     # Returns
-      * a JSON Answer object where the data: field is the **deduplicated** CSV file (i.e. lines which were already
-        imported as part of that leak (same username, same password, same domain) will not be returned.
-        In other words, data: [] contains the rows from the CSV file which did not yet exist in the DB.
+          * a JSON Answer object where the data: field is the **deduplicated** CSV file (i.e. lines which were already
+            imported as part of that leak (same username, same password, same domain) will not be returned.
+            In other words, data: [] contains the rows from the CSV file which did not yet exist in the DB.
     """
-    pass
+
+
+    t0 = time.time()
+
+    if not parent_ticket_id:
+        return Answer(success=False, errormsg="Please specify a parent_ticket_id as a GET-style parameter in the URL. "
+                                              "This is the parameter, needed to link the sub-issues against", data=[])
+    if not summary:
+        return Answer(success=False, errormsg="Please specify a summary for the Leak object which needs to be created. ", data=[])
+
+    # first check if the leak_id for that summary already exists and if it's already linked to the parent_ticket_id.
+    sql = """SELECT id from leak where summary = %s and ticket_id=%s"""
+    db = get_db()
+    try:
+        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(sql, (summary, parent_ticket_id))
+        rows = cur.fetchall()
+        nr_results = len(rows)
+        if nr_results >= 1:
+            # take the first one
+            leak_id = rows[0]['id']
+        else:
+            # nothing found, create one
+            source_name = "SpyCloud"
+            leak = Leak(ticket_id=parent_ticket_id, summary=summary, source_name=source_name)
+            await answer = new_leak(leak, response=response, api_key=api_key)
+            if answer.success:
+                leak_id = int(answer.data[0]['id'])
+            else:
+                return Answer(success=False, errormsg="could not create leak object", data=[])
+    except Exception as ex:
+        return Answer(success=False, errormsg=str(ex), data=[])
+
+    # okay, we found the leak, let's insert the CSV
+    file_on_disk = await store_file(_file.filename, _file.file)
+    await check_file(file_on_disk)  # XXX FIXME. Additional checks on the dumped file still missing
+
+    p = SpycloudParser()
+    df = pd.DataFrame()
+    try:
+        df = p.parse_file(Path(file_on_disk), leak_id=leak_id)
+    except Exception as ex:
+        return Answer(success=False, errormsg=str(ex), data=[])
+
+    df = p.normalize_data(df, leak_id=leak_id)
+    """
+    Now, after normalization, the df is in the format:
+      leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id, email_verified,
+         password_verified_ok, ip, domain, browser , malware_name, infected_machine, dg
+    
+    Example
+    -------
+    [5 rows x 15 columns]
+       leak_id                email  ... infected_machine     dg
+    0        1    aaron@example.com  ...     local_laptop  DIGIT
+    1        1    sarah@example.com  ...    sarahs_laptop  DIGIT
+    2        1  rousben@example.com  ...      WORKSTATION  DIGIT
+    3        1    david@example.com  ...      Macbook Pro  DIGIT
+    4        1    lauri@example.com  ...  Raspberry PI 3+  DIGIT
+    5        1  natasha@example.com  ...  Raspberry PI 3+  DIGIT
+    
+    """
+
+    df = enrich_df(df)
+
+    i = 0
+    inserted_ids = []
+    for r in df.reset_index().to_dict(orient='records'):
+        sql = """
+            INSERT into leak_data(
+              leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id, email_verified,
+              password_verified_ok, ip, domain, browser , malware_name, infected_machine, dg
+              )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s )
+            ON CONFLICT ON CONSTRAINT constr_unique_leak_data_leak_id_email_password_domain
+            DO UPDATE SET  count_seen = leak_data.count_seen + 1
+            RETURNING id
+            """
+        try:
+            cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            cur.execute(sql, (r['leak_id'], r['email'], r['password'], r['password_plain'], r['password_hashed'],
+                              r['hash_algo'], r['ticket_id'], r['email_verified'], r['password_verified_ok'], r['ip'],
+                              r['domain'], r['browser'], r['malware_name'], r['infected_machine'], r['dg']))
+            leak_data_id = int(cur.fetchone()['id'])
+            inserted_ids.append(leak_data_id)
+            i += 1
+        except Exception as ex:
+            return Answer(success=False, errormsg=str(ex), data=[])
+    t1 = time.time()
+    d = round(t1 - t0, 3)
+    num_deduped = len(inserted_ids)
+    logging.info("inserted %d rows, %d duplicates, %d new rows" % (i, i - num_deduped, num_deduped))
+
+    # now get the data of all the IDs / dedup
+    try:
+        sql = """SELECT * from leak_data where id in %s"""
+        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(sql, (tuple(inserted_ids),))
+        data = cur.fetchall()
+        data = enrich_df(data)
+        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(inserted_ids)),
+                      data=data)
+    except Exception as ex:
+        return Answer(success=False, errormsg=str(ex), data=[])
+
 
 
 @app.post("/import/csv/by_leak/{leak_id}",
