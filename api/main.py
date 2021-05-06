@@ -27,6 +27,7 @@ from pydantic import EmailStr
 # packages from this code repo
 from api.models import Leak, LeakData, Answer, AnswerMeta
 from importer.parser import BaseParser
+from importer.spycloud import SpycloudParser
 from api.config import config
 from api.enrichment import LDAPEnricher, ExternalEnricher
 
@@ -914,7 +915,7 @@ async def import_csv_spycloud(parent_ticket_id: int,
     db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute(sql, (summary, parent_ticket_id))
+        cur.execute(sql, (summary, str(parent_ticket_id)))
         rows = cur.fetchall()
         nr_results = len(rows)
         if nr_results >= 1:
@@ -924,7 +925,7 @@ async def import_csv_spycloud(parent_ticket_id: int,
             # nothing found, create one
             source_name = "SpyCloud"
             leak = Leak(ticket_id=parent_ticket_id, summary=summary, source_name=source_name)
-            await answer = new_leak(leak, response=response, api_key=api_key)
+            answer = await new_leak(leak, response=response, api_key=api_key)
             if answer.success:
                 leak_id = int(answer.data[0]['id'])
             else:
