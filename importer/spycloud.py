@@ -13,7 +13,7 @@ from .parser import BaseParser
 
 class SpycloudParser(BaseParser):
     """Parse Spycloud CSVs"""
-    def parse_file(self, fname: Path, csv_dialect='excel') -> pd.DataFrame:
+    def parse_file(self, fname: Path, csv_dialect='excel', leak_id=None) -> pd.DataFrame:
         """Parse the Spycloud CSV files, which are in the form:
 
             breach_title,spycloud_publish_date,breach_date,email,domain,username,password,salt,target_domain,target_url,password_plaintext,sighting,severity,status,password_type,cc_number,infected_path,infected_machine_id,email_domain,cc_expiration,cc_last_four,email_username,user_browser,infected_time,ip_addresses
@@ -32,7 +32,7 @@ class SpycloudParser(BaseParser):
             logging.error("could not pandas.read_csv(%s). Reason: %s. Skipping file." %(fname, str(ex)))
             return None
 
-    def normalize_data(self, df: pd.DataFrame) -> pd.DataFrame:
+    def normalize_data(self, df: pd.DataFrame, leak_id=None) -> pd.DataFrame:
         """Bring the pandas DataFrame into an internal data format."""
 
         """ Spycloud headers:
@@ -81,4 +81,5 @@ class SpycloudParser(BaseParser):
                         print(f"mapping {k} to {map_to}!")
                         retrow[map_to] = v
                 retdf.append(retrow)
+        retdf[:,'leak_id'] = leak_id
         return retdf
