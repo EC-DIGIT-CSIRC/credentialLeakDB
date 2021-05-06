@@ -873,6 +873,7 @@ def enrich_df(df: pd.DataFrame) -> pd.DataFrame:
         key,email = df.loc[index, 'email']
         dg = enricher.email2DG(email)
         df.loc[index, 'dg'] = dg
+    print("df: %s" % df)
     return df
 
 # ############################################################################################################
@@ -968,6 +969,7 @@ async def import_csv_spycloud(parent_ticket_id: int,
     i = 0
     inserted_ids = []
     for r in df.reset_index().to_dict(orient='records'):
+        print("r: %r" % r)
         sql = """
             INSERT into leak_data(
               leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id, email_verified,
@@ -980,9 +982,8 @@ async def import_csv_spycloud(parent_ticket_id: int,
             """
         try:
             cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-            cur.execute(sql, (r['leak_id'], r['email'], r['password'], r['password_plain'], r['password_hashed'],
-                              r['hash_algo'], r['ticket_id'], r['email_verified'], r['password_verified_ok'], r['ip'],
-                              r['domain'], r['browser'], r['malware_name'], r['infected_machine'], r['dg']))
+            print(cur.mogrify(sql, (leak_id, r['email'], r['password'], r['password_plain'], r['password_hashed'], r['hash_algo'], r['ticket_id'], r['email_verified'], r['password_verified_ok'], r['ip'], r['domain'], r['browser'], r['malware_name'], r['infected_machine'], r['dg'])))
+            cur.execute(sql, (leak_id, r['email'], r['password'], r['password_plain'], r['password_hashed'], r['hash_algo'], r['ticket_id'], r['email_verified'], r['password_verified_ok'], r['ip'], r['domain'], r['browser'], r['malware_name'], r['infected_machine'], r['dg']))
             leak_data_id = int(cur.fetchone()['id'])
             inserted_ids.append(leak_data_id)
             i += 1

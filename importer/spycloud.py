@@ -24,8 +24,9 @@ class SpycloudParser(BaseParser):
         """
         logging.debug("Parsing SPYCLOUD file %s...", fname)
         try:
-            df = pd.read_csv(fname, dialect=csv_dialect, header=1, error_bad_lines=False, warn_bad_lines=True)
-            logging.debug(df.head())
+            # df = pd.read_csv(fname, dialect=csv_dialect, header=1, error_bad_lines=False, warn_bad_lines=True)
+            df = pd.read_csv(fname, error_bad_lines=False, warn_bad_lines=True)
+            print(df)
             return df
 
         except Exception as ex:
@@ -45,7 +46,7 @@ class SpycloudParser(BaseParser):
             "spycloud_publish_date": None,
             "breach_date": None,
             "email": "email",
-            "domain": "target_domain",
+            "domain": "domain",
             "username": None,
             "password": "password",
             "salt": None,
@@ -72,14 +73,19 @@ class SpycloudParser(BaseParser):
         retdf = pd.DataFrame()
         for i,r in df.iterrows():       # go over all df rows. Returns index, row
             # print(f"{i}:{r}")
+            retrow = dict()             # build up what we want to return
             for k,v in r.items():       # go over all key-val items in the row
-                print(f"{k}:{v}", file=sys.stderr)
-                retrow = dict()         # build up what we want to return
+                # print(f"{k}:{v}", file=sys.stderr)
                 if k in mapping_tbl.keys():
                     map_to = mapping_tbl[k]
                     if map_to:
                         print(f"mapping {k} to {map_to}!")
                         retrow[map_to] = v
-                retdf.append(retrow)
-        retdf[:,'leak_id'] = leak_id
+                    else:
+                        # don't map it
+                        pass
+            print("retrow = %r" % retrow)
+            retdf = retdf.append(pd.Series(retrow), ignore_index=True)
+        # retdf[:,'leak_id'] = leak_id
+        print("retdf: %s" % retdf)
         return retdf
