@@ -90,6 +90,12 @@ class LDAPEnricher:
             print("could not query LDAP/CED. Reason: %s" % str(ex))
             return None
 
+    def exists(self, email: str) -> bool:
+        if "A" == self.email2status(email).upper():
+            return True
+        else:
+            return False
+
 
 class AbuseContactLookup:
     """A simple abuse contact lookup class."""
@@ -110,9 +116,9 @@ class AbuseContactLookup:
         """
 
         mapping_table = collections.OrderedDict({
-            re.compile("example\.ec\.europa\.eu", re.X): "ec-digit-csirc@ec.europa.eu",       # example
-            re.compile(".*\.ec\.europa\.eu", re.X): "DIRECT",
-            re.compile(".*", re.X): "DIRECT"          # the default catch-all rule. Don't delete!
+            re.compile(r"example\.ec\.europa\.eu", re.X): "ec-digit-csirc@ec.europa.eu",       # example
+            re.compile(r".*\.ec\.europa\.eu", re.X): "DIRECT",
+            re.compile(r".*", re.X): "DIRECT"          # the default catch-all rule. Don't delete!
         })
 
         domain = email.split('@')[-1]
