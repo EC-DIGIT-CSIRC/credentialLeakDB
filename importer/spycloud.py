@@ -70,7 +70,7 @@ class SpycloudParser(BaseParser):
 
         # This complexity sucks! need to get rid of it. No, itertools won't make it more understandable.
         retdf = pd.DataFrame()
-        for i,r in df.iterrows()        # go over all df rows. Returns index, row
+        for i,r in df.iterrows():       # go over all df rows. Returns index, row
             # print(f"{i}:{r}")
             for k,v in r.items():       # go over all key-val items in the row
                 print(f"{k}:{v}", file=sys.stderr)
