@@ -97,6 +97,7 @@ CREATE TABLE public.leak_data (
     password_verified_ok boolean DEFAULT false,
     ip inet,
     domain text,
+    target_domain text,
     browser text,
     malware_name text,
     infected_machine text,
