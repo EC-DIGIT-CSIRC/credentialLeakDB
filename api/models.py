@@ -33,6 +33,7 @@ class LeakData(BaseModel):
     password_verified_ok: Optional[bool]
     ip: Optional[str]
     domain: Optional[str]
+    target_domain: Optional[str]        # new
     browser: Optional[str]
     malware_name: Optional[str]
     infected_machine: Optional[str]

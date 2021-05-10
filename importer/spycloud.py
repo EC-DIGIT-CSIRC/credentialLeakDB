@@ -78,8 +78,10 @@ class SpycloudParser(BaseParser):
                 # print(f"{k}:{v}", file=sys.stderr)
                 if k in mapping_tbl.keys():
                     map_to = mapping_tbl[k]
+                    if k == 'ip_addresses' and v == '-':
+                        v = None
                     if map_to:
-                        print(f"mapping {k} to {map_to}!")
+                        # print(f"mapping {k} to {map_to}!")
                         retrow[map_to] = v
                     else:
                         # don't map it
