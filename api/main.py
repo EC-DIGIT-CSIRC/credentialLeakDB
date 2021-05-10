@@ -9,6 +9,7 @@ License: see LICENSE
 # system / base packages
 import logging
 import os
+import sys
 import shutil
 import time
 from pathlib import Path
@@ -198,6 +199,7 @@ async def timeout_test():
     time.sleep(5)
     return {"message": "OK"}
 
+
 @app.get("/", tags=["Tests"])
 async def root(api_key: APIKey = Depends(validate_api_key_header)):
     """A simple hello world endpoint. This one requires an API key."""
@@ -237,7 +239,7 @@ async def get_user_by_email(email: EmailStr,
         d = round(t1 - t0, 3)
         return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(success=False, errormsg =str(ex), data=[])
+        return Answer(success=False, errormsg=str(ex), data=[])
 
 
 @app.get('/user_and_password/{email}/{password}',
@@ -280,7 +282,7 @@ async def get_user_by_email_and_password(email: EmailStr,
         d = round(t1 - t0, 3)
         return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(success=False, errormsg =str(ex), data=[])
+        return Answer(success=False, errormsg=str(ex), data=[])
 
 
 @app.get('/exists/by_email/{email}',
@@ -315,7 +317,7 @@ async def check_user_by_email(email: EmailStr,
         d = round(t1 - t0, 3)
         return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(success=False, errormsg =str(ex), data=[])
+        return Answer(success=False, errormsg=str(ex), data=[])
 
 
 @app.get('/exists/by_password/{password}',
@@ -353,7 +355,7 @@ async def check_user_by_password(password: str,
         d = round(t1 - t0, 3)
         return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(success=False, errormsg =str(ex), data=[])
+        return Answer(success=False, errormsg=str(ex), data=[])
 
 
 @app.get('/exists/by_domain/{domain}',
@@ -384,7 +386,7 @@ async def check_by_domain(domain: str,
         d = round(t1 - t0, 3)
         return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(success=False, errormsg =str(ex), data=[])
+        return Answer(success=False, errormsg=str(ex), data=[])
 
 
 # ##############################################################################
@@ -416,7 +418,7 @@ async def get_reporters(response: Response,
         d = round(t1 - t0, 3)
         return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(success=False, errormsg =str(ex), data=[])
+        return Answer(success=False, errormsg=str(ex), data=[])
 
 
 @app.get('/source_name',
@@ -446,7 +448,7 @@ async def get_sources(response: Response,
         d = round(t1 - t0, 3)
         return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(success=False, errormsg =str(ex), data=[])
+        return Answer(success=False, errormsg=str(ex), data=[])
 
 
 # ##############################################################################
@@ -479,13 +481,13 @@ async def get_all_leaks(response: Response,
         d = round(t1 - t0, 3)
         return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(success=False, errormsg =str(ex), data=[])
+        return Answer(success=False, errormsg=str(ex), data=[])
 
 
 @app.get("/leak/by_ticket_id/{ticket_id}",
-         tags = ["Leak"],
+         tags=["Leak"],
          status_code=200,
-         response_model = Answer)
+         response_model=Answer)
 async def get_leak_by_ticket_id(ticket_id: str,
                                 response: Response,
                                 api_key: APIKey = Depends(validate_api_key_header)
@@ -504,7 +506,7 @@ async def get_leak_by_ticket_id(ticket_id: str,
         d = round(t1 - t0, 3)
         return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(success=False, errormsg =str(ex), data=[])
+        return Answer(success=False, errormsg=str(ex), data=[])
 
 
 @app.get("/leak/by_summary/{summary}",
@@ -529,7 +531,7 @@ async def get_leak_by_summary(summary: str,
         d = round(t1 - t0, 3)
         return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(success=False, errormsg =str(ex), data=[])
+        return Answer(success=False, errormsg=str(ex), data=[])
 
 
 @app.get("/leak/by_reporter/{reporter}",
@@ -554,7 +556,7 @@ async def get_leak_by_reporter(reporter: str,
         d = round(t1 - t0, 3)
         return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(success=False, errormsg =str(ex), data=[])
+        return Answer(success=False, errormsg=str(ex), data=[])
 
 
 @app.get("/leak/by_source/{source_name}",
@@ -587,7 +589,7 @@ async def get_leak_by_source(source_name: str,
         d = round(t1 - t0, 3)
         return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(success=False, errormsg =str(ex), data=[])
+        return Answer(success=False, errormsg=str(ex), data=[])
 
 
 @app.get("/leak/{_id}", tags=["Leak"],
@@ -612,7 +614,7 @@ async def get_leak_by_id(_id: int,
         d = round(t1 - t0, 3)
         return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(success=False, errormsg =str(ex), data=[])
+        return Answer(success=False, errormsg=str(ex), data=[])
 
 
 @app.post("/leak/",
@@ -651,7 +653,7 @@ async def new_leak(leak: Leak,
         d = round(t1 - t0, 3)
         return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(success=False, errormsg =str(ex), data=[])
+        return Answer(success=False, errormsg=str(ex), data=[])
 
 
 @app.put("/leak/",
@@ -679,7 +681,7 @@ async def update_leak(leak: Leak,
     t0 = time.time()
     db = get_db()
     if not leak.id:
-        return Answer(errormsg = "id %s not given. Please specify a leak.id you want to UPDATE", data=[])
+        return Answer(errormsg="id %s not given. Please specify a leak.id you want to UPDATE", data=[])
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (leak.summary, leak.ticket_id, leak.reporter_name,
@@ -691,7 +693,7 @@ async def update_leak(leak: Leak,
         d = round(t1 - t0, 3)
         return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(success=False, errormsg =str(ex), data=[])
+        return Answer(success=False, errormsg=str(ex), data=[])
 
 
 # ############################################################################################################
@@ -727,7 +729,7 @@ async def get_leak_data_by_id(leak_data_id: int,
         d = round(t1 - t0, 3)
         return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(success=False, errormsg =str(ex), data=[])
+        return Answer(success=False, errormsg=str(ex), data=[])
 
 
 @app.get("/leak_data/by_ticket_id/{ticket_id}",
@@ -758,7 +760,7 @@ async def get_leak_data_by_ticket_id(ticket_id: str,
         d = round(t1 - t0, 3)
         return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(success=False, errormsg =str(ex), data=[])
+        return Answer(success=False, errormsg=str(ex), data=[])
 
 
 @app.post("/leak_data/",
@@ -799,7 +801,7 @@ async def new_leak_data(row: LeakData,
         d = round(t1 - t0, 3)
         return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(success=False, errormsg =str(ex), data=[])
+        return Answer(success=False, errormsg=str(ex), data=[])
 
 
 @app.put("/leak_data/",
@@ -859,7 +861,7 @@ async def update_leak_data(row: LeakData,
         d = round(t1 - t0, 3)
         return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
     except Exception as ex:
-        return Answer(success=False, errormsg =str(ex), data=[])
+        return Answer(success=False, errormsg=str(ex), data=[])
 
 """
 @app.post("/import/csv")
@@ -879,12 +881,12 @@ def enrich_df(df: pd.DataFrame) -> pd.DataFrame:
     for index in df.index:
         email = df.loc[index]['email']
         if is_internal_email(email):
-            df.loc[index,'external_user'] = False
-            dg = enricher.email2DG(email)
+            df.loc[index, 'external_user'] = False
+            dg = enricher.email_to_DG(email)
             if not dg:
                 dg = "UNKNOWN"
         else:
-            df.loc[index,'external_user'] = True
+            df.loc[index, 'external_user'] = True
             dg = "UNKNOWN"          # XXX FIXME . Should never happen.
         df.loc[index, 'dg'] = dg
     print("df: %s" % df)
@@ -910,11 +912,10 @@ def save_pickle(df: pd.DataFrame, outfile: str):
           status_code=200,
           response_model=Answer)
 async def import_csv_spycloud(parent_ticket_id: int,
-                                  response: Response,
-                                  summary: str = None,
-                                  _file: UploadFile = File(...),
-                                  api_key: APIKey = Depends(validate_api_key_header)
-                                  ) -> Answer:
+                              response: Response,
+                              summary: str = None,
+                              _file: UploadFile = File(...),
+                              api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
     """
     Import a spycloud CSV file into the DB. Note that you do not need to specify a leak_id parameter here.
     The API will automatically create a leak object in the DB for you and link it.
@@ -928,7 +929,6 @@ async def import_csv_spycloud(parent_ticket_id: int,
        imported as part of that leak (same username, same password, same domain) will not be returned.
        In other words, data: [] contains the rows from the CSV file which did not yet exist in the DB.
     """
-
 
     t0 = time.time()
 
@@ -980,7 +980,7 @@ async def import_csv_spycloud(parent_ticket_id: int,
     Now, after normalization, the df is in the format:
       leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id, email_verified,
          password_verified_ok, ip, domain, browser , malware_name, infected_machine, dg
-    
+
     Example
     -------
     [5 rows x 15 columns]
@@ -991,7 +991,7 @@ async def import_csv_spycloud(parent_ticket_id: int,
     3        1    david@example.com  ...      Macbook Pro  DIGIT
     4        1    lauri@example.com  ...  Raspberry PI 3+  DIGIT
     5        1  natasha@example.com  ...  Raspberry PI 3+  DIGIT
-    
+
     """
 
     print(df2.info())
@@ -1051,7 +1051,6 @@ async def import_csv_spycloud(parent_ticket_id: int,
         return Answer(success=False, errormsg=str(ex), data=[])
 
 
-
 @app.post("/import/csv/by_leak/{leak_id}",
           tags=["CSV import"],
           status_code=200,
@@ -1079,7 +1078,7 @@ async def import_csv_with_leak_id(leak_id: int,
     t0 = time.time()
 
     if not leak_id:
-        return Answer(errormsg = "Please specify a leak_id GET-style parameter in the URL", data=[])
+        return Answer(errormsg="Please specify a leak_id GET-style parameter in the URL", data=[])
 
     # first check if the leak_id exists
     sql = """SELECT count(*) from leak where id = %s"""
@@ -1091,9 +1090,9 @@ async def import_csv_with_leak_id(leak_id: int,
         nr_results = int(rows['count'])
         if nr_results != 1:
             response.status_code = 404
-            return Answer(success=False, errormsg = "Leak ID %s not found" % leak_id, data=[])
+            return Answer(success=False, errormsg="Leak ID %s not found" % leak_id, data=[])
     except Exception as ex:
-        return Answer(success=False, errormsg =str(ex), data=[])
+        return Answer(success=False, errormsg=str(ex), data=[])
 
     # okay, we found the leak, let's insert the CSV
     file_on_disk = await store_file(_file.filename, _file.file)
@@ -1104,7 +1103,7 @@ async def import_csv_with_leak_id(leak_id: int,
     try:
         df = p.parse_file(Path(file_on_disk), leak_id=leak_id)
     except Exception as ex:
-        return Answer(success=False, errormsg =str(ex), data=[])
+        return Answer(success=False, errormsg=str(ex), data=[])
 
     df = p.normalize_data(df, leak_id=leak_id)
     """
@@ -1147,7 +1146,7 @@ async def import_csv_with_leak_id(leak_id: int,
             inserted_ids.append(leak_data_id)
             i += 1
         except Exception as ex:
-            return Answer(success=False, errormsg =str(ex), data=[])
+            return Answer(success=False, errormsg=str(ex), data=[])
     t1 = time.time()
     d = round(t1 - t0, 3)
     num_deduped = len(inserted_ids)
@@ -1161,7 +1160,7 @@ async def import_csv_with_leak_id(leak_id: int,
         data = cur.fetchall()
         return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(inserted_ids)), data=data)
     except Exception as ex:
-        return Answer(success=False, errormsg =str(ex), data=[])
+        return Answer(success=False, errormsg=str(ex), data=[])
 
 
 # ############################################################################################################
@@ -1176,26 +1175,24 @@ async def enrich_dg_by_email(email: EmailStr,
                              api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
     t0 = time.time()
     le = LDAPEnricher()
-    retval = le.email2DG(email)
+    retval = le.email_to_DG(email)
     t1 = time.time()
     d = round(t1 - t0, 3)
     if not retval:
         response.status_code=404
-        return Answer(success=False, errormsg="not found", meta=AnswerMeta(version=VER,
-            duration=d, count=0), data=[])
+        return Answer(success=False, errormsg="not found", meta=AnswerMeta(version=VER, duration=d, count=0), data=[])
     else:
         response.status_code=200
-        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER,
-            duration=d, count=1), data=[{"dg": retval}])
+        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=1),
+                      data=[{"dg": retval}])
 
 
 @app.get('/enrich/email_to_userid/{email}',
          tags=["Enricher"],
          status_code=200,
          response_model=Answer)
-async def enrich_userid_by_email(email: EmailStr,
-                             response: Response,
-                             api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
+async def enrich_userid_by_email(email: EmailStr, response: Response,
+                                 api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
     t0 = time.time()
     le = LDAPEnricher()
     retval = le.email2userId(email)
@@ -1203,12 +1200,11 @@ async def enrich_userid_by_email(email: EmailStr,
     d = round(t1 - t0, 3)
     if not retval:
         response.status_code=404
-        return Answer(success=False, errormsg="not found", meta=AnswerMeta(version=VER,
-            duration=d, count=0), data=[])
+        return Answer(success=False, errormsg="not found", meta=AnswerMeta(version=VER, duration=d, count=0), data=[])
     else:
         response.status_code=200
-        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER,
-            duration=d, count=1), data=[{"ecMoniker": retval}])
+        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=1),
+                      data=[{"ecMoniker": retval}])
 
 
 if __name__ == "__main__":
