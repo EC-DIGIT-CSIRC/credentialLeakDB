@@ -27,11 +27,13 @@ class VIPenricher:
             print("Could not load VIP list. Using an empty list and continuing. Exception: %s" % str(ex), file=sys.stderr)
 
     def load_vips(self, path: Path()) -> List[str]:
+        """Load the external refernece data set of the known VIPs."""
         with open(path, 'r') as f:
             self.vips = [x.strip().upper() for x in f.readlines()]
             return self.vips
 
     def is_vip(self, email: str) -> bool:
+        """Check if an email address is a VIP."""
         return email.upper() in self.vips
 
     def __str__(self):
@@ -63,7 +65,8 @@ class LDAPEnricher:
     def __init__(self):
         self.ced = CEDQuery()
 
-    def email2DG(self, email: str) -> List[str]:
+    def email_to_DG(self, email: str) -> str:
+        """Return the DG of an email. Note that there might be multiple DGs, we just return the first one here."""
         try:
             results = self.ced.search_by_mail(email)
             if results and results[0]['attributes'] and results[0]['attributes']['dg'][0]:
@@ -73,6 +76,7 @@ class LDAPEnricher:
             return None
 
     def email2userId(self, email: str) -> str:
+        """Return the userID of an email. """
         try:
             results = self.ced.search_by_mail(email)
             if results and results[0]['attributes'] and results[0]['attributes']['ecMoniker'][0]:
@@ -82,6 +86,7 @@ class LDAPEnricher:
             return None
 
     def email2status(self, email: str) -> str:
+        """Return the active status."""
         try:
             results = self.ced.search_by_mail(email)
             if results and results[0]['attributes'] and results[0]['attributes']['recordStatus'][0]:
@@ -91,6 +96,7 @@ class LDAPEnricher:
             return None
 
     def exists(self, email: str) -> bool:
+        """Check if a user exists."""
         if "A" == self.email2status(email).upper():
             return True
         else:
@@ -111,7 +117,7 @@ class AbuseContactLookup:
         """
 
         """The following mapping table is of the form:
-           regular expression   --> email address or "DIRECT".   If DIRECT is returned, send directly to the email addr. 
+           regular expression   --> email address or "DIRECT".   If DIRECT is returned, send directly to the email addr.
            The matching should proceed top down
         """
 
@@ -123,13 +129,10 @@ class AbuseContactLookup:
 
         domain = email.split('@')[-1]
         print("%s domain part of %s" %(domain, email))
-        for k,v in mapping_table.items():
+        for k, v in mapping_table.items():
             if re.match(k, domain):
                 if v == "DIRECT":
                     return email
                 else:
                     return v
         return None
-
-
-
