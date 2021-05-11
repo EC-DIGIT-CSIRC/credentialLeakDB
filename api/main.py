@@ -885,10 +885,10 @@ def enrich_df(df: pd.DataFrame) -> pd.DataFrame:
             df.loc[index, 'external_user'] = False
             dg = enricher.email_to_DG(email)
             if not dg:
-                dg = "UNKNOWN"
+                dg = "Unknown"
         else:
             df.loc[index, 'external_user'] = True
-            dg = "UNKNOWN"          # XXX FIXME . Should never happen.
+            dg = "Unknown"          # XXX FIXME . Should never happen.
         df.loc[index, 'dg'] = dg
         df.loc[index, 'is_vip'] = False
     return df
@@ -1020,7 +1020,7 @@ async def import_csv_spycloud(parent_ticket_id: str,
             RETURNING id
             """
         try:
-            print("ehllo world")
+            print("ehlddlo world")
             db = get_db()
             with db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)as cur:
                 r['ticket_id'] = None                 # XXX FIXME
