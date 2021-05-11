@@ -26,7 +26,7 @@ from fastapi.security.api_key import APIKeyHeader, APIKey, Request
 from pydantic import EmailStr
 
 # packages from this code repo
-from api.models import Leak, LeakData, Answer, AnswerMeta
+from api.models import Leak, LeakData, Answer, AnswerMeta, CredentialType
 from importer.parser import BaseParser
 from importer.spycloud import SpycloudParser
 from api.config import config
@@ -890,15 +890,19 @@ def enrich_df(df: pd.DataFrame) -> pd.DataFrame:
             df.loc[index, 'external_user'] = True
             dg = "UNKNOWN"          # XXX FIXME . Should never happen.
         df.loc[index, 'dg'] = dg
+        df.loc[index, 'is_vip'] = False
     return df
 
 
-def postprocess_df(df: pd.DataFrame) -> pd.DataFrame:
-    return df           # XXX FIXME
+def postprocess(d: dict) -> dict:
     # df.loc[:,'errors'] = 0
     # df.loc[:,'needs_human_intervention'] = True
-    df = df.loc[:,'is_vip'] = False
-    return df           # XXX FIXME
+    if 'is_vip' not in d:
+        d['is_vip'] = False
+    credType = CredentialType()     # XXX FIXME
+    credType = ['External', 'EU Login']
+    d['credential_type'] = credType
+    return d           # XXX FIXME
 
 
 def save_pickle(df: pd.DataFrame, outfile: str):
@@ -982,7 +986,7 @@ async def import_csv_spycloud(parent_ticket_id: str,
     """
     Now, after normalization, the df is in the format:
       leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id, email_verified,
-         password_verified_ok, ip, domain, browser , malware_name, infected_machine, dg
+         password_verified_ok, ip, domain, browser , malware_name, infected_machine, dg, is_vip
 
     Example
     -------
@@ -1024,9 +1028,7 @@ async def import_csv_spycloud(parent_ticket_id: str,
                 r['password_verified_ok'] = False     # XXX FIXME
                 r['malware_name'] = None              # XXX FIXME
                 print(cur.mogrify(sql, (leak_id, r['email'], r['password'], r['password_plain'], r['password'], r['hash_algo'], r['ticket_id'], r['email_verified'], r['password_verified_ok'], r['ip'], r['domain'], r['browser'], r['malware_name'], r['infected_machine'], r['dg'])))
-                print("ehllo world2")
                 cur.execute(sql, (leak_id, r['email'], r['password'], r['password_plain'], r['password'], r['hash_algo'], r['ticket_id'], r['email_verified'], r['password_verified_ok'], r['ip'], r['domain'], r['browser'], r['malware_name'], r['infected_machine'], r['dg']))
-                print("ehllo world3")
                 leak_data_id = int(cur.fetchone()['id'])
                 print("leak_data_id: %s" % leak_data_id)
                 inserted_ids.append(leak_data_id)
@@ -1047,7 +1049,7 @@ async def import_csv_spycloud(parent_ticket_id: str,
         with db.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(sql, (tuple(inserted_ids),))
             data = cur.fetchall()
-            data = postprocess_df(data)
+            data = postprocess(data)
             return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(inserted_ids)),
                           data=data)
     except Exception as ex:
