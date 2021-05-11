@@ -28,6 +28,9 @@ class CredentialType(Enum):
     is_domain_login = "Domain"
     is_secem_login = "SECEM"
 
+class HumanIntervention(BaseModel):
+    needs_human: bool = False       # needs to be set. Defaults to False
+    reason: Optional[str] = None    # a string to display to the user where he/she needs to add stuff the the data
 
 class LeakData(BaseModel):
     id: Optional[int]
@@ -49,8 +52,8 @@ class LeakData(BaseModel):
     dg: Optional[str]
     is_vip: Optional[bool]
     credential_type: Optional[List[CredentialType]]
-    report_to: Optional[str]
-    needs_human_attention: Optional[bool]
+    report_to: Optional[str]        # the security contact to report this to, in case it's not the the user directly.
+    needs_human_intervention: HumanIntervention
 
 
 class AnswerMeta(BaseModel):
