@@ -897,8 +897,8 @@ def postprocess_df(df: pd.DataFrame) -> pd.DataFrame:
     return df           # XXX FIXME
     # df.loc[:,'errors'] = 0
     # df.loc[:,'needs_human_intervention'] = True
-    # df.loc[:,'isVIP'] = False
-    # return df           # XXX FIXME
+    df = df.loc[:,'is_vip'] = False
+    return df           # XXX FIXME
 
 
 def save_pickle(df: pd.DataFrame, outfile: str):
@@ -1047,7 +1047,7 @@ async def import_csv_spycloud(parent_ticket_id: str,
         with db.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(sql, (tuple(inserted_ids),))
             data = cur.fetchall()
-            # data = postprocess_df(data)
+            data = postprocess_df(data)
             return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(inserted_ids)),
                           data=data)
     except Exception as ex:
