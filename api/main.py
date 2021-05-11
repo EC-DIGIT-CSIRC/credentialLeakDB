@@ -911,7 +911,7 @@ def save_pickle(df: pd.DataFrame, outfile: str):
           tags=["CSV import"],
           status_code=200,
           response_model=Answer)
-async def import_csv_spycloud(parent_ticket_id: int,
+async def import_csv_spycloud(parent_ticket_id: str,
                               response: Response,
                               summary: str = None,
                               _file: UploadFile = File(...),
@@ -922,6 +922,7 @@ async def import_csv_spycloud(parent_ticket_id: int,
 
     # Parameters
      * parent_ticket_id: a ticket ID which allows us to link the leak object to the ticket
+     * summary: a summary string for the new leak object (if it's created)
      * _file: a file which must be uploaded via HTML forms/multipart.
 
     # Returns
@@ -943,8 +944,8 @@ async def import_csv_spycloud(parent_ticket_id: int,
     db = get_db()
     try:
         with db.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            print(cur.mogrify(sql, (summary, str(parent_ticket_id))))
-            cur.execute(sql, (summary, str(parent_ticket_id)))
+            print(cur.mogrify(sql, (summary, parent_ticket_id)))
+            cur.execute(sql, (summary, parent_ticket_id))
             rows = cur.fetchall()
             nr_results = len(rows)
             if nr_results >= 1:
