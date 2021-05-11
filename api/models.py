@@ -48,7 +48,7 @@ class LeakData(BaseModel):
     infected_machine: Optional[str]
     dg: Optional[str]
     is_vip: Optional[bool]
-    credential_type: Optional[CredentialType]
+    credential_type: Optional[List[CredentialType]]
     report_to: Optional[str]
     needs_human_attention: Optional[bool]
 
