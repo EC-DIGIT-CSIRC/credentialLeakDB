@@ -894,15 +894,19 @@ def enrich_df(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def postprocess(d: dict) -> dict:
+def postprocess(_list: list) -> list:
     # df.loc[:,'errors'] = 0
     # df.loc[:,'needs_human_intervention'] = True
-    if 'is_vip' not in d:
-        d['is_vip'] = False
-    credType = CredentialType()     # XXX FIXME
-    credType = ['External', 'EU Login']
-    d['credential_type'] = credType
-    return d           # XXX FIXME
+    return [ el.update({'is_vip': False,
+                        'credential_type': ['External', 'EU Login']
+                        }) for el in _list]
+    # print("type(d) = %s, d= %r" %(type(d), d))
+    # if 'is_vip' not in d:
+    #     d['is_vip'] = False
+    # credType = CredentialType()     # XXX FIXME
+    # credType = ['External', 'EU Login']
+    # d['credential_type'] = credType
+    # return d           # XXX FIXME
 
 
 def save_pickle(df: pd.DataFrame, outfile: str):
@@ -983,6 +987,12 @@ async def import_csv_spycloud(parent_ticket_id: str,
         return Answer(success=False, errormsg=str(ex), data=[])
 
     df2 = p.normalize_data(df, leak_id=leak_id)
+    # df = dedup_data(df)
+    # df = filter_data(df2)
+    # df = enrich_data(df)
+    # df = postprocess_data(df)
+    # df = store_data(df)
+    # data = return_data(df)
     """
     Now, after normalization, the df is in the format:
       leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id, email_verified,
@@ -1002,7 +1012,7 @@ async def import_csv_spycloud(parent_ticket_id: str,
     """
 
     print(df2.info())
-    save_pickle(df2, "output.pkl")
+    # save_pickle(df2, "output.pkl")
     df = enrich_df(df2)
 
     i = 0
