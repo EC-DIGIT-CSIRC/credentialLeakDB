@@ -21,7 +21,7 @@ class Leak(BaseModel):
     source_publish_ts: Optional[datetime.datetime]
 
 
-class CredentialType(BaseModel, Enum):
+class CredentialType(Enum):
     is_external = "External"
     is_proxy_login = "Proxy"
     is_EU_login = "EU Login"
