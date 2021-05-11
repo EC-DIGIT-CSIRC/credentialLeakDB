@@ -6,6 +6,7 @@ License: see LICENSE.
 
 from pydantic import BaseModel, EmailStr
 from typing import Optional, Dict, List    # Union
+from enum import Enum
 
 import datetime
 
@@ -18,6 +19,14 @@ class Leak(BaseModel):
     source_name: Optional[str]
     breach_ts: Optional[datetime.datetime]
     source_publish_ts: Optional[datetime.datetime]
+
+
+class CredentialType(BaseModel, Enum):
+    is_external = "External"
+    is_proxy_login = "Proxy"
+    is_EU_login = "EU Login"
+    is_domain_login = "Domain"
+    is_secem_login = "SECEM"
 
 
 class LeakData(BaseModel):
@@ -38,6 +47,10 @@ class LeakData(BaseModel):
     malware_name: Optional[str]
     infected_machine: Optional[str]
     dg: Optional[str]
+    is_vip: Optional[bool]
+    credential_type: Optional[CredentialType]
+    report_to: Optional[str]
+    needs_human_attention: Optional[bool]
 
 
 class AnswerMeta(BaseModel):

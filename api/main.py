@@ -788,7 +788,7 @@ async def new_leak_data(row: LeakData,
         """
     t0 = time.time()
     db = get_db()
-    print(row)
+    logging.debug(row)
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql, (row.leak_id, row.email, row.password, row.password_plain, row.password_hashed, row.hash_algo,
@@ -845,11 +845,12 @@ async def update_leak_data(row: LeakData,
     db = get_db()
     try:
         cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        print("HTTP request: '%r'" % request)
-        print("SQL command:")
-        # print(cur.mogrify(sql, (row.leak_id, row.email, row.password, row.password_plain, row.password_hashed, row.hash_algo,
-        #                    row.ticket_id, row.email_verified, row.password_verified_ok, row.ip, row.domain, row.browser,
-        #                    row.malware_name, row.infected_machine, row.dg, row.id)))
+        logging.debug("HTTP request: '%r'" % request)
+        logging.debug("SQL command: '%s'" % cur.mogrify(sql, (row.leak_id, row.email, row.password, row.password_plain,
+                                                              row.password_hashed, row.hash_algo,
+                                                              row.ticket_id, row.email_verified,
+                                                              row.password_verified_ok, row.ip, row.domain, row.browser,
+                                                              row.malware_name, row.infected_machine, row.dg, row.id)))
         cur.execute(sql, (row.leak_id, row.email, row.password, row.password_plain, row.password_hashed, row.hash_algo,
                           row.ticket_id, row.email_verified, row.password_verified_ok, row.ip, row.domain, row.browser,
                           row.malware_name, row.infected_machine, row.dg, row.id))
@@ -889,7 +890,6 @@ def enrich_df(df: pd.DataFrame) -> pd.DataFrame:
             df.loc[index, 'external_user'] = True
             dg = "UNKNOWN"          # XXX FIXME . Should never happen.
         df.loc[index, 'dg'] = dg
-    print("df: %s" % df)
     return df
 
 
@@ -951,19 +951,21 @@ async def import_csv_spycloud(parent_ticket_id: str,
             if nr_results >= 1:
                 # take the first one
                 leak_id = rows[0]['id']
+                logging.info("Found existing leak object: %s" % leak_id)
             else:
                 # nothing found, create one
                 source_name = "SpyCloud"
                 leak = Leak(ticket_id=parent_ticket_id, summary=summary, source_name=source_name)
                 answer = await new_leak(leak, response=response, api_key=api_key)
+                logging.info("Did not find existing leak object, creating one")
                 if answer.success:
                     leak_id = int(answer.data[0]['id'])
+                    logging.info("Created with id %s" % leak_id)
                 else:
+                    logging.error("Could not create leak object for spycloud CSV file")
                     return Answer(success=False, errormsg="could not create leak object", data=[])
     except Exception as ex:
         return Answer(success=False, errormsg=str(ex), data=[])
-
-    print("leak_id = %s" % leak_id)
 
     # okay, we found the leak, let's insert the CSV
     file_on_disk = await store_file(_file.filename, _file.file)
