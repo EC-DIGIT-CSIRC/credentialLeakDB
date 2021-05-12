@@ -12,6 +12,7 @@ import os
 import sys
 import shutil
 import time
+import random
 from pathlib import Path
 from tempfile import SpooledTemporaryFile
 from typing import List
@@ -897,9 +898,16 @@ def enrich_df(df: pd.DataFrame) -> pd.DataFrame:
 def postprocess(_list: list) -> list:
     # df.loc[:,'errors'] = 0
     # df.loc[:,'needs_human_intervention'] = True
-    return [ el.update({'is_vip': False,
-                        'credential_type': ['External', 'EU Login']
-                        }) for el in _list]
+    attention = random.random() > 0.5
+    notify = not attention
+    for item in _list:
+        item.update({'is_vip': False, 
+            "credential_type": ["EU Login", "External"],
+            "report_to": "Benoit.Roussille@ec.europa.eu",
+            "needs_human_attention": attention,
+            "notify": notify
+            })
+    return _list
     # print("type(d) = %s, d= %r" %(type(d), d))
     # if 'is_vip' not in d:
     #     d['is_vip'] = False
