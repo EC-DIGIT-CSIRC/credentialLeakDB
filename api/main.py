@@ -949,6 +949,7 @@ def convert_to_output(idf: InternalDataFormat) -> LeakData:
 
     ":returns LeakData
     """
+    # XXX FIXME!! needs to be implemented.
     return idf
 
 
@@ -1026,7 +1027,7 @@ async def import_csv_spycloud(parent_ticket_id: str,
     p = SpyCloudParser()
     # items: Type[List[InternalDataFormat]]  # list of InternalDataFormat
     try:
-        items = p.parse(Path(file_on_disk))
+        items = p.parse(df)
     except Exception as ex:
         return Answer(success = False, errormsg = str(ex), data = [])
 

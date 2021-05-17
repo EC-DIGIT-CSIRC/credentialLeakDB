@@ -26,6 +26,8 @@ class SpyCloudParser(BaseParser):
     def parse(self, df: pd.DataFrame) -> List[InternalDataFormat]:
         """parse a pandas DF and return the data in the Internal Data Format."""
 
+
+        print(df)
         # First, map empty columns to None so that it fits nicely into the IDF
         df.replace({"-": None}, inplace = True)
         df.replace({"nan": None}, inplace = True)
