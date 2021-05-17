@@ -18,7 +18,7 @@ pandas==1.2.1
 pluggy==0.13.1
 psycopg2-binary==2.8.6
 py==1.10.0
-pydantic==1.7.3
+pydantic==1.7.4
 pylint-venv==2.1.1
 pylint==2.6.2
 pyparsing==2.4.7
