@@ -10,7 +10,8 @@ venv
 
 
 # real data directories, don't upload to github ;-)
-importer/real_data
+modules/collectors/real_data
+real_data
 data/
 
 
