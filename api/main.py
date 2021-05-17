@@ -26,13 +26,14 @@ from fastapi.security.api_key import APIKeyHeader, APIKey, Request
 from pydantic import EmailStr
 
 # packages from this code repo
-from lib.db.db import _get_db, _close_db
+from lib.db.db import _get_db, _close_db, _connect_db, DSN
 from api.models import Leak, LeakData, Answer, AnswerMeta, CredentialType
 from api.config import config
 from modules.collectors.parser import BaseParser
 from modules.parsers.spycloud import SpyCloudParser
 from modules.collectors.spycloud.collector import SpyCloudCollector
 
+from modules.filters.filter import Filter
 from modules.enrichers.ldap import LDAPEnricher
 from modules.enrichers.vip import VIPEnricher
 from modules.enrichers.external_email import ExternalEmailEnricher
@@ -902,7 +903,7 @@ def postprocess(_list: list) -> list:
 # ############################################################################################################
 # CSV file importing
 
-def enrich(item: InternalDataFormat, leak_id: int) -> InternalDataFormat:
+def enrich(item: InternalDataFormat, leak_id: str) -> InternalDataFormat:
     """Initial enricher chain. This SHOULD be configurable and a pipeline via a MQ."""
     # set leak_id
     item.leak_id = leak_id
@@ -932,6 +933,23 @@ def enrich(item: InternalDataFormat, leak_id: int) -> InternalDataFormat:
         abuse_enricher = AbuseContactLookup()
         item.report_to = abuse_enricher.lookup(item.email)
     return item
+
+
+def store(idf: InternalDataFormat) -> InternalDataFormat:
+    """Store the item in the DB.
+
+    :returns the idf item.
+    """
+    # XXX FIXME!! need to implement / refactor existing code.
+    return idf
+
+
+def convert_to_output(idf: InternalDataFormat) -> LeakData:
+    """Convert the internal data format to the output data format.
+
+    ":returns LeakData
+    """
+    return idf
 
 
 @app.post("/import/csv/spycloud/{parent_ticket_id}",
@@ -1031,7 +1049,7 @@ async def import_csv_spycloud(parent_ticket_id: str,
             logging.error("Could not deduplicate item (%s, %s). Skipping this row. Reason: %s" % (item.email, item.password, str(ex)))
             continue
         try:
-            item = enrich(item)
+            item = enrich(item, leak_id=leak_id)
         except Exception as ex:
             errmsg = "Could not enrich item (%s, %s). Skipping this row. Reason: %s" % (item.email, item.password, str(ex),)
             logging.error(errmsg)
@@ -1273,5 +1291,5 @@ async def enrich_userid_by_email(email: EmailStr, response: Response,
 
 
 if __name__ == "__main__":
-    db_conn = connect_db(DSN)
+    db_conn = _connect_db(DSN)
     uvicorn.run(app, debug = True, port = os.getenv('PORT', default = 8080))

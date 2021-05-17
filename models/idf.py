@@ -4,7 +4,7 @@ from pydantic import BaseModel, IPvAnyAddress
 
 class InternalDataFormat(BaseModel):
     """The Internal Data Format (IDF)."""
-    leak_id: Optional[int]      # the leak(id) reference
+    leak_id: Optional[str]      # the leak(id) reference
     email: str
     password: str
     password_plain: Optional[str]
