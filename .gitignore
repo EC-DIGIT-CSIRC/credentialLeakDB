@@ -13,7 +13,7 @@ venv
 modules/collectors/real_data
 real_data
 data/
-
+VIPs.txt
 
 poetry.lock
 
