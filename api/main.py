@@ -14,7 +14,7 @@ import shutil
 import time
 from pathlib import Path
 from tempfile import SpooledTemporaryFile
-from typing import List
+from typing import List, Type
 
 # database, ASGI, etc.
 import pandas as pd
@@ -26,74 +26,43 @@ from fastapi.security.api_key import APIKeyHeader, APIKey, Request
 from pydantic import EmailStr
 
 # packages from this code repo
+from lib.db.db import _get_db, _close_db
 from api.models import Leak, LeakData, Answer, AnswerMeta, CredentialType
-from importer.parser import BaseParser
-from importer.spycloud import SpycloudParser
 from api.config import config
-from api.enrichment import LDAPEnricher, ExternalEnricher
+from modules.collectors.parser import BaseParser
+from modules.parsers.spycloud import SpyCloudParser
+from modules.collectors.spycloud.collector import SpyCloudCollector
 
+from modules.enrichers.ldap import LDAPEnricher
+from modules.enrichers.vip import VIPEnricher
+from modules.enrichers.external_email import ExternalEmailEnricher
+from modules.enrichers.abuse_contact import AbuseContactLookup
+
+from modules.filters.deduper import Deduper
+
+from models.idf import InternalDataFormat
 
 ###############################################################################
 # API key stuff
 API_KEYLEN = 32
 API_KEY_NAME = "x-api-key"
-api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=True)
+api_key_header = APIKeyHeader(name = API_KEY_NAME, auto_error = True)
 
-#################################
-# DB functions
+VER = "0.6"
 
-db_conn = None
-DSN = "host=%s dbname=%s user=%s password=%s" % (os.getenv('DBHOST', 'localhost'),
-                                                 os.getenv('DBNAME', 'credentialleakdb'),
-                                                 os.getenv('DBUSER', 'credentialleakdb'),
-                                                 os.getenv('DBPASSWORD'))
-
-VER = "0.5"
-
-app = FastAPI(title="CredentialLeakDB", version=VER, )  # root_path='/api/v1')
+app = FastAPI(title = "CredentialLeakDB", version = VER, )  # root_path='/api/v1')
 
 
 # ##############################################################################
 # DB specific functions
 @app.on_event('startup')
 def get_db():
-    """
-    Open a new database connection if there is none yet for the
-    current application context.
-
-    :returns: the DB handle."""
-    global db_conn
-
-    if not db_conn:
-        db_conn = connect_db(DSN)
-    return db_conn
+    return _get_db()
 
 
 @app.on_event('shutdown')
 def close_db():
-    """Closes the database again at the end of the request."""
-    global db_conn
-
-    logging.info('shutting down....')
-    if db_conn:
-        db_conn.close()
-        db_conn = None
-    return db_conn
-
-
-def connect_db(dsn: str):
-    """Connects to the specific database.
-
-    :param dsn: the database connection string.
-    :returns: the DB connection handle
-    """
-    try:
-        conn = psycopg2.connect(dsn)
-        conn.set_session(autocommit=True)
-    except Exception as ex:
-        raise HTTPException(status_code=500, detail="could not connect to the DB. Reason: %s" % (str(ex)))
-    logging.info("connection to DB established")
-    return conn
+    return _close_db()
 
 
 # ##############################################################################
@@ -135,15 +104,15 @@ def validate_api_key_header(apikeyheader: str = Security(api_key_header)):
     :returns: the apikey apikeyheader again, if it is valid. Otherwise, raise an HTTPException and return 403.
     """
     if not apikeyheader:
-        raise HTTPException(status_code=403,
-                            detail="""need API key. Please get in contact with the admins of this
+        raise HTTPException(status_code = 403,
+                            detail = """need API key. Please get in contact with the admins of this
                             site in order get your API key.""")
     if is_valid_api_key(apikeyheader):
         return apikeyheader
     else:
         raise HTTPException(
-            status_code=403,  # HTTP FORBIDDEN
-            detail="""Could not validate the provided credentials. Please get in contact with the admins of this
+            status_code = 403,  # HTTP FORBIDDEN
+            detail = """Could not validate the provided credentials. Please get in contact with the admins of this
             site in order get your API key."""
         )
 
@@ -151,7 +120,7 @@ def validate_api_key_header(apikeyheader: str = Security(api_key_header)):
 # ##############################################################################
 # File uploading
 async def store_file(orig_filename: str, _file: SpooledTemporaryFile,
-                     upload_path=os.getenv('UPLOAD_PATH', default='/tmp')) -> str:
+                     upload_path=os.getenv('UPLOAD_PATH', default = '/tmp')) -> str:
     """
     Stores a SpooledTemporaryFile to a permanent location and returns the path to it
 
@@ -182,25 +151,25 @@ async def check_file(filename: str) -> bool:
 # API endpoints
 
 @app.get("/ping",
-         name="Ping test",
-         summary="Run a ping test, to check if the service is running",
-         tags=["Tests"])
+         name = "Ping test",
+         summary = "Run a ping test, to check if the service is running",
+         tags = ["Tests"])
 async def ping():
     """A simple ping / liveliness test endpoint. No API Key required."""
     return {"message": "pong"}
 
 
 @app.get("/timeout_test",
-         name="A simple timeout test",
-         summary="Call this and the GET request will sleep for 5 seconds",
-         tags=["Tests"])
+         name = "A simple timeout test",
+         summary = "Call this and the GET request will sleep for 5 seconds",
+         tags = ["Tests"])
 async def timeout_test():
     """A simple timeout/ liveliness test endpoint. No API Key required."""
     time.sleep(5)
     return {"message": "OK"}
 
 
-@app.get("/", tags=["Tests"])
+@app.get("/", tags = ["Tests"])
 async def root(api_key: APIKey = Depends(validate_api_key_header)):
     """A simple hello world endpoint. This one requires an API key."""
     return {"message": "Hello World"}  # , "root_path": request.scope.get("root_path")}
@@ -211,9 +180,9 @@ async def root(api_key: APIKey = Depends(validate_api_key_header)):
 
 
 @app.get('/user/{email}',
-         tags=["General queries"],
-         status_code=200,
-         response_model=Answer)
+         tags = ["General queries"],
+         status_code = 200,
+         response_model = Answer)
 async def get_user_by_email(email: EmailStr,
                             response: Response,
                             api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
@@ -230,22 +199,23 @@ async def get_user_by_email(email: EmailStr,
     t0 = time.time()
     db = get_db()
     try:
-        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur = db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
         cur.execute(sql, (email,))
         rows = cur.fetchall()
-        if len(rows) == 0:      # return 404 in case no data was found
+        if len(rows) == 0:  # return 404 in case no data was found
             response.status_code = 404
         t1 = time.time()
         d = round(t1 - t0, 3)
-        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
+        return Answer(success = True, errormsg = None,
+                      meta = AnswerMeta(version = VER, duration = d, count = len(rows)), data = rows)
     except Exception as ex:
-        return Answer(success=False, errormsg=str(ex), data=[])
+        return Answer(success = False, errormsg = str(ex), data = [])
 
 
 @app.get('/user_and_password/{email}/{password}',
-         tags=["General queries"],
-         status_code=200,
-         response_model=Answer)
+         tags = ["General queries"],
+         status_code = 200,
+         response_model = Answer)
 async def get_user_by_email_and_password(email: EmailStr,
                                          password: str,
                                          response: Response,
@@ -273,22 +243,23 @@ async def get_user_by_email_and_password(email: EmailStr,
     t0 = time.time()
     db = get_db()
     try:
-        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur = db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
         cur.execute(sql, (email, password))
         rows = cur.fetchall()
-        if len(rows) == 0:      # return 404 in case no data was found
+        if len(rows) == 0:  # return 404 in case no data was found
             response.status_code = 404
         t1 = time.time()
         d = round(t1 - t0, 3)
-        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
+        return Answer(success = True, errormsg = None,
+                      meta = AnswerMeta(version = VER, duration = d, count = len(rows)), data = rows)
     except Exception as ex:
-        return Answer(success=False, errormsg=str(ex), data=[])
+        return Answer(success = False, errormsg = str(ex), data = [])
 
 
 @app.get('/exists/by_email/{email}',
-         tags=["General queries"],
-         status_code=200,
-         response_model=Answer)
+         tags = ["General queries"],
+         status_code = 200,
+         response_model = Answer)
 async def check_user_by_email(email: EmailStr,
                               response: Response,
                               api_key: APIKey = Depends(validate_api_key_header)
@@ -310,20 +281,21 @@ async def check_user_by_email(email: EmailStr,
     t0 = time.time()
     db = get_db()
     try:
-        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur = db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
         cur.execute(sql, (email,))
         rows = cur.fetchall()
         t1 = time.time()
         d = round(t1 - t0, 3)
-        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
+        return Answer(success = True, errormsg = None,
+                      meta = AnswerMeta(version = VER, duration = d, count = len(rows)), data = rows)
     except Exception as ex:
-        return Answer(success=False, errormsg=str(ex), data=[])
+        return Answer(success = False, errormsg = str(ex), data = [])
 
 
 @app.get('/exists/by_password/{password}',
-         tags=["General queries"],
-         status_code=200,
-         response_model=Answer)
+         tags = ["General queries"],
+         status_code = 200,
+         response_model = Answer)
 async def check_user_by_password(password: str,
                                  response: Response,
                                  api_key: APIKey = Depends(validate_api_key_header)
@@ -348,20 +320,21 @@ async def check_user_by_password(password: str,
     t0 = time.time()
     db = get_db()
     try:
-        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur = db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
         cur.execute(sql, (password, password, password))
         rows = cur.fetchall()
         t1 = time.time()
         d = round(t1 - t0, 3)
-        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
+        return Answer(success = True, errormsg = None,
+                      meta = AnswerMeta(version = VER, duration = d, count = len(rows)), data = rows)
     except Exception as ex:
-        return Answer(success=False, errormsg=str(ex), data=[])
+        return Answer(success = False, errormsg = str(ex), data = [])
 
 
 @app.get('/exists/by_domain/{domain}',
-         tags=["General queries"],
-         status_code=200,
-         response_model=Answer)
+         tags = ["General queries"],
+         status_code = 200,
+         response_model = Answer)
 async def check_by_domain(domain: str,
                           response: Response,
                           api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
@@ -379,22 +352,23 @@ async def check_by_domain(domain: str,
     t0 = time.time()
     db = get_db()
     try:
-        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur = db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
         cur.execute(sql, (domain,))
         rows = cur.fetchall()
         t1 = time.time()
         d = round(t1 - t0, 3)
-        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
+        return Answer(success = True, errormsg = None,
+                      meta = AnswerMeta(version = VER, duration = d, count = len(rows)), data = rows)
     except Exception as ex:
-        return Answer(success=False, errormsg=str(ex), data=[])
+        return Answer(success = False, errormsg = str(ex), data = [])
 
 
 # ##############################################################################
 # Reference data (reporter, source, etc) starts here
 @app.get('/reporter',
-         tags=["Reference data"],
-         status_code=200,
-         response_model=Answer)
+         tags = ["Reference data"],
+         status_code = 200,
+         response_model = Answer)
 async def get_reporters(response: Response,
                         api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
     """
@@ -409,22 +383,23 @@ async def get_reporters(response: Response,
     t0 = time.time()
     db = get_db()
     try:
-        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur = db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
         cur.execute(sql)
         rows = cur.fetchall()
-        if len(rows) == 0:      # return 404 in case no data was found
+        if len(rows) == 0:  # return 404 in case no data was found
             response.status_code = 404
         t1 = time.time()
         d = round(t1 - t0, 3)
-        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
+        return Answer(success = True, errormsg = None,
+                      meta = AnswerMeta(version = VER, duration = d, count = len(rows)), data = rows)
     except Exception as ex:
-        return Answer(success=False, errormsg=str(ex), data=[])
+        return Answer(success = False, errormsg = str(ex), data = [])
 
 
 @app.get('/source_name',
-         tags=["Reference data"],
-         status_code=200,
-         response_model=Answer)
+         tags = ["Reference data"],
+         status_code = 200,
+         response_model = Answer)
 async def get_sources(response: Response,
                       api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
     """
@@ -439,25 +414,26 @@ async def get_sources(response: Response,
     t0 = time.time()
     db = get_db()
     try:
-        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur = db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
         cur.execute(sql)
         rows = cur.fetchall()
-        if len(rows) == 0:      # return 404 in case no data was found
+        if len(rows) == 0:  # return 404 in case no data was found
             response.status_code = 404
         t1 = time.time()
         d = round(t1 - t0, 3)
-        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
+        return Answer(success = True, errormsg = None,
+                      meta = AnswerMeta(version = VER, duration = d, count = len(rows)), data = rows)
     except Exception as ex:
-        return Answer(success=False, errormsg=str(ex), data=[])
+        return Answer(success = False, errormsg = str(ex), data = [])
 
 
 # ##############################################################################
 # Leak table starts here
 
 @app.get("/leak/all",
-         tags=["Leak"],
-         status_code=200,
-         response_model=Answer)
+         tags = ["Leak"],
+         status_code = 200,
+         response_model = Answer)
 async def get_all_leaks(response: Response,
                         api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
     """Fetch all leaks.
@@ -472,22 +448,23 @@ async def get_all_leaks(response: Response,
     sql = "SELECT * from leak"
     db = get_db()
     try:
-        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur = db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
         cur.execute(sql)
         rows = cur.fetchall()
-        if len(rows) == 0:      # return 404 in case no data was found
+        if len(rows) == 0:  # return 404 in case no data was found
             response.status_code = 404
         t1 = time.time()
         d = round(t1 - t0, 3)
-        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
+        return Answer(success = True, errormsg = None,
+                      meta = AnswerMeta(version = VER, duration = d, count = len(rows)), data = rows)
     except Exception as ex:
-        return Answer(success=False, errormsg=str(ex), data=[])
+        return Answer(success = False, errormsg = str(ex), data = [])
 
 
 @app.get("/leak/by_ticket_id/{ticket_id}",
-         tags=["Leak"],
-         status_code=200,
-         response_model=Answer)
+         tags = ["Leak"],
+         status_code = 200,
+         response_model = Answer)
 async def get_leak_by_ticket_id(ticket_id: str,
                                 response: Response,
                                 api_key: APIKey = Depends(validate_api_key_header)
@@ -497,22 +474,23 @@ async def get_leak_by_ticket_id(ticket_id: str,
     sql = "SELECT * from leak WHERE ticket_id = %s"
     db = get_db()
     try:
-        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur = db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
         cur.execute(sql, (ticket_id,))
         rows = cur.fetchall()
-        if len(rows) == 0:      # return 404 in case no data was found
+        if len(rows) == 0:  # return 404 in case no data was found
             response.status_code = 404
         t1 = time.time()
         d = round(t1 - t0, 3)
-        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
+        return Answer(success = True, errormsg = None,
+                      meta = AnswerMeta(version = VER, duration = d, count = len(rows)), data = rows)
     except Exception as ex:
-        return Answer(success=False, errormsg=str(ex), data=[])
+        return Answer(success = False, errormsg = str(ex), data = [])
 
 
 @app.get("/leak/by_summary/{summary}",
-         tags=["Leak"],
-         status_code=200,
-         response_model=Answer)
+         tags = ["Leak"],
+         status_code = 200,
+         response_model = Answer)
 async def get_leak_by_summary(summary: str,
                               response: Response,
                               api_key: APIKey = Depends(validate_api_key_header)
@@ -522,22 +500,23 @@ async def get_leak_by_summary(summary: str,
     t0 = time.time()
     db = get_db()
     try:
-        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur = db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
         cur.execute(sql, (summary,))
         rows = cur.fetchall()
-        if len(rows) == 0:      # return 404 in case no data was found
+        if len(rows) == 0:  # return 404 in case no data was found
             response.status_code = 404
         t1 = time.time()
         d = round(t1 - t0, 3)
-        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
+        return Answer(success = True, errormsg = None,
+                      meta = AnswerMeta(version = VER, duration = d, count = len(rows)), data = rows)
     except Exception as ex:
-        return Answer(success=False, errormsg=str(ex), data=[])
+        return Answer(success = False, errormsg = str(ex), data = [])
 
 
 @app.get("/leak/by_reporter/{reporter}",
-         tags=["Leak"],
-         status_code=200,
-         response_model=Answer)
+         tags = ["Leak"],
+         status_code = 200,
+         response_model = Answer)
 async def get_leak_by_reporter(reporter: str,
                                response: Response,
                                api_key: APIKey = Depends(validate_api_key_header)
@@ -547,22 +526,23 @@ async def get_leak_by_reporter(reporter: str,
     t0 = time.time()
     db = get_db()
     try:
-        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur = db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
         cur.execute(sql, (reporter,))
         rows = cur.fetchall()
-        if len(rows) == 0:      # return 404 in case no data was found
+        if len(rows) == 0:  # return 404 in case no data was found
             response.status_code = 404
         t1 = time.time()
         d = round(t1 - t0, 3)
-        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
+        return Answer(success = True, errormsg = None,
+                      meta = AnswerMeta(version = VER, duration = d, count = len(rows)), data = rows)
     except Exception as ex:
-        return Answer(success=False, errormsg=str(ex), data=[])
+        return Answer(success = False, errormsg = str(ex), data = [])
 
 
 @app.get("/leak/by_source/{source_name}",
-         tags=["Leak"],
-         status_code=200,
-         response_model=Answer)
+         tags = ["Leak"],
+         status_code = 200,
+         response_model = Answer)
 async def get_leak_by_source(source_name: str,
                              response: Response,
                              api_key: APIKey = Depends(validate_api_key_header)
@@ -580,22 +560,23 @@ async def get_leak_by_source(source_name: str,
     t0 = time.time()
     db = get_db()
     try:
-        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur = db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
         cur.execute(sql, (source_name,))
         rows = cur.fetchall()
-        if len(rows) == 0:      # return 404 in case no data was found
+        if len(rows) == 0:  # return 404 in case no data was found
             response.status_code = 404
         t1 = time.time()
         d = round(t1 - t0, 3)
-        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
+        return Answer(success = True, errormsg = None,
+                      meta = AnswerMeta(version = VER, duration = d, count = len(rows)), data = rows)
     except Exception as ex:
-        return Answer(success=False, errormsg=str(ex), data=[])
+        return Answer(success = False, errormsg = str(ex), data = [])
 
 
-@app.get("/leak/{_id}", tags=["Leak"],
-         description='Get the leak info by its ID.',
-         status_code=200,
-         response_model=Answer)
+@app.get("/leak/{_id}", tags = ["Leak"],
+         description = 'Get the leak info by its ID.',
+         status_code = 200,
+         response_model = Answer)
 async def get_leak_by_id(_id: int,
                          response: Response,
                          api_key: APIKey = Depends(validate_api_key_header)
@@ -605,23 +586,24 @@ async def get_leak_by_id(_id: int,
     sql = "SELECT * from leak WHERE id = %s"
     db = get_db()
     try:
-        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur = db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
         cur.execute(sql, (_id,))
         rows = cur.fetchall()
-        if len(rows) == 0:      # return 404 in case no data was found
+        if len(rows) == 0:  # return 404 in case no data was found
             response.status_code = 404
         t1 = time.time()
         d = round(t1 - t0, 3)
-        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
+        return Answer(success = True, errormsg = None,
+                      meta = AnswerMeta(version = VER, duration = d, count = len(rows)), data = rows)
     except Exception as ex:
-        return Answer(success=False, errormsg=str(ex), data=[])
+        return Answer(success = False, errormsg = str(ex), data = [])
 
 
 @app.post("/leak/",
-          tags=["Leak"],
-          description="INSERT a new leak into the DB",
-          status_code=201,
-          response_model=Answer)
+          tags = ["Leak"],
+          description = "INSERT a new leak into the DB",
+          status_code = 201,
+          response_model = Answer)
 async def new_leak(leak: Leak,
                    response: Response,
                    api_key: APIKey = Depends(validate_api_key_header)
@@ -643,23 +625,24 @@ async def new_leak(leak: Leak,
     t0 = time.time()
     db = get_db()
     try:
-        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur = db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
         cur.execute(sql, (leak.summary, leak.ticket_id, leak.reporter_name, leak.source_name, leak.breach_ts,
                           leak.source_publish_ts,))
         rows = cur.fetchall()
-        if len(rows) == 0:      # return 400 in case the INSERT failed.
+        if len(rows) == 0:  # return 400 in case the INSERT failed.
             response.status_code = 400
         t1 = time.time()
         d = round(t1 - t0, 3)
-        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
+        return Answer(success = True, errormsg = None,
+                      meta = AnswerMeta(version = VER, duration = d, count = len(rows)), data = rows)
     except Exception as ex:
-        return Answer(success=False, errormsg=str(ex), data=[])
+        return Answer(success = False, errormsg = str(ex), data = [])
 
 
 @app.put("/leak/",
-         tags=["Leak"],
-         status_code=200,
-         response_model=Answer)
+         tags = ["Leak"],
+         status_code = 200,
+         response_model = Answer)
 async def update_leak(leak: Leak,
                       response: Response,
                       api_key: APIKey = Depends(validate_api_key_header)
@@ -681,28 +664,29 @@ async def update_leak(leak: Leak,
     t0 = time.time()
     db = get_db()
     if not leak.id:
-        return Answer(errormsg="id %s not given. Please specify a leak.id you want to UPDATE", data=[])
+        return Answer(errormsg = "id %s not given. Please specify a leak.id you want to UPDATE", data = [])
     try:
-        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur = db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
         cur.execute(sql, (leak.summary, leak.ticket_id, leak.reporter_name,
                           leak.source_name, leak.breach_ts, leak.source_publish_ts, leak.id))
         rows = cur.fetchall()
-        if len(rows) == 0:      # return 400 in case the INSERT failed.
+        if len(rows) == 0:  # return 400 in case the INSERT failed.
             response.status_code = 400
         t1 = time.time()
         d = round(t1 - t0, 3)
-        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
+        return Answer(success = True, errormsg = None,
+                      meta = AnswerMeta(version = VER, duration = d, count = len(rows)), data = rows)
     except Exception as ex:
-        return Answer(success=False, errormsg=str(ex), data=[])
+        return Answer(success = False, errormsg = str(ex), data = [])
 
 
 # ############################################################################################################
 # Leak Data starts here
 
 @app.get("/leak_data/{leak_data_id}",
-         tags=["Leak Data"],
-         status_code=200,
-         response_model=Answer)
+         tags = ["Leak Data"],
+         status_code = 200,
+         response_model = Answer)
 async def get_leak_data_by_id(leak_data_id: int,
                               response: Response,
                               api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
@@ -720,22 +704,23 @@ async def get_leak_data_by_id(leak_data_id: int,
     sql = "SELECT * from leak_data where id=%s"
     db = get_db()
     try:
-        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur = db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
         cur.execute(sql, (leak_data_id,))
         rows = cur.fetchall()
-        if len(rows) == 0:      # return 404 in case no data was found
+        if len(rows) == 0:  # return 404 in case no data was found
             response.status_code = 404
         t1 = time.time()
         d = round(t1 - t0, 3)
-        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
+        return Answer(success = True, errormsg = None,
+                      meta = AnswerMeta(version = VER, duration = d, count = len(rows)), data = rows)
     except Exception as ex:
-        return Answer(success=False, errormsg=str(ex), data=[])
+        return Answer(success = False, errormsg = str(ex), data = [])
 
 
 @app.get("/leak_data/by_ticket_id/{ticket_id}",
-         tags=["Leak Data"],
-         status_code=200,
-         response_model=Answer)
+         tags = ["Leak Data"],
+         status_code = 200,
+         response_model = Answer)
 async def get_leak_data_by_ticket_id(ticket_id: str,
                                      response: Response,
                                      api_key: APIKey = Depends(validate_api_key_header)
@@ -751,22 +736,23 @@ async def get_leak_data_by_ticket_id(ticket_id: str,
     t0 = time.time()
     db = get_db()
     try:
-        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur = db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
         cur.execute(sql, (ticket_id,))
         rows = cur.fetchall()
-        if len(rows) == 0:      # return 404 in case no data was found
+        if len(rows) == 0:  # return 404 in case no data was found
             response.status_code = 404
         t1 = time.time()
         d = round(t1 - t0, 3)
-        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
+        return Answer(success = True, errormsg = None,
+                      meta = AnswerMeta(version = VER, duration = d, count = len(rows)), data = rows)
     except Exception as ex:
-        return Answer(success=False, errormsg=str(ex), data=[])
+        return Answer(success = False, errormsg = str(ex), data = [])
 
 
 @app.post("/leak_data/",
-          tags=["Leak Data"],
-          status_code=201,
-          response_model=Answer)
+          tags = ["Leak Data"],
+          status_code = 201,
+          response_model = Answer)
 async def new_leak_data(row: LeakData,
                         response: Response,
                         api_key: APIKey = Depends(validate_api_key_header)
@@ -790,24 +776,25 @@ async def new_leak_data(row: LeakData,
     db = get_db()
     logging.debug(row)
     try:
-        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur = db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
         cur.execute(sql, (row.leak_id, row.email, row.password, row.password_plain, row.password_hashed, row.hash_algo,
                           row.ticket_id, row.email_verified, row.password_verified_ok, row.ip, row.domain, row.browser,
                           row.malware_name, row.infected_machine, row.dg, row.email))
         rows = cur.fetchall()
-        if len(rows) == 0:      # return 400 in case the INSERT failed.
+        if len(rows) == 0:  # return 400 in case the INSERT failed.
             response.status_code = 400
         t1 = time.time()
         d = round(t1 - t0, 3)
-        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
+        return Answer(success = True, errormsg = None,
+                      meta = AnswerMeta(version = VER, duration = d, count = len(rows)), data = rows)
     except Exception as ex:
-        return Answer(success=False, errormsg=str(ex), data=[])
+        return Answer(success = False, errormsg = str(ex), data = [])
 
 
 @app.put("/leak_data/",
-         tags=["Leak Data"],
-         status_code=200,
-         response_model=Answer)
+         tags = ["Leak Data"],
+         status_code = 200,
+         response_model = Answer)
 async def update_leak_data(row: LeakData,
                            request: Request,
                            response: Response,
@@ -844,7 +831,7 @@ async def update_leak_data(row: LeakData,
     t0 = time.time()
     db = get_db()
     try:
-        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur = db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
         logging.debug("HTTP request: '%r'" % request)
         logging.debug("SQL command: '%s'" % cur.mogrify(sql, (row.leak_id, row.email, row.password, row.password_plain,
                                                               row.password_hashed, row.hash_algo,
@@ -856,13 +843,15 @@ async def update_leak_data(row: LeakData,
                           row.malware_name, row.infected_machine, row.dg, row.id))
         db.commit()
         rows = cur.fetchall()
-        if len(rows) == 0:      # return 400 in case the INSERT failed.
+        if len(rows) == 0:  # return 400 in case the INSERT failed.
             response.status_code = 400
         t1 = time.time()
         d = round(t1 - t0, 3)
-        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(rows)), data=rows)
+        return Answer(success = True, errormsg = None,
+                      meta = AnswerMeta(version = VER, duration = d, count = len(rows)), data = rows)
     except Exception as ex:
-        return Answer(success=False, errormsg=str(ex), data=[])
+        return Answer(success = False, errormsg = str(ex), data = [])
+
 
 """
 @app.post("/import/csv")
@@ -888,7 +877,7 @@ def enrich_df(df: pd.DataFrame) -> pd.DataFrame:
                 dg = "Unknown"
         else:
             df.loc[index, 'external_user'] = True
-            dg = "Unknown"          # XXX FIXME . Should never happen.
+            dg = "Unknown"  # XXX FIXME . Should never happen.
         df.loc[index, 'dg'] = dg
         df.loc[index, 'is_vip'] = False
     return df
@@ -897,9 +886,9 @@ def enrich_df(df: pd.DataFrame) -> pd.DataFrame:
 def postprocess(_list: list) -> list:
     # df.loc[:,'errors'] = 0
     # df.loc[:,'needs_human_intervention'] = True
-    return [ el.update({'is_vip': False,
-                        'credential_type': ['External', 'EU Login']
-                        }) for el in _list]
+    return [el.update({'is_vip': False,
+                       'credential_type': ['External', 'EU Login']
+                       }) for el in _list]
     # print("type(d) = %s, d= %r" %(type(d), d))
     # if 'is_vip' not in d:
     #     d['is_vip'] = False
@@ -909,16 +898,46 @@ def postprocess(_list: list) -> list:
     # return d           # XXX FIXME
 
 
-def save_pickle(df: pd.DataFrame, outfile: str):
-    df.to_pickle(outfile)
-
 
 # ############################################################################################################
 # CSV file importing
+
+def enrich(item: InternalDataFormat, leak_id: int) -> InternalDataFormat:
+    """Initial enricher chain. This SHOULD be configurable and a pipeline via a MQ."""
+    # set leak_id
+    item.leak_id = leak_id
+    # VIP status
+    if not item.is_vip:
+        vip_enricher = VIPEnricher()
+        item.is_vip = vip_enricher.is_vip(item.email)
+    # DG
+    if not item.dg:
+        ldap_enricher = LDAPEnricher()
+        dg = ldap_enricher.email_to_DG(item.email)
+        if not dg:
+            dg = "Unknown"
+        item.dg = dg
+    # Active account or outdated?
+    if not item.is_active_account:
+        item.is_active_account = ldap_enricher.exists(item.email)
+    # External Address or internal?
+    if not item.external_user:
+        ext_email_enricher = ExternalEmailEnricher()
+        item.external_user = ext_email_enricher.is_external_email(item.email)
+    # credential Type
+    if not item.credential_type:
+        item.credential_type.append("EU Login")     # XXX FIXME! This is mock-up data!
+    # Abuse contact / report to
+    if not item.report_to:
+        abuse_enricher = AbuseContactLookup()
+        item.report_to = abuse_enricher.lookup(item.email)
+    return item
+
+
 @app.post("/import/csv/spycloud/{parent_ticket_id}",
-          tags=["CSV import"],
-          status_code=200,
-          response_model=Answer)
+          tags = ["CSV import"],
+          status_code = 200,
+          response_model = Answer)
 async def import_csv_spycloud(parent_ticket_id: str,
                               response: Response,
                               summary: str = None,
@@ -942,16 +961,18 @@ async def import_csv_spycloud(parent_ticket_id: str,
     t0 = time.time()
 
     if not parent_ticket_id:
-        return Answer(success=False, errormsg="Please specify a parent_ticket_id as a GET-style parameter in the URL. "
-                                              "This is the parameter, needed to link the sub-issues against", data=[])
+        return Answer(success = False,
+                      errormsg = "Please specify a parent_ticket_id as a GET-style parameter in the URL. "
+                                 "This is the parameter, needed to link the sub-issues against", data = [])
     if not summary:
-        return Answer(success=False, errormsg="Please specify a summary for the Leak object which needs to be created. ", data=[])
+        return Answer(success = False,
+                      errormsg = "Please specify a summary for the Leak object which needs to be created. ", data = [])
 
     # first check if the leak_id for that summary already exists and if it's already linked to the parent_ticket_id.
     sql = """SELECT id from leak where summary = %s and ticket_id=%s"""
     db = get_db()
     try:
-        with db.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        with db.cursor(cursor_factory = psycopg2.extras.RealDictCursor) as cur:
             print(cur.mogrify(sql, (summary, parent_ticket_id)))
             cur.execute(sql, (summary, parent_ticket_id))
             rows = cur.fetchall()
@@ -963,61 +984,80 @@ async def import_csv_spycloud(parent_ticket_id: str,
             else:
                 # nothing found, create one
                 source_name = "SpyCloud"
-                leak = Leak(ticket_id=parent_ticket_id, summary=summary, source_name=source_name)
-                answer = await new_leak(leak, response=response, api_key=api_key)
+                leak = Leak(ticket_id = parent_ticket_id, summary = summary, source_name = source_name)
+                answer = await new_leak(leak, response = response, api_key = api_key)
                 logging.info("Did not find existing leak object, creating one")
                 if answer.success:
                     leak_id = int(answer.data[0]['id'])
                     logging.info("Created with id %s" % leak_id)
                 else:
                     logging.error("Could not create leak object for spycloud CSV file")
-                    return Answer(success=False, errormsg="could not create leak object", data=[])
+                    return Answer(success = False, errormsg = "could not create leak object", data = [])
     except Exception as ex:
-        return Answer(success=False, errormsg=str(ex), data=[])
+        return Answer(success = False, errormsg = str(ex), data = [])
 
     # okay, we found the leak, let's insert the CSV
     file_on_disk = await store_file(_file.filename, _file.file)
     await check_file(file_on_disk)  # XXX FIXME. Additional checks on the dumped file still missing
 
-    p = SpycloudParser()
-    df = pd.DataFrame()
+    collector = SpyCloudCollector()
+    status, df = collector.collect(Path(file_on_disk))
+    if status != "OK":
+        return Answer(success = False, errormsg = "Could not read input CSV file", data = [])
+
+    p = SpyCloudParser()
+    # items: Type[List[InternalDataFormat]]  # list of InternalDataFormat
     try:
-        df = p.parse_file(Path(file_on_disk), leak_id=leak_id)
+        items = p.parse(Path(file_on_disk))
     except Exception as ex:
-        return Answer(success=False, errormsg=str(ex), data=[])
+        return Answer(success = False, errormsg = str(ex), data = [])
 
-    df2 = p.normalize_data(df, leak_id=leak_id)
-    # df = dedup_data(df)
-    # df = filter_data(df2)
-    # df = enrich_data(df)
-    # df = postprocess_data(df)
-    # df = store_data(df)
-    # data = return_data(df)
-    """
-    Now, after normalization, the df is in the format:
-      leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id, email_verified,
-         password_verified_ok, ip, domain, browser , malware_name, infected_machine, dg, is_vip
+    deduper = Deduper()
+    filter = Filter()
 
-    Example
-    -------
-    [5 rows x 15 columns]
-       leak_id                email  ... infected_machine     dg
-    0        1    aaron@example.com  ...     local_laptop  DIGIT
-    1        1    sarah@example.com  ...    sarahs_laptop  DIGIT
-    2        1  rousben@example.com  ...      WORKSTATION  DIGIT
-    3        1    david@example.com  ...      Macbook Pro  DIGIT
-    4        1    lauri@example.com  ...  Raspberry PI 3+  DIGIT
-    5        1  natasha@example.com  ...  Raspberry PI 3+  DIGIT
+    data = []
+    for item in items:          # FIXME: this pipeline could be done nicer with functools and reduce
+        # send it through the complete pipeline
+        item = filter.filter(item)
+        if not item:
+            logging.info("skipping item (%s, %s), It got filtered out by the filter." % (item.email, item.password))
+            continue
+        try:
+            item = deduper.dedup(item)
+            if not item:
+                logging.info("skipping item (%s, %s), since it already existed in the DB." % (item.email, item.password))
+                continue        # next item
+        except Exception as ex:
+            logging.error("Could not deduplicate item (%s, %s). Skipping this row. Reason: %s" % (item.email, item.password, str(ex)))
+            continue
+        try:
+            item = enrich(item)
+        except Exception as ex:
+            errmsg = "Could not enrich item (%s, %s). Skipping this row. Reason: %s" % (item.email, item.password, str(ex),)
+            logging.error(errmsg)
+            item.error_msg = errmsg
+            item.needs_human_intervention = True
+            item.notify = False
+        try:
+           item = store(item)
+        except Exception as ex:
+            logging.error("Could not store Item. Skipping this row. Reason: %s" % str(ex))
+            continue
+        # after all is finished, convert to output format and return the (deduped) row
+        # convert to output format:
+        XXXXXXXXXXXXXXXXXX This Breaks for now XXXXXXXXXXXXXXXXXXXXXX
+        out_item = convert_to_output(item)
+        data.append(out_item)
 
-    """
-
-    print(df2.info())
-    # save_pickle(df2, "output.pkl")
-    df = enrich_df(df2)
+    t1 = time.time()
+    d = round(t1 - t0, 3)
+    return Answer(success = True, errormsg = None,
+                  meta = AnswerMeta(version = VER, duration = d, count = len(data)),
+                  data = data)
 
     i = 0
     inserted_ids = []
-    for r in df.reset_index().to_dict(orient='records'):
+    for r in df.reset_index().to_dict(orient = 'records'):
         print("r: %r" % r)
         sql = """
             INSERT into leak_data(
@@ -1032,20 +1072,26 @@ async def import_csv_spycloud(parent_ticket_id: str,
         try:
             print("ehlddlo world")
             db = get_db()
-            with db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)as cur:
-                r['ticket_id'] = None                 # XXX FIXME
-                r['email_verified'] = False           # XXX FIXME
-                r['password_verified_ok'] = False     # XXX FIXME
-                r['malware_name'] = None              # XXX FIXME
-                print(cur.mogrify(sql, (leak_id, r['email'], r['password'], r['password_plain'], r['password'], r['hash_algo'], r['ticket_id'], r['email_verified'], r['password_verified_ok'], r['ip'], r['domain'], r['browser'], r['malware_name'], r['infected_machine'], r['dg'])))
-                cur.execute(sql, (leak_id, r['email'], r['password'], r['password_plain'], r['password'], r['hash_algo'], r['ticket_id'], r['email_verified'], r['password_verified_ok'], r['ip'], r['domain'], r['browser'], r['malware_name'], r['infected_machine'], r['dg']))
+            with db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)as cur:
+                r['ticket_id'] = None  # XXX FIXME
+                r['email_verified'] = False  # XXX FIXME
+                r['password_verified_ok'] = False  # XXX FIXME
+                r['malware_name'] = None  # XXX FIXME
+                print(cur.mogrify(sql, (
+                leak_id, r['email'], r['password'], r['password_plain'], r['password'], r['hash_algo'], r['ticket_id'],
+                r['email_verified'], r['password_verified_ok'], r['ip'], r['domain'], r['browser'], r['malware_name'],
+                r['infected_machine'], r['dg'])))
+                cur.execute(sql, (
+                leak_id, r['email'], r['password'], r['password_plain'], r['password'], r['hash_algo'], r['ticket_id'],
+                r['email_verified'], r['password_verified_ok'], r['ip'], r['domain'], r['browser'], r['malware_name'],
+                r['infected_machine'], r['dg']))
                 leak_data_id = int(cur.fetchone()['id'])
                 print("leak_data_id: %s" % leak_data_id)
                 inserted_ids.append(leak_data_id)
                 i += 1
         except psycopg2.Error as ex:
-            print("error: %s" % ex.pgerror, file=sys.stderr)
-            return Answer(success=False, errormsg=ex.pgerror, data=[])
+            print("error: %s" % ex.pgerror, file = sys.stderr)
+            return Answer(success = False, errormsg = ex.pgerror, data = [])
 
     t1 = time.time()
     d = round(t1 - t0, 3)
@@ -1056,20 +1102,21 @@ async def import_csv_spycloud(parent_ticket_id: str,
     # now get the data of all the IDs / dedup
     try:
         sql = """SELECT * from leak_data where id in %s"""
-        with db.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        with db.cursor(cursor_factory = psycopg2.extras.RealDictCursor) as cur:
             cur.execute(sql, (tuple(inserted_ids),))
             data = cur.fetchall()
             data = postprocess(data)
-            return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(inserted_ids)),
-                          data=data)
+            return Answer(success = True, errormsg = None,
+                          meta = AnswerMeta(version = VER, duration = d, count = len(inserted_ids)),
+                          data = data)
     except Exception as ex:
-        return Answer(success=False, errormsg=str(ex), data=[])
+        return Answer(success = False, errormsg = str(ex), data = [])
 
 
 @app.post("/import/csv/by_leak/{leak_id}",
-          tags=["CSV import"],
-          status_code=200,
-          response_model=Answer)
+          tags = ["CSV import"],
+          status_code = 200,
+          response_model = Answer)
 async def import_csv_with_leak_id(leak_id: int,
                                   response: Response,
                                   _file: UploadFile = File(...),
@@ -1093,21 +1140,21 @@ async def import_csv_with_leak_id(leak_id: int,
     t0 = time.time()
 
     if not leak_id:
-        return Answer(errormsg="Please specify a leak_id GET-style parameter in the URL", data=[])
+        return Answer(errormsg = "Please specify a leak_id GET-style parameter in the URL", data = [])
 
     # first check if the leak_id exists
     sql = """SELECT count(*) from leak where id = %s"""
     db = get_db()
     try:
-        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur = db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
         cur.execute(sql, (leak_id,))
         rows = cur.fetchone()
         nr_results = int(rows['count'])
         if nr_results != 1:
             response.status_code = 404
-            return Answer(success=False, errormsg="Leak ID %s not found" % leak_id, data=[])
+            return Answer(success = False, errormsg = "Leak ID %s not found" % leak_id, data = [])
     except Exception as ex:
-        return Answer(success=False, errormsg=str(ex), data=[])
+        return Answer(success = False, errormsg = str(ex), data = [])
 
     # okay, we found the leak, let's insert the CSV
     file_on_disk = await store_file(_file.filename, _file.file)
@@ -1116,11 +1163,11 @@ async def import_csv_with_leak_id(leak_id: int,
     p = BaseParser()
     df = pd.DataFrame()
     try:
-        df = p.parse_file(Path(file_on_disk), leak_id=leak_id)
+        df = p.parse_file(Path(file_on_disk), leak_id = leak_id)
     except Exception as ex:
-        return Answer(success=False, errormsg=str(ex), data=[])
+        return Answer(success = False, errormsg = str(ex), data = [])
 
-    df = p.normalize_data(df, leak_id=leak_id)
+    df = p.normalize_data(df, leak_id = leak_id)
     """
     Now, after normalization, the df is in the format:
       leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id, email_verified,
@@ -1141,7 +1188,7 @@ async def import_csv_with_leak_id(leak_id: int,
 
     i = 0
     inserted_ids = []
-    for r in df.reset_index().to_dict(orient='records'):
+    for r in df.reset_index().to_dict(orient = 'records'):
         sql = """
         INSERT into leak_data(
           leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id, email_verified,
@@ -1153,7 +1200,7 @@ async def import_csv_with_leak_id(leak_id: int,
         RETURNING id
         """
         try:
-            cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            cur = db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
             cur.execute(sql, (r['leak_id'], r['email'], r['password'], r['password_plain'], r['password_hashed'],
                               r['hash_algo'], r['ticket_id'], r['email_verified'], r['password_verified_ok'], r['ip'],
                               r['domain'], r['browser'], r['malware_name'], r['infected_machine'], r['dg']))
@@ -1161,7 +1208,7 @@ async def import_csv_with_leak_id(leak_id: int,
             inserted_ids.append(leak_data_id)
             i += 1
         except Exception as ex:
-            return Answer(success=False, errormsg=str(ex), data=[])
+            return Answer(success = False, errormsg = str(ex), data = [])
     t1 = time.time()
     d = round(t1 - t0, 3)
     num_deduped = len(inserted_ids)
@@ -1170,21 +1217,22 @@ async def import_csv_with_leak_id(leak_id: int,
     # now get the data of all the IDs / dedup
     try:
         sql = """SELECT * from leak_data where id in %s"""
-        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur = db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
         cur.execute(sql, (tuple(inserted_ids),))
         data = cur.fetchall()
-        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=len(inserted_ids)), data=data)
+        return Answer(success = True, errormsg = None,
+                      meta = AnswerMeta(version = VER, duration = d, count = len(inserted_ids)), data = data)
     except Exception as ex:
-        return Answer(success=False, errormsg=str(ex), data=[])
+        return Answer(success = False, errormsg = str(ex), data = [])
 
 
 # ############################################################################################################
 # enrichers
 
 @app.get('/enrich/email_to_dg/{email}',
-         tags=["Enricher"],
-         status_code=200,
-         response_model=Answer)
+         tags = ["Enricher"],
+         status_code = 200,
+         response_model = Answer)
 async def enrich_dg_by_email(email: EmailStr,
                              response: Response,
                              api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
@@ -1194,34 +1242,36 @@ async def enrich_dg_by_email(email: EmailStr,
     t1 = time.time()
     d = round(t1 - t0, 3)
     if not retval:
-        response.status_code=404
-        return Answer(success=False, errormsg="not found", meta=AnswerMeta(version=VER, duration=d, count=0), data=[])
+        response.status_code = 404
+        return Answer(success = False, errormsg = "not found",
+                      meta = AnswerMeta(version = VER, duration = d, count = 0), data = [])
     else:
-        response.status_code=200
-        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=1),
-                      data=[{"dg": retval}])
+        response.status_code = 200
+        return Answer(success = True, errormsg = None, meta = AnswerMeta(version = VER, duration = d, count = 1),
+                      data = [{"dg": retval}])
 
 
 @app.get('/enrich/email_to_userid/{email}',
-         tags=["Enricher"],
-         status_code=200,
-         response_model=Answer)
+         tags = ["Enricher"],
+         status_code = 200,
+         response_model = Answer)
 async def enrich_userid_by_email(email: EmailStr, response: Response,
                                  api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
     t0 = time.time()
     le = LDAPEnricher()
-    retval = le.email2userId(email)
+    retval = le.email_to_user_id(email)
     t1 = time.time()
     d = round(t1 - t0, 3)
     if not retval:
-        response.status_code=404
-        return Answer(success=False, errormsg="not found", meta=AnswerMeta(version=VER, duration=d, count=0), data=[])
+        response.status_code = 404
+        return Answer(success = False, errormsg = "not found",
+                      meta = AnswerMeta(version = VER, duration = d, count = 0), data = [])
     else:
-        response.status_code=200
-        return Answer(success=True, errormsg=None, meta=AnswerMeta(version=VER, duration=d, count=1),
-                      data=[{"ecMoniker": retval}])
+        response.status_code = 200
+        return Answer(success = True, errormsg = None, meta = AnswerMeta(version = VER, duration = d, count = 1),
+                      data = [{"ecMoniker": retval}])
 
 
 if __name__ == "__main__":
     db_conn = connect_db(DSN)
-    uvicorn.run(app, debug=True, port=os.getenv('PORT', default=8080))
+    uvicorn.run(app, debug = True, port = os.getenv('PORT', default = 8080))

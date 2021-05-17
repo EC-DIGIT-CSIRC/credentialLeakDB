@@ -4,6 +4,7 @@ from pydantic import BaseModel, IPvAnyAddress
 
 class InternalDataFormat(BaseModel):
     """The Internal Data Format (IDF)."""
+    leak_id: Optional[int]      # the leak(id) reference
     email: str
     password: str
     password_plain: Optional[str]
@@ -18,7 +19,15 @@ class InternalDataFormat(BaseModel):
     browser: Optional[str]
     malware_name: Optional[str]
     infected_machine: Optional[str]
+    #
+    # flags set by the enrichers
     dg: Optional[str]
+    external_user: Optional[bool]
+    is_vip: Optional[bool]
+    is_active_account: Optional[bool]
+    credential_type: Optional[List[str]]    # External, EU Login, etc.
+    report_to: Optional[str]                # whom to report this to?
+    #
     # meta stuff and things for error reporting
     count_seen: Optional[int] = 1
     original_line: Optional[str]

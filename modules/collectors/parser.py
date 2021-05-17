@@ -51,21 +51,18 @@ class BaseParser:
             a DataFrame
             number of errors while parsing
         """
-        logging.debug("Parsing file %s...", fname)
-        print("Parsing file %s..." % fname)
+        logging.info("Parsing file %s..." % fname)
         try:
             if csv_dialect:
                 dialect = csv_dialect
             else:
                 dialect = peek_into_file(fname)     # try to guess
             df = pd.read_csv(fname, dialect=dialect, error_bad_lines=False, warn_bad_lines=True)  # , usecols=range(2))
-            print(df.head())
-            print(df.info())
-            print("Parsing file 2...")
+            logging.debug(df.head())
+            logging.debug(df.info())
+            logging.debug("Parsing file 2...")
             df.insert(0, 'leak_id', leak_id)
-            print(df.head())
-            # logging.debug(df.head())
-            # logging.debug(df.describe())
+            logging.debug(df.head())
             logging.debug("parsed %s", fname)
             return df
 
@@ -84,63 +81,6 @@ class BaseParser:
         # replace NaN with None
         return df.where(pd.notnull(df), None)
 
-
-'''
-def prepare_db_structures(breach_title, reporter, collection=None, breach_ts=None, source_publish_ts=None,
-                          leaked_website=None, jira_ticket_id=None, infected_machine=None, dg=None):
-    """ XXX FIXME !! THIS IS BROKEN """
-    """Fill up all relevant tables (leak, reporter, when the breach happened,
-    etc. etc.) up first before we insert the actual leak data (individual rows).
-
-    This whole thing is super ugly and could use some ORM love. Feel free to improve it please.
-    """
-
-    if not breach_title:
-        logging.error("can't insert into DB when no breach title given")
-        return
-    if not reporter:
-        logging.error("can't insert into DB when no reporter given")
-        return
-
-    # first try to insert the collection, if we have one
-    if collection:
-        sql = 'INSERT into collection (name) values (%s) ON CONFLICT (name) DO UPDATE SET name = %s RETURNING id'
-        try:
-            cur.execute(sql, (collection, collection))
-            collection_id = cur.fetchone()[0]
-        except Exception as ex:
-            logging.error("could not insert/fetch collection, reason: %s. SQL=%s", str(ex), cur.mogrify(sql, (collection, collection)))
-    else:
-        collection_id = None
-
-    # next the reporter
-    sql = 'INSERT into leak_reporter (name) values (%s) RETURNING id'
-    try:
-        cur.execute(sql, (reporter, ))
-        reporter_id = cur.fetchone()[0]
-    except Exception as ex:
-        logging.error("could not insert/fetch reporter, reason: %s. SQL=%s", str(ex), cur.mogrify(sql, (reporter,)))
-
-    # the actual leak
-    leak_id = None
-    sql = 'INSERT INTO leak (breach_title, leak_reporter_id, ingestion_ts) values (%s, %s, now()) ON CONFLICT DO NOTHING RETURNING id'
-    try:
-        cur.execute(sql, (breach_title, reporter_id, ))
-        leak_id = cur.fetchone()[0]
-    except Exception as ex:
-        logging.error("could not insert to DB, reason: %s", str(ex))
-
-    # and if we have a collection, do the n-to-m intersection tbl
-    if leak_id and collection and collection_id:
-        sql = 'INSERT into leak2collection (collection_id, leak_id) values (%s, %s)'
-        try:
-            cur.execute(sql, (collection_id, leak_id))
-        except Exception as ex:
-            logging.error("could not insert/fetch into leak2collection, reason: %s. SQL=%s", str(ex), cur.mogrify(sql, (collection_id, leak_id,)))
-
-    conn.commit()
-    cur.close()
-'''
 
 if __name__ == "__main__":
 

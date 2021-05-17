@@ -26,7 +26,7 @@ class SpycloudParser(BaseParser):
         try:
             # df = pd.read_csv(fname, dialect=csv_dialect, header=1, error_bad_lines=False, warn_bad_lines=True)
             df = pd.read_csv(fname, error_bad_lines=False, warn_bad_lines=True)
-            print(df)
+            logging.debug(df)
             return df
 
         except Exception as ex:
@@ -86,8 +86,8 @@ class SpycloudParser(BaseParser):
                     else:
                         # don't map it
                         pass
-            print("retrow = %r" % retrow)
+            logging.debug("retrow = %r" % retrow)
             retdf = retdf.append(pd.Series(retrow), ignore_index=True)
         # retdf[:,'leak_id'] = leak_id
-        print("retdf: %s" % retdf)
+        logging.debug("retdf: %s" % retdf)
         return retdf

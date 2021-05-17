@@ -4,6 +4,8 @@ import unittest
 
 from fastapi.testclient import TestClient
 
+from lib.db.db import _connect_db as connect_db
+
 from credentialLeakDB.api.main import *
 
 VALID_AUTH = {'x-api-key': 'random-test-api-key'}
@@ -334,6 +336,7 @@ def insert_leak_data(d: dict) -> int:
     response = client.post("/leak_data/", json = d, headers = VALID_AUTH)
     assert response.status_code == 201
     data = response.json()
+    print(data)
     assert "meta" in data and \
            "data" in data and \
            data['meta']['count'] >= 1 and \
