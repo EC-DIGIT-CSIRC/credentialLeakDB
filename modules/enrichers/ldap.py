@@ -12,8 +12,11 @@ class LDAPEnricher:
         """Return the DG of an email. Note that there might be multiple DGs, we just return the first one here."""
         try:
             results = self.ced.search_by_mail(email)
-            if results and results[0]['attributes'] and results[0]['attributes']['dg'][0]:
+            if results and results[0]['attributes'] and results[0]['attributes']['dg'] and \
+                    results[0]['attributes']['dg'][0]:
                 return results[0]['attributes']['dg'][0]
+            else:
+                return "Unknown"
         except Exception as ex:
             print("could not query LDAP/CED. Reason: %s" % str(ex))
             return None
@@ -22,8 +25,11 @@ class LDAPEnricher:
         """Return the userID of an email. """
         try:
             results = self.ced.search_by_mail(email)
-            if results and results[0]['attributes'] and results[0]['attributes']['ecMoniker'][0]:
+            if results and results[0]['attributes'] and  results[0]['attributes']['ecMoniker'] and \
+                    results[0]['attributes']['ecMoniker'][0]:
                 return results[0]['attributes']['ecMoniker'][0]
+            else:
+                return None
         except Exception as ex:
             print("could not query LDAP/CED. Reason: %s" % str(ex))
             return None
@@ -32,7 +38,8 @@ class LDAPEnricher:
         """Return the active status."""
         try:
             results = self.ced.search_by_mail(email)
-            if results and results[0]['attributes'] and results[0]['attributes']['recordStatus'][0]:
+            if results and results[0]['attributes'] and results[0]['attributes']['recordStatus'] and \
+                    results[0]['attributes']['recordStatus'][0]:
                 return results[0]['attributes']['recordStatus'][0]
         except Exception as ex:
             print("could not query LDAP/CED. Reason: %s" % str(ex))
