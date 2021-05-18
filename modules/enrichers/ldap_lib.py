@@ -26,7 +26,6 @@ class CEDQuery:
             self.base_dn=os.getenv('CED_BASEDN')
             try:
                 self.connect_ldap(self.server, self.port, self.user, self.password)
-                self.is_connected = True
             except Exception as ex:
                 logging.error("could ot connect to LDAP. Reason: %s" % str(ex))
                 self.is_connected = False
@@ -36,16 +35,19 @@ class CEDQuery:
         try:
             self.s = Server(server, port=port, get_info=ALL)
             self.conn = Connection(self.s, user=user, password=password)
+            self.is_connected = self.conn.bind()
+            print("Connection = %s" % self.conn)
             logging.info("connect_ldap(): self.conn = %s" %(self.conn,))
             logging.info("connect_ldap(): conn.bind() = %s" %(self.conn.bind(),))
         except Exception as ex:
             logging.error("error connecting to CED. Reason: %s" %(str(ex)))
+            self.is_connected = False
             return None
 
     def search_by_mail(self, email: str) -> List[dict]:
         attributes = ['cn', 'dg', 'uid', 'ecMoniker', 'employeeType', 'recordStatus', 'sn', 'givenName', 'mail']
         if not self.is_connected:
-            logging.error("Could not seearch via email. Not connected to LDAP.")
+            logging.error("Could not search via email. Not connected to LDAP.")
             return None
         try:
             self.conn.search(self.base_dn, "(mail=%s)" %(email,), attributes=attributes)
@@ -54,7 +56,7 @@ class CEDQuery:
         logging.info("search_by_mail(): %s" %(self.conn.entries,))
         results = [] 
         for entry in self.conn.entries:
-            results.append(  json.loads(entry.entry_to_json()))
+            results.append(json.loads(entry.entry_to_json()))
         return results          # yeah, a list comprehension would be more pythonic
 
 

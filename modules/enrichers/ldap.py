@@ -1,4 +1,5 @@
 
+import logging
 from modules.enrichers.ldap_lib import CEDQuery
 
 
@@ -18,8 +19,8 @@ class LDAPEnricher:
             else:
                 return "Unknown"
         except Exception as ex:
-            print("could not query LDAP/CED. Reason: %s" % str(ex))
-            return None
+            logging.error("could not query LDAP/CED. Reason: %s" % str(ex))
+            raise ex
 
     def email_to_user_id(self, email: str) -> str:
         """Return the userID of an email. """
@@ -31,8 +32,8 @@ class LDAPEnricher:
             else:
                 return None
         except Exception as ex:
-            print("could not query LDAP/CED. Reason: %s" % str(ex))
-            return None
+            logging.error("could not query LDAP/CED. Reason: %s" % str(ex))
+            raise ex
 
     def email_to_status(self, email: str) -> str:
         """Return the active status."""
@@ -42,12 +43,13 @@ class LDAPEnricher:
                     results[0]['attributes']['recordStatus'][0]:
                 return results[0]['attributes']['recordStatus'][0]
         except Exception as ex:
-            print("could not query LDAP/CED. Reason: %s" % str(ex))
-            return None
+            logging.error("could not query LDAP/CED. Reason: %s" % str(ex))
+            raise ex
 
     def exists(self, email: str) -> bool:
         """Check if a user exists."""
-        if "A" == self.email_to_status(email).upper():
+        status = self.email_to_status(email)
+        if status and status.upper() == "A":
             return True
         else:
             return False
