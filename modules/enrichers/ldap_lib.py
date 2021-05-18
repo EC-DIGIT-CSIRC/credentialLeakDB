@@ -48,11 +48,12 @@ class CEDQuery:
         attributes = ['cn', 'dg', 'uid', 'ecMoniker', 'employeeType', 'recordStatus', 'sn', 'givenName', 'mail']
         if not self.is_connected:
             logging.error("Could not search via email. Not connected to LDAP.")
-            return None
+            raise Exception("Could not search via email. Not connected to LDAP.")
         try:
             self.conn.search(self.base_dn, "(mail=%s)" %(email,), attributes=attributes)
         except Exception as ex:
             logging.error("could not search LDAP. error: %s" %str(ex))
+            raise ex
         logging.info("search_by_mail(): %s" %(self.conn.entries,))
         results = [] 
         for entry in self.conn.entries:

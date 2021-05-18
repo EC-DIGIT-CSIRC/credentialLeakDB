@@ -927,7 +927,7 @@ def enrich(item: InternalDataFormat, leak_id: str) -> InternalDataFormat:
         item.external_user = ext_email_enricher.is_external_email(item.email)
     # credential Type
     if not item.credential_type:
-        item.credential_type.append("EU Login")     # XXX FIXME! This is mock-up data!
+        item.credential_type = ["EU Login"]     # XXX FIXME! This is mock-up data!
     # Abuse contact / report to
     if not item.report_to:
         abuse_enricher = AbuseContactLookup()

@@ -27,16 +27,17 @@ class SpyCloudParser(BaseParser):
         """parse a pandas DF and return the data in the Internal Data Format."""
 
 
-        print(df)
         # First, map empty columns to None so that it fits nicely into the IDF
         df.replace({"-": None}, inplace = True)
         df.replace({"nan": None}, inplace = True)
         df.replace({np.nan: None}, inplace = True)
         df.replace({'breach_date': {'Unknown': None}}, inplace = True)
+        print(df.describe())
 
         # validate via pydantic
         items = []
         for row in df.reset_index().to_dict(orient = 'records'):
+            print("row=%s" % row)
             try:
                 indf_item = parse_obj_as(SpyCloudInputEntry, row)  # here the validation magic happens
                 idf_dict = indf_item.dict()  # conversion magic happens between input format and internal data format

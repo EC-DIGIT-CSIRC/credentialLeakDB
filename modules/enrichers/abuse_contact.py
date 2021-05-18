@@ -29,7 +29,6 @@ class AbuseContactLookup:
         })
 
         domain = email.split('@')[-1]
-        print("%s domain part of %s" %(domain, email))
         for k, v in mapping_table.items():
             if re.match(k, domain):
                 if v == "DIRECT":
