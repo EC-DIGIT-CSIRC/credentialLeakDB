@@ -883,7 +883,6 @@ def postprocess(_list: list) -> list:
     # return d           # XXX FIXME
 
 
-
 # ############################################################################################################
 # CSV file importing
 
@@ -929,6 +928,8 @@ def store(idf: InternalDataFormat) -> InternalDataFormat:
     :returns the idf item.
     """
     # XXX FIXME!! need to implement / refactor existing code.
+    # convert the idf to the DB row
+
     return idf
 
 
@@ -937,8 +938,7 @@ def convert_to_output(idf: InternalDataFormat) -> LeakData:
 
     ":returns LeakData
     """
-    # XXX FIXME!! needs to be implemented.
-    output_data_entry = idf.dict()
+    output_data_entry = idf.dict()          # here the validation pydantic magic happens
     return output_data_entry
 
 
