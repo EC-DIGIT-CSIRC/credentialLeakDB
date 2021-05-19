@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 
 from lib.db.db import _connect_db as connect_db
 
-from credentialLeakDB.api.main import *
+from api.main import *
 
 VALID_AUTH = {'x-api-key': 'random-test-api-key'}
 INVALID_AUTH = {'x-api-key': 'random-test-api-XXX'}

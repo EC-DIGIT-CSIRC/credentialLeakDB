@@ -5,7 +5,7 @@ name: flak8 and pytest
 
 on:
   push:
-    branches: [ main, develop, release/* ]
+    branches: [ main, develop, re-write-modules, release/* ]
   pull_request:
     branches: [ main ]
 
@@ -19,6 +19,7 @@ jobs:
       DBUSER: credentialleakdb
       DBPASSWORD: 1234testForUnitTesting
       DBNAME: credentialleakdb
+      VIPLIST: tests/fixtures/vips.txt
     steps:
     - uses: actions/checkout@v2
       with:
