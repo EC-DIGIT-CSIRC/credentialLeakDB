@@ -9,9 +9,9 @@ License: see LICENSE
 # system / base packages
 import logging
 import os
+import random
 import shutil
 import time
-import random
 from pathlib import Path
 from tempfile import SpooledTemporaryFile
 from typing import List
@@ -28,21 +28,18 @@ from pydantic import EmailStr
 # packages from this code repo
 from api.config import config
 from lib.db.db import _get_db, _close_db, _connect_db, DSN
+from models.idf import InternalDataFormat
 from models.outdf import Leak, LeakData, Answer, AnswerMeta
-from modules.collectors.parser import BaseParser        # XXX FIXME: this should be in lib, no? Or called "genericparser"
-from modules.parsers.spycloud import SpyCloudParser
+from modules.collectors.parser import BaseParser  # XXX FIXME: this should be in lib, no? Or called "genericparser"
 from modules.collectors.spycloud.collector import SpyCloudCollector
-
-from modules.filters.filter import Filter
+from modules.enrichers.abuse_contact import AbuseContactLookup
+from modules.enrichers.external_email import ExternalEmailEnricher
 from modules.enrichers.ldap import LDAPEnricher
 from modules.enrichers.vip import VIPEnricher
-from modules.enrichers.external_email import ExternalEmailEnricher
-from modules.enrichers.abuse_contact import AbuseContactLookup
-
 from modules.filters.deduper import Deduper
+from modules.filters.filter import Filter
 from modules.output.db import PostgresqlOutput
-
-from models.idf import InternalDataFormat
+from modules.parsers.spycloud import SpyCloudParser
 
 ###############################################################################
 # API key stuff
@@ -665,7 +662,8 @@ async def update_leak(leak: Leak,
     t0 = time.time()
     db = get_db()
     if not leak.id:
-        return Answer(success=False, errormsg = "id %s not given. Please specify a leak.id you want to UPDATE", data = [])
+        return Answer(success = False, errormsg = "id %s not given. Please specify a leak.id you want to UPDATE",
+                      data = [])
     try:
         cur = db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
         cur.execute(sql, (leak.summary, leak.ticket_id, leak.reporter_name,
@@ -860,6 +858,7 @@ async def import_csv_auto_mode(ticket_id=str, summary=None):
       return (deduplicated data including the newly created leak_id)
 """
 
+
 def postprocess(_list: list) -> list:
     # df.loc[:,'errors'] = 0
     # df.loc[:,'needs_human_intervention'] = True
@@ -868,11 +867,11 @@ def postprocess(_list: list) -> list:
         notify = not attention
         is_vip = random.random() > 0.5
         item.update({'is_vip': is_vip,
-            "credential_type": ["EU Login", "External"],
-            "report_to": "Benoit.Roussille@ec.europa.eu",
-            "needs_human_attention": attention,
-            "notify": notify
-            })
+                     "credential_type": ["EU Login", "External"],
+                     "report_to": "Benoit.Roussille@ec.europa.eu",
+                     "needs_human_attention": attention,
+                     "notify": notify
+                     })
     return _list
     # print("type(d) = %s, d= %r" %(type(d), d))
     # if 'is_vip' not in d:
@@ -915,7 +914,7 @@ def enrich(item: InternalDataFormat, leak_id: str) -> InternalDataFormat:
 
     # credential Type
     if not item.credential_type:
-        item.credential_type = ["EU Login"]     # XXX FIXME! This is mock-up data!
+        item.credential_type = ["EU Login"]  # XXX FIXME! This is mock-up data!
 
     # Abuse contact / report to
     if not item.report_to:
@@ -945,7 +944,7 @@ def convert_to_output(idf: InternalDataFormat) -> LeakData:
 
     ":returns LeakData
     """
-    output_data_entry = LeakData(**idf.dict())      # here the validation pydantic magic happens
+    output_data_entry = LeakData(**idf.dict())  # here the validation pydantic magic happens
     return output_data_entry
 
 
@@ -1031,12 +1030,12 @@ async def import_csv_spycloud(parent_ticket_id: str,
     filter = Filter()
 
     data = []
-    for item in items:          # FIXME: this pipeline could be done nicer with functools and reduce
+    for item in items:  # FIXME: this pipeline could be done nicer with functools and reduce
         # send it through the complete pipeline
         print(item)
         item = filter.filter(item)
-        email=item.email
-        password=item.password
+        email = item.email
+        password = item.password
         if not item:
             logging.info("skipping item (%s, %s), It got filtered out by the filter." % (email, password))
             continue
@@ -1044,12 +1043,13 @@ async def import_csv_spycloud(parent_ticket_id: str,
             item = deduper.dedup(item)
             if not item:
                 logging.info("skipping item (%s, %s), since it already existed in the DB." % (email, password))
-                continue        # next item
+                continue  # next item
         except Exception as ex:
-            logging.error("Could not deduplicate item (%s, %s). Skipping this row. Reason: %s" % (email, password, str(ex)))
+            logging.error(
+                "Could not deduplicate item (%s, %s). Skipping this row. Reason: %s" % (email, password, str(ex)))
             continue
         try:
-            item = enrich(item, leak_id=leak_id)
+            item = enrich(item, leak_id = leak_id)
             item.leak_id = leak_id
         except Exception as ex:
             errmsg = "Could not enrich item (%s, %s). Skipping this row. Reason: %s" % (email, password, str(ex),)

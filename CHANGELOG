@@ -1,6 +1,7 @@
 0.6 * complete re-write. Refactor everything.
     * make a structure of collectors, parsers, enrichers, filters, output modules
-    * re-write spycloud parsing completely
+    * re-wrote spycloud parsing completely
+    * re-wrote the output / postgresql storing of the data
 
 0.5 * things sort of work, but feels buggy
 
