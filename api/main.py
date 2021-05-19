@@ -907,6 +907,10 @@ def enrich(item: InternalDataFormat, leak_id: str) -> InternalDataFormat:
     if not item.report_to:
         abuse_enricher = AbuseContactLookup()
         item.report_to = abuse_enricher.lookup(item.email)
+    # all is good, we went through the pipeline
+    item.notify = True
+    item.needs_human_intervention = False
+    item.error_msg = None
     return item
 
 
