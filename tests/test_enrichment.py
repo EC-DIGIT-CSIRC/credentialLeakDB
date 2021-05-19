@@ -40,6 +40,6 @@ class TestAbuseContactLookup(unittest.TestCase):
     def test_lookup(self):
         email = "aaron@example.com"
         te = AbuseContactLookup()
-        assert email == te.lookup(email)
+        assert email == te.lookup(email)[0]
         email = "aaron@example.ec.europa.eu"
-        assert "ec-digit-csirc@ec.europa.eu" == te.lookup(email)
+        assert "ec-digit-csirc@ec.europa.eu" == te.lookup(email)[0]
