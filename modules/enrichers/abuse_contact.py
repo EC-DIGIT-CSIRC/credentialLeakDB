@@ -7,7 +7,7 @@ import re
 class AbuseContactLookup:
     """A simple abuse contact lookup class."""
 
-    def lookup(self, email: str) -> str:
+    def lookup(self, email: str) -> List[str]:
         """Look up the right abuse contact for credential leaks based on the email address.
         Example:
             lookup("example@jrc.it")   --> "reports@jrc.it"
@@ -23,7 +23,7 @@ class AbuseContactLookup:
         """
 
         mapping_table = collections.OrderedDict({
-            re.compile(r"example\.ec\.europa\.eu", re.X): "ec-digit-csirc@ec.europa.eu",       # example
+            re.compile(r"example\.ec\.europa\.eu", re.X): ["ec-digit-csirc@ec.europa.eu"],       # example
             re.compile(r".*\.ec\.europa\.eu", re.X): "DIRECT",
             re.compile(r".*", re.X): "DIRECT"          # the default catch-all rule. Don't delete!
         })
@@ -32,7 +32,7 @@ class AbuseContactLookup:
         for k, v in mapping_table.items():
             if re.match(k, domain):
                 if v == "DIRECT":
-                    return email
+                    return [email]
                 else:
                     return v
         return ""

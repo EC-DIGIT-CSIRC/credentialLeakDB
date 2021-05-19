@@ -27,7 +27,7 @@ from pydantic import EmailStr
 
 # packages from this code repo
 from lib.db.db import _get_db, _close_db, _connect_db, DSN
-from api.models import Leak, LeakData, Answer, AnswerMeta, CredentialType
+from api.models import Leak, LeakData, Answer, AnswerMeta
 from api.config import config
 from modules.collectors.parser import BaseParser
 from modules.parsers.spycloud import SpyCloudParser
@@ -912,8 +912,8 @@ def enrich(item: InternalDataFormat, leak_id: str) -> InternalDataFormat:
         vip_enricher = VIPEnricher()
         item.is_vip = vip_enricher.is_vip(item.email)
     # DG
+    ldap_enricher = LDAPEnricher()
     if not item.dg:
-        ldap_enricher = LDAPEnricher()
         dg = ldap_enricher.email_to_DG(item.email)
         if not dg:
             dg = "Unknown"
@@ -1037,6 +1037,7 @@ async def import_csv_spycloud(parent_ticket_id: str,
     data = []
     for item in items:          # FIXME: this pipeline could be done nicer with functools and reduce
         # send it through the complete pipeline
+        print(item)
         item = filter.filter(item)
         if not item:
             logging.info("skipping item (%s, %s), It got filtered out by the filter." % (item.email, item.password))
@@ -1057,6 +1058,7 @@ async def import_csv_spycloud(parent_ticket_id: str,
             item.error_msg = errmsg
             item.needs_human_intervention = True
             item.notify = False
+        print(item)
         try:
            item = store(item)
         except Exception as ex:

@@ -26,7 +26,7 @@ class InternalDataFormat(BaseModel):
     is_vip: Optional[bool]
     is_active_account: Optional[bool]
     credential_type: Optional[List[str]]    # External, EU Login, etc.
-    report_to: Optional[str]                # whom to report this to?
+    report_to: Optional[List[str]]          # whom to report this to?
     #
     # meta stuff and things for error reporting
     count_seen: Optional[int] = 1

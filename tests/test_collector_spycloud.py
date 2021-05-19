@@ -1,12 +1,14 @@
 import unittest
 import pandas as pd
 
+from pathlib import Path
+
 from modules.collectors.spycloud.collector import SpyCloudCollector
 
 class SpyCloudCollectorTest(unittest.TestCase):
     def test_collect(self):
         data = pd.DataFrame()
-        path = 'tests/fixtures/data_anonymized_spycloud.csv'
+        path = Path('tests/fixtures/data_anonymized_spycloud.csv')
         tc = SpyCloudCollector()
         statuscode, data = tc.collect(path)
         assert statuscode == "OK"
