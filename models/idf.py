@@ -32,6 +32,6 @@ class InternalDataFormat(BaseModel):
     count_seen: Optional[int] = 1
     original_line: Optional[str]
     error_msg: Optional[str]
-    notify: bool
-    needs_human_intervention: bool
+    notify: Optional[bool]
+    needs_human_intervention: Optional[bool]
 
