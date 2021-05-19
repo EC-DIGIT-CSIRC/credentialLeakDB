@@ -1048,7 +1048,8 @@ async def import_csv_spycloud(parent_ticket_id: str,
             item.error_msg = errmsg
             item.needs_human_intervention = True
             item.notify = False
-        print(item)
+        if item.external_user:
+            item.notify = False
         try:
             item = store(item)
         except Exception as ex:
