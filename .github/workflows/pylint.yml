@@ -4,6 +4,8 @@ on: [push]
 
 jobs:
   build:
+    env:
+      VIPLIST: tests/fixtures/vips.txt
 
     runs-on: ubuntu-latest
 

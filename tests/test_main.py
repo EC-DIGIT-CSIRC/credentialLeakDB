@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 
 from lib.db.db import _connect_db as connect_db
 
-from credentialLeakDB.api.main import *
+from api.main import *
 
 VALID_AUTH = {'x-api-key': 'random-test-api-key'}
 INVALID_AUTH = {'x-api-key': 'random-test-api-XXX'}
@@ -418,10 +418,25 @@ def test_import_csv_with_leak_id():
     fixtures_file = "./tests/fixtures/data.csv"
     f = open(fixtures_file, "rb")
     response = client.post('/import/csv/by_leak/%s' % (_id,), files = {"_file": f}, headers = VALID_AUTH)
-    print(response.status_code)
     assert response.status_code >= 200 and response.status_code < 300
     assert response.json()['meta']['count'] >= 0
 
 
 def test_check_file():
     assert True  # trivial check, not implemented yet actually in main.py
+
+def test_enrich_email_to_vip():
+    email_vip = "aaron@example.com"
+    response = client.get('/enrich/email_to_vip/%s' % (email_vip,), headers = VALID_AUTH)
+    assert response.status_code == 200
+    data = response.json()
+    assert data['meta']['count'] >= 1
+    assert data['data'][0]['is_vip'] == True
+
+def test_enrich_email_to_vip_INVALID():
+    email_vip = "aaron-invalid-does-not-exist@example.com"
+    response = client.get('/enrich/email_to_vip/%s' % (email_vip,), headers = VALID_AUTH)
+    assert response.status_code == 200
+    data = response.json()
+    assert data['meta']['count'] >= 1
+    assert data['data'][0]['is_vip'] == False
