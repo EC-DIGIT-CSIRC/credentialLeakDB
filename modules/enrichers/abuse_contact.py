@@ -2,6 +2,7 @@
 
 import collections
 import re
+from typing import List
 
 
 class AbuseContactLookup:

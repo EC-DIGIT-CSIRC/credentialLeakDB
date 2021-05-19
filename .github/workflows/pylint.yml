@@ -23,5 +23,5 @@ jobs:
         cp config.SAMPLE.py api/config.py
     - name: Analysing the code with pylint
       run: |
-        export PYTHONPATH=$(pwd) &&  pylint --suggestion-mode=y --extension-pkg-whitelist='pydantic' -E -d C0301 -d E0611 api
+        export PYTHONPATH=$(pwd) && pylint --suggestion-mode=y --extension-pkg-whitelist='pydantic' -E -d C0301 -d E0611 api models tests modules lib
         
