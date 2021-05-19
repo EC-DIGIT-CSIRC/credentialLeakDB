@@ -938,8 +938,8 @@ def convert_to_output(idf: InternalDataFormat) -> LeakData:
     ":returns LeakData
     """
     # XXX FIXME!! needs to be implemented.
-    ld = LeakData()
-    return idf
+    output_data_entry = idf.dict()
+    return output_data_entry
 
 
 @app.post("/import/csv/spycloud/{parent_ticket_id}",
@@ -1050,7 +1050,7 @@ async def import_csv_spycloud(parent_ticket_id: str,
             item.notify = False
         print(item)
         try:
-           item = store(item)
+            item = store(item)
         except Exception as ex:
             logging.error("Could not store Item. Skipping this row. Reason: %s" % str(ex))
             continue
