@@ -888,10 +888,11 @@ def enrich_df(df: pd.DataFrame) -> pd.DataFrame:
 def postprocess(_list: list) -> list:
     # df.loc[:,'errors'] = 0
     # df.loc[:,'needs_human_intervention'] = True
-    attention = random.random() > 0.5
-    notify = not attention
     for item in _list:
-        item.update({'is_vip': False, 
+        attention = random.random() > 0.5
+        notify = not attention
+        is_vip = random.random() > 0.5
+        item.update({'is_vip': is_vip,
             "credential_type": ["EU Login", "External"],
             "report_to": "Benoit.Roussille@ec.europa.eu",
             "needs_human_attention": attention,
@@ -1099,7 +1100,7 @@ async def import_csv_spycloud(parent_ticket_id: str,
             RETURNING id
             """
         try:
-            print("ehlddlo world")
+            # print("ehlddlo world")
             db = get_db()
             with db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)as cur:
                 r['ticket_id'] = None  # XXX FIXME
@@ -1115,7 +1116,7 @@ async def import_csv_spycloud(parent_ticket_id: str,
                 r['email_verified'], r['password_verified_ok'], r['ip'], r['domain'], r['browser'], r['malware_name'],
                 r['infected_machine'], r['dg']))
                 leak_data_id = int(cur.fetchone()['id'])
-                print("leak_data_id: %s" % leak_data_id)
+                # print("leak_data_id: %s" % leak_data_id)
                 inserted_ids.append(leak_data_id)
                 i += 1
         except psycopg2.Error as ex:
@@ -1124,9 +1125,9 @@ async def import_csv_spycloud(parent_ticket_id: str,
 
     t1 = time.time()
     d = round(t1 - t0, 3)
-    print("all inserted ids: %s" % inserted_ids)
+    # print("all inserted ids: %s" % inserted_ids)
     num_deduped = len(inserted_ids)
-    print("inserted %d rows, %d duplicates, %d new rows" % (i, i - num_deduped, num_deduped))
+    # print("inserted %d rows, %d duplicates, %d new rows" % (i, i - num_deduped, num_deduped))
 
     # now get the data of all the IDs / dedup
     try:
