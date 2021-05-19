@@ -29,11 +29,6 @@ class CredentialType(Enum):
     is_secem_login = "SECEM"
 
 
-class HumanIntervention(BaseModel):
-    needs_human: bool = False  # needs to be set. Defaults to False
-    reason: Optional[str] = None  # a string to display to the user where he/she needs to add stuff the the data
-
-
 class LeakData(BaseModel):
     id: Optional[int]
     leak_id: int
@@ -55,9 +50,13 @@ class LeakData(BaseModel):
     is_vip: Optional[bool]
     credential_type: Optional[List[CredentialType]]
     report_to: Optional[List[str]]  # the security contact to report this to, in case it's not the the user directly.
-    needs_human_intervention: HumanIntervention
-    notify: bool
+    #
+    # meta stuff and things for error reporting
+    count_seen: Optional[int] = 1
     original_line: Optional[str]        # the original CSV file in case of errors
+    error_msg: Optional[str]
+    notify: bool
+    needs_human_intervention: bool
 
 
 class AnswerMeta(BaseModel):
