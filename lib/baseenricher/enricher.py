@@ -1,6 +1,6 @@
 """Purely abstract base enricher class."""
 
-from models.idf  import InternalDataFormat
+from models.idf import InternalDataFormat
 
 class BaseEnricher:
     def __init__(self):

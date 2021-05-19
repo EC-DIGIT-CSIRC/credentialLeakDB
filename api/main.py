@@ -9,13 +9,12 @@ License: see LICENSE
 # system / base packages
 import logging
 import os
-import sys
 import shutil
 import time
 import random
 from pathlib import Path
 from tempfile import SpooledTemporaryFile
-from typing import List, Type
+from typing import List
 
 # database, ASGI, etc.
 import pandas as pd
@@ -41,6 +40,7 @@ from modules.enrichers.external_email import ExternalEmailEnricher
 from modules.enrichers.abuse_contact import AbuseContactLookup
 
 from modules.filters.deduper import Deduper
+from modules.output.db import PostgresqlOutput
 
 from models.idf import InternalDataFormat
 
@@ -890,10 +890,12 @@ def enrich(item: InternalDataFormat, leak_id: str) -> InternalDataFormat:
     """Initial enricher chain. This SHOULD be configurable and a pipeline via a MQ."""
     # set leak_id
     item.leak_id = leak_id
+
     # VIP status
     if not item.is_vip:
         vip_enricher = VIPEnricher()
         item.is_vip = vip_enricher.is_vip(item.email)
+
     # DG
     ldap_enricher = LDAPEnricher()
     if not item.dg:
@@ -901,20 +903,25 @@ def enrich(item: InternalDataFormat, leak_id: str) -> InternalDataFormat:
         if not dg:
             dg = "Unknown"
         item.dg = dg
+
     # Active account or outdated?
     if not item.is_active_account:
         item.is_active_account = ldap_enricher.exists(item.email)
+
     # External Address or internal?
     if not item.external_user:
         ext_email_enricher = ExternalEmailEnricher()
         item.external_user = ext_email_enricher.is_external_email(item.email)
+
     # credential Type
     if not item.credential_type:
         item.credential_type = ["EU Login"]     # XXX FIXME! This is mock-up data!
+
     # Abuse contact / report to
     if not item.report_to:
         abuse_enricher = AbuseContactLookup()
         item.report_to = abuse_enricher.lookup(item.email)
+
     # all is good, we went through the pipeline
     item.notify = True
     item.needs_human_intervention = False
@@ -938,7 +945,7 @@ def convert_to_output(idf: InternalDataFormat) -> LeakData:
 
     ":returns LeakData
     """
-    output_data_entry = idf.dict()          # here the validation pydantic magic happens
+    output_data_entry = LeakData(**idf.dict())      # here the validation pydantic magic happens
     return output_data_entry
 
 
@@ -1020,6 +1027,7 @@ async def import_csv_spycloud(parent_ticket_id: str,
         return Answer(success = False, errormsg = str(ex), data = [])
 
     deduper = Deduper()
+    dbOutput = PostgresqlOutput()
     filter = Filter()
 
     data = []
@@ -1042,6 +1050,7 @@ async def import_csv_spycloud(parent_ticket_id: str,
             continue
         try:
             item = enrich(item, leak_id=leak_id)
+            item.leak_id = leak_id
         except Exception as ex:
             errmsg = "Could not enrich item (%s, %s). Skipping this row. Reason: %s" % (email, password, str(ex),)
             logging.error(errmsg)
@@ -1050,80 +1059,28 @@ async def import_csv_spycloud(parent_ticket_id: str,
             item.notify = False
         if item.external_user:
             item.notify = False
-        try:
-            item = store(item)
-        except Exception as ex:
-            logging.error("Could not store Item. Skipping this row. Reason: %s" % str(ex))
-            continue
         # after all is finished, convert to output format and return the (deduped) row
         # convert to output format:
-        # XXXXXXXXXXXXXXXXXX Mockup XXXXXXXXXXXXXXXXXXXXXX
         out_item = convert_to_output(item)
-        data.append(out_item)
 
+        # and finally, store it in the DB
+        if not item.needs_human_intervention:
+            try:
+                dbOutput.process(out_item)
+            except Exception as ex:
+                errmsg = "Could not store row. Skipping this row. Reason: %s" % str(ex)
+                logging.error(errmsg)
+                out_item.error_msg = errmsg
+                out_item.needs_human_intervention = True
+                out_item.notify = False
+
+        data.append(out_item)
+    # done! Emit all the output items with the header
     t1 = time.time()
     d = round(t1 - t0, 3)
     return Answer(success = True, errormsg = None,
                   meta = AnswerMeta(version = VER, duration = d, count = len(data)),
                   data = data)
-
-    ############ unreachable code here.... left for now , moving out soon XXX FIME
-    i = 0
-    inserted_ids = []
-    for r in df.reset_index().to_dict(orient = 'records'):
-        print("r: %r" % r)
-        sql = """
-            INSERT into leak_data(
-              leak_id, email, password, password_plain, password_hashed, hash_algo, ticket_id, email_verified,
-              password_verified_ok, ip, domain, browser , malware_name, infected_machine, dg
-              )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s )
-            ON CONFLICT ON CONSTRAINT constr_unique_leak_data_leak_id_email_password_domain
-            DO UPDATE SET  count_seen = leak_data.count_seen + 1
-            RETURNING id
-            """
-        try:
-            # print("ehlddlo world")
-            db = get_db()
-            with db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)as cur:
-                r['ticket_id'] = None  # XXX FIXME
-                r['email_verified'] = False  # XXX FIXME
-                r['password_verified_ok'] = False  # XXX FIXME
-                r['malware_name'] = None  # XXX FIXME
-                print(cur.mogrify(sql, (
-                leak_id, r['email'], r['password'], r['password_plain'], r['password'], r['hash_algo'], r['ticket_id'],
-                r['email_verified'], r['password_verified_ok'], r['ip'], r['domain'], r['browser'], r['malware_name'],
-                r['infected_machine'], r['dg'])))
-                cur.execute(sql, (
-                leak_id, r['email'], r['password'], r['password_plain'], r['password'], r['hash_algo'], r['ticket_id'],
-                r['email_verified'], r['password_verified_ok'], r['ip'], r['domain'], r['browser'], r['malware_name'],
-                r['infected_machine'], r['dg']))
-                leak_data_id = int(cur.fetchone()['id'])
-                # print("leak_data_id: %s" % leak_data_id)
-                inserted_ids.append(leak_data_id)
-                i += 1
-        except psycopg2.Error as ex:
-            print("error: %s" % ex.pgerror, file = sys.stderr)
-            return Answer(success = False, errormsg = ex.pgerror, data = [])
-
-    t1 = time.time()
-    d = round(t1 - t0, 3)
-    # print("all inserted ids: %s" % inserted_ids)
-    num_deduped = len(inserted_ids)
-    # print("inserted %d rows, %d duplicates, %d new rows" % (i, i - num_deduped, num_deduped))
-
-    # now get the data of all the IDs / dedup
-    try:
-        sql = """SELECT * from leak_data where id in %s"""
-        with db.cursor(cursor_factory = psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(sql, (tuple(inserted_ids),))
-            data = cur.fetchall()
-            data = postprocess(data)
-            return Answer(success = True, errormsg = None,
-                          meta = AnswerMeta(version = VER, duration = d, count = len(inserted_ids)),
-                          data = data)
-    except Exception as ex:
-        return Answer(success = False, errormsg = str(ex), data = [])
 
 
 @app.post("/import/csv/by_leak/{leak_id}",
@@ -1153,7 +1110,7 @@ async def import_csv_with_leak_id(leak_id: int,
     t0 = time.time()
 
     if not leak_id:
-        return Answer(errormsg = "Please specify a leak_id GET-style parameter in the URL", data = [])
+        return Answer(success = False, errormsg = "Please specify a leak_id GET-style parameter in the URL", data = [])
 
     # first check if the leak_id exists
     sql = """SELECT count(*) from leak where id = %s"""
