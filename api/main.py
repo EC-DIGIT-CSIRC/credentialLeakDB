@@ -12,6 +12,7 @@ import os
 import sys
 import shutil
 import time
+import random
 from pathlib import Path
 from tempfile import SpooledTemporaryFile
 from typing import List, Type
@@ -862,9 +863,17 @@ async def import_csv_auto_mode(ticket_id=str, summary=None):
 def postprocess(_list: list) -> list:
     # df.loc[:,'errors'] = 0
     # df.loc[:,'needs_human_intervention'] = True
-    return [el.update({'is_vip': False,
-                       'credential_type': ['External', 'EU Login']
-                       }) for el in _list]
+    for item in _list:
+        attention = random.random() > 0.5
+        notify = not attention
+        is_vip = random.random() > 0.5
+        item.update({'is_vip': is_vip,
+            "credential_type": ["EU Login", "External"],
+            "report_to": "Benoit.Roussille@ec.europa.eu",
+            "needs_human_attention": attention,
+            "notify": notify
+            })
+    return _list
     # print("type(d) = %s, d= %r" %(type(d), d))
     # if 'is_vip' not in d:
     #     d['is_vip'] = False
@@ -1018,21 +1027,23 @@ async def import_csv_spycloud(parent_ticket_id: str,
         # send it through the complete pipeline
         print(item)
         item = filter.filter(item)
+        email=item.email
+        password=item.password
         if not item:
-            logging.info("skipping item (%s, %s), It got filtered out by the filter." % (item.email, item.password))
+            logging.info("skipping item (%s, %s), It got filtered out by the filter." % (email, password))
             continue
         try:
             item = deduper.dedup(item)
             if not item:
-                logging.info("skipping item (%s, %s), since it already existed in the DB." % (item.email, item.password))
+                logging.info("skipping item (%s, %s), since it already existed in the DB." % (email, password))
                 continue        # next item
         except Exception as ex:
-            logging.error("Could not deduplicate item (%s, %s). Skipping this row. Reason: %s" % (item.email, item.password, str(ex)))
+            logging.error("Could not deduplicate item (%s, %s). Skipping this row. Reason: %s" % (email, password, str(ex)))
             continue
         try:
             item = enrich(item, leak_id=leak_id)
         except Exception as ex:
-            errmsg = "Could not enrich item (%s, %s). Skipping this row. Reason: %s" % (item.email, item.password, str(ex),)
+            errmsg = "Could not enrich item (%s, %s). Skipping this row. Reason: %s" % (email, password, str(ex),)
             logging.error(errmsg)
             item.error_msg = errmsg
             item.needs_human_intervention = True
@@ -1071,7 +1082,7 @@ async def import_csv_spycloud(parent_ticket_id: str,
             RETURNING id
             """
         try:
-            print("ehlddlo world")
+            # print("ehlddlo world")
             db = get_db()
             with db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)as cur:
                 r['ticket_id'] = None  # XXX FIXME
@@ -1087,7 +1098,7 @@ async def import_csv_spycloud(parent_ticket_id: str,
                 r['email_verified'], r['password_verified_ok'], r['ip'], r['domain'], r['browser'], r['malware_name'],
                 r['infected_machine'], r['dg']))
                 leak_data_id = int(cur.fetchone()['id'])
-                print("leak_data_id: %s" % leak_data_id)
+                # print("leak_data_id: %s" % leak_data_id)
                 inserted_ids.append(leak_data_id)
                 i += 1
         except psycopg2.Error as ex:
@@ -1096,9 +1107,9 @@ async def import_csv_spycloud(parent_ticket_id: str,
 
     t1 = time.time()
     d = round(t1 - t0, 3)
-    print("all inserted ids: %s" % inserted_ids)
+    # print("all inserted ids: %s" % inserted_ids)
     num_deduped = len(inserted_ids)
-    print("inserted %d rows, %d duplicates, %d new rows" % (i, i - num_deduped, num_deduped))
+    # print("inserted %d rows, %d duplicates, %d new rows" % (i, i - num_deduped, num_deduped))
 
     # now get the data of all the IDs / dedup
     try:
