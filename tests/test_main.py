@@ -334,6 +334,8 @@ def insert_leak_data(d: dict) -> int:
     @:rtype: int
     """
     response = client.post("/leak_data/", json = d, headers = VALID_AUTH)
+    print(response)
+    print(response.text)
     assert response.status_code == 201
     data = response.json()
     print(data)
@@ -361,7 +363,9 @@ def test_new_leak_data():
         "browser": "Chrome",
         "malware_name": "n/a",
         "infected_machine": "n/a",
-        "dg": "DIGIT"
+        "dg": "DIGIT",
+        "needs_human_intervention": False,
+        "notify": False
     }
     _id = insert_leak_data(test_data)
     assert _id >= 0
@@ -385,7 +389,9 @@ def test_update_leak_data():
         "browser": "Chrome",
         "malware_name": "n/a",
         "infected_machine": "n/a",
-        "dg": "DIGIT"
+        "dg": "DIGIT",
+        "needs_human_intervention": False,
+        "notify": False
     }
     # create my own leak_data row
     _id = insert_leak_data(test_data)
