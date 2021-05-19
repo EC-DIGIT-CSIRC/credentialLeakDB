@@ -26,10 +26,10 @@ from fastapi.security.api_key import APIKeyHeader, APIKey, Request
 from pydantic import EmailStr
 
 # packages from this code repo
-from lib.db.db import _get_db, _close_db, _connect_db, DSN
-from api.models import Leak, LeakData, Answer, AnswerMeta
 from api.config import config
-from modules.collectors.parser import BaseParser
+from lib.db.db import _get_db, _close_db, _connect_db, DSN
+from models.outdf import Leak, LeakData, Answer, AnswerMeta
+from modules.collectors.parser import BaseParser        # XXX FIXME: this should be in lib, no? Or called "genericparser"
 from modules.parsers.spycloud import SpyCloudParser
 from modules.collectors.spycloud.collector import SpyCloudCollector
 
@@ -73,7 +73,6 @@ def fetch_valid_api_keys() -> List[str]:
 
     :returns: List of strings - the API keys
     """
-
     return config['api_keys']
 
 
@@ -665,7 +664,7 @@ async def update_leak(leak: Leak,
     t0 = time.time()
     db = get_db()
     if not leak.id:
-        return Answer(errormsg = "id %s not given. Please specify a leak.id you want to UPDATE", data = [])
+        return Answer(success=False, errormsg = "id %s not given. Please specify a leak.id you want to UPDATE", data = [])
     try:
         cur = db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
         cur.execute(sql, (leak.summary, leak.ticket_id, leak.reporter_name,
@@ -860,30 +859,6 @@ async def import_csv_auto_mode(ticket_id=str, summary=None):
       return (deduplicated data including the newly created leak_id)
 """
 
-
-def is_internal_email(email: str) -> bool:
-    if email:
-        return email.upper().endswith('EUROPA.EU')
-    return False
-
-
-def enrich_df(df: pd.DataFrame) -> pd.DataFrame:
-    enricher = LDAPEnricher()
-    for index in df.index:
-        email = df.loc[index]['email']
-        if is_internal_email(email):
-            df.loc[index, 'external_user'] = False
-            dg = enricher.email_to_DG(email)
-            if not dg:
-                dg = "Unknown"
-        else:
-            df.loc[index, 'external_user'] = True
-            dg = "Unknown"  # XXX FIXME . Should never happen.
-        df.loc[index, 'dg'] = dg
-        df.loc[index, 'is_vip'] = False
-    return df
-
-
 def postprocess(_list: list) -> list:
     # df.loc[:,'errors'] = 0
     # df.loc[:,'needs_human_intervention'] = True
@@ -950,6 +925,7 @@ def convert_to_output(idf: InternalDataFormat) -> LeakData:
     ":returns LeakData
     """
     # XXX FIXME!! needs to be implemented.
+    ld = LeakData()
     return idf
 
 
@@ -1025,7 +1001,6 @@ async def import_csv_spycloud(parent_ticket_id: str,
         return Answer(success = False, errormsg = "Could not read input CSV file", data = [])
 
     p = SpyCloudParser()
-    # items: Type[List[InternalDataFormat]]  # list of InternalDataFormat
     try:
         items = p.parse(df)
     except Exception as ex:
@@ -1066,7 +1041,7 @@ async def import_csv_spycloud(parent_ticket_id: str,
             continue
         # after all is finished, convert to output format and return the (deduped) row
         # convert to output format:
-        # XXXXXXXXXXXXXXXXXX This Breaks for now XXXXXXXXXXXXXXXXXXXXXX
+        # XXXXXXXXXXXXXXXXXX Mockup XXXXXXXXXXXXXXXXXXXXXX
         out_item = convert_to_output(item)
         data.append(out_item)
 
@@ -1076,6 +1051,7 @@ async def import_csv_spycloud(parent_ticket_id: str,
                   meta = AnswerMeta(version = VER, duration = d, count = len(data)),
                   data = data)
 
+    ############ unreachable code here.... left for now , moving out soon XXX FIME
     i = 0
     inserted_ids = []
     for r in df.reset_index().to_dict(orient = 'records'):
