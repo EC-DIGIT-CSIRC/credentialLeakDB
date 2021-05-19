@@ -32,16 +32,18 @@ class SpyCloudParser(BaseParser):
         df.replace({"nan": None}, inplace = True)
         df.replace({np.nan: None}, inplace = True)
         df.replace({'breach_date': {'Unknown': None}}, inplace = True)
-        print(df.describe())
+
+        # some initial checks on the df
 
         # validate via pydantic
         items = []
         for row in df.reset_index().to_dict(orient = 'records'):
             logging.error("row=%s" % row)
+            idf_dict = dict(email = "", password="", notify = False, error_msg = "incomplete data", needs_human_intervention = True)
             try:
-                indf_item = parse_obj_as(SpyCloudInputEntry, row)  # here the validation magic happens
-                idf_dict = indf_item.dict()  # conversion magic happens between input format and internal data format
-                idf_dict['domain'] = indf_item.email_domain        # map specific fields
+                input_data_item = parse_obj_as(SpyCloudInputEntry, row)  # here the validation magic happens
+                idf_dict = input_data_item.dict()  # conversion magic happens between input format and internal data format
+                idf_dict['domain'] = input_data_item.email_domain        # map specific fields
             except ValidationError as ex:
                 idf_dict['needs_human_intervention'] = True
                 idf_dict['notify'] = False

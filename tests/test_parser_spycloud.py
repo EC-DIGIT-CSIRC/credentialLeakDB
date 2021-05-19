@@ -19,5 +19,5 @@ class SpyCloudParserTest(unittest.TestCase):
         # print([ i for i in idf ])
         for i in idf:
             if "error_msg" in i.dict() and i.error_msg:
-                print("erro_msg: %s" % i.error_msg)
+                print("error_msg: %s" % i.error_msg)
                 print("orig_line: %s" %i.original_line)
