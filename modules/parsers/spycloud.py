@@ -37,11 +37,11 @@ class SpyCloudParser(BaseParser):
         # validate via pydantic
         items = []
         for row in df.reset_index().to_dict(orient = 'records'):
-            print("row=%s" % row)
+            logging.error("row=%s" % row)
             try:
                 indf_item = parse_obj_as(SpyCloudInputEntry, row)  # here the validation magic happens
                 idf_dict = indf_item.dict()  # conversion magic happens between input format and internal data format
-                idf_dict.domain = indf_item.email_domain        # map specific fields
+                idf_dict['domain'] = indf_item.email_domain        # map specific fields
             except ValidationError as ex:
                 idf_dict['needs_human_intervention'] = True
                 idf_dict['notify'] = False
