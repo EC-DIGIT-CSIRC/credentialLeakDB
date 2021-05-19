@@ -1293,6 +1293,22 @@ async def enrich_userid_by_email(email: EmailStr, response: Response,
                       data = [{"ecMoniker": retval}])
 
 
+@app.get('/enrich/email_to_vip/{email}',
+         tags = ["Enricher"],
+         status_code = 200,
+         response_model = Answer)
+async def enrich_vip_via_email(email: EmailStr, response: Response,
+                               api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
+    t0 = time.time()
+    enr = VIPEnricher()
+    retval = enr.is_vip(email)
+    t1 = time.time()
+    d = round(t1 - t0, 3)
+    response.status_code = 200
+    return Answer(success = True, errormsg = None, meta = AnswerMeta(version = VER, duration = d, count = 1),
+                  data = [{"is_vip": retval}])
+
+
 if __name__ == "__main__":
     db_conn = _connect_db(DSN)
     uvicorn.run(app, debug = True, port = os.getenv('PORT', default = 8080))
