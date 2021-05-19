@@ -1048,21 +1048,23 @@ async def import_csv_spycloud(parent_ticket_id: str,
         # send it through the complete pipeline
         print(item)
         item = filter.filter(item)
+        email=item.email
+        password=item.password
         if not item:
-            logging.info("skipping item (%s, %s), It got filtered out by the filter." % (item.email, item.password))
+            logging.info("skipping item (%s, %s), It got filtered out by the filter." % (email, password))
             continue
         try:
             item = deduper.dedup(item)
             if not item:
-                logging.info("skipping item (%s, %s), since it already existed in the DB." % (item.email, item.password))
+                logging.info("skipping item (%s, %s), since it already existed in the DB." % (email, password))
                 continue        # next item
         except Exception as ex:
-            logging.error("Could not deduplicate item (%s, %s). Skipping this row. Reason: %s" % (item.email, item.password, str(ex)))
+            logging.error("Could not deduplicate item (%s, %s). Skipping this row. Reason: %s" % (email, password, str(ex)))
             continue
         try:
             item = enrich(item, leak_id=leak_id)
         except Exception as ex:
-            errmsg = "Could not enrich item (%s, %s). Skipping this row. Reason: %s" % (item.email, item.password, str(ex),)
+            errmsg = "Could not enrich item (%s, %s). Skipping this row. Reason: %s" % (email, password, str(ex),)
             logging.error(errmsg)
             item.error_msg = errmsg
             item.needs_human_intervention = True
