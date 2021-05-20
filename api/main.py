@@ -1131,7 +1131,6 @@ async def import_csv_with_leak_id(leak_id: int,
 
     """
 
-    i = 0
     inserted_ids = []
     for r in df.reset_index().to_dict(orient = 'records'):
         sql = """
@@ -1151,13 +1150,10 @@ async def import_csv_with_leak_id(leak_id: int,
                               r['domain'], r['browser'], r['malware_name'], r['infected_machine'], r['dg']))
             leak_data_id = int(cur.fetchone()['id'])
             inserted_ids.append(leak_data_id)
-            i += 1
         except Exception as ex:
             return Answer(success = False, errormsg = str(ex), data = [])
     t1 = time.time()
     d = round(t1 - t0, 3)
-    num_deduped = len(inserted_ids)
-    # logger.info("inserted %d rows, %d duplicates, %d new rows" % (i, i - num_deduped, num_deduped))
 
     # now get the data of all the IDs / dedup
     try:
@@ -1181,6 +1177,12 @@ async def import_csv_with_leak_id(leak_id: int,
 async def enrich_dg_by_email(email: EmailStr,
                              response: Response,
                              api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
+    """
+    Enricher function: insert an email, returns the DG.
+
+    :param email:
+    :return: The DG or "Unknown"
+    """
     t0 = time.time()
     le = LDAPEnricher()
     retval = le.email_to_dg(email)

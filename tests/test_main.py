@@ -469,6 +469,23 @@ class TestImportCSVSpycloud(unittest.TestCase):
     def test_import_csv_spycloud(self):
         fixtures_file = "./tests/fixtures/data_anonymized_spycloud.csv"
         f = open(fixtures_file, "rb")
-        response = client.post('/import/csv/spycloud/%s?summary=test2' % ("ticket99",), files = {"_file": f}, headers = VALID_AUTH)
+        response = client.post('/import/csv/spycloud/%s?summary=test2' % ("ticket99",), files = {"_file": f},
+                               headers = VALID_AUTH)
         assert 200 <= response.status_code < 300
         assert response.json()['meta']['count'] >= 0
+
+
+class TestEnricherEmailToDG(unittest.TestCase):
+    response = None
+
+    def test_enrich_dg_by_email(self):
+        email = "aaron@example.com"
+        if not os.getenv('CED_SERVER'):
+            with self.assertRaises(Exception):
+                client.get('/enrich/email_to_dg/%s' % (email,), headers = VALID_AUTH)
+        else:
+            response = client.get('/enrich/email_to_dg/%s' % (email,), headers = VALID_AUTH)
+            assert response.status_code == 200
+            data = response.json()
+            assert data['meta']['count'] >= 1
+            assert data['data'][0]['dg']
