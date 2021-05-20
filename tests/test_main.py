@@ -453,3 +453,18 @@ def test_enrich_email_to_vip_INVALID():
     data = response.json()
     assert data['meta']['count'] >= 1
     assert not data['data'][0]['is_vip']
+
+
+class TestImportCSVSpycloud(unittest.TestCase):
+    def test_import_csv_spycloud_invalid_ticket_id(self):
+        fixtures_file = "./tests/fixtures/data_anonymized_spycloud.csv"
+        f = open(fixtures_file, "rb")
+        response = client.post('/import/csv/spycloud/?summary=test2', files = {"_file": f}, headers = VALID_AUTH)
+        assert response.status_code >= 400
+
+    def test_import_csv_spycloud(self):
+        fixtures_file = "./tests/fixtures/data_anonymized_spycloud.csv"
+        f = open(fixtures_file, "rb")
+        response = client.post('/import/csv/spycloud/%s?summary=test2' % ("ticket99",), files = {"_file": f}, headers = VALID_AUTH)
+        assert 200 <= response.status_code < 300
+        assert response.json()['meta']['count'] >= 0

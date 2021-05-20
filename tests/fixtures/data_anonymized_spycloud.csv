@@ -2,4 +2,3 @@ breach_title,spycloud_publish_date,breach_date,email,domain,username,password,ta
 Freedom Fox Combo List,2020-06-25,Unknown,peter@example.com,example.com,-,12345,-,-,12345,1,High,plaintext,peter.petersson,-,-,example.com,-,-
 Freedom Fox Combo List,2020-06-25,Unknown,bob.inventedname@ec.europa.eu,europa.eu,-,123456,-,-,123456,1,High,plaintext,bob.inventedname,-,-,ec.europa.eu,-,-
 Freedom Fox Combo List,2020-06-25,Unknown,karen.inventedname@ec.europa.eu,europa.eu,-,reallyweakpassword,-,-,reallyweakpassword,1,High,plaintext,karen.inventedname,-,-,ec.europa.eu,-,-
-Freedom Fox Combo List,2020-06-25,Unknown,,europa.eu,-,test,-,-,no_email_addr_given,1,High,plaintext,karen.inventedname,-,-,ec.europa.eu,-,-
