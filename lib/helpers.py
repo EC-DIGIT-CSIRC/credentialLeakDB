@@ -2,6 +2,37 @@ import csv
 import logging
 from pathlib import Path
 
+LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+LOG_FORMAT = '%(asctime)s - [%(name)s:%(module)s:%(funcName)s] - %(levelname)s - %(message)s'
+
+def getlogger(name: str, log_level=logging.INFO) -> logging.Logger:
+    """This is how we do logging. How to use it:
+
+    Add the following code snippet to every module
+    ```
+    logger = getlogger(__name__)
+    logger.info("foobar")
+    ```
+
+    :param name - name of the logger
+    :param log_level - default log level
+
+    :returns logging.Logger object
+    """
+    logger = logging.getLogger(name)
+    logger.setLevel(log_level)
+
+    # create console handler
+    ch = logging.StreamHandler()
+
+    formatter = logging.Formatter(LOG_FORMAT)
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+
+    logger.info('Setting up logger: DONE')
+
+    return logger
+
 
 def peek_into_file(fname: Path) -> csv.Dialect:
     """
