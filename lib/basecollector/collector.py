@@ -40,8 +40,8 @@ class BaseCollector:
         """
         try:
             with open(input_file, "r") as f:
-                df = pd.read_csv(f, kwargs)
+                df = pd.read_csv(f, **kwargs)
                 return "OK", df
-        except pd.errors.ParserError as ex:
-            logging.error("could not parse CSV file. Reason: %r" % (str(ex),))
+        except Exception as ex:
+            logging.exception("could not parse CSV file. Reason: %r" % (str(ex),))
             return str(ex), pd.DataFrame()
