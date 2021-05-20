@@ -9,5 +9,5 @@ Then reload the server (or it gets reloaded automatically).
 
 
 config = {
-    "api_keys":  ["random-test-api-key", "another-example-api-key"]
+    "api_keys": ["random-test-api-key", "another-example-api-key"]
 }

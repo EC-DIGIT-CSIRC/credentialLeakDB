@@ -435,13 +435,14 @@ def test_import_csv_with_leak_id():
 def test_check_file():
     assert True  # trivial check, not implemented yet actually in main.py
 
+
 def test_enrich_email_to_vip():
     email_vip = "aaron@example.com"
     response = client.get('/enrich/email_to_vip/%s' % (email_vip,), headers = VALID_AUTH)
     assert response.status_code == 200
     data = response.json()
     assert data['meta']['count'] >= 1
-    assert data['data'][0]['is_vip'] == True
+    assert data['data'][0]['is_vip']
 
 
 # noinspection PyPep8Naming
@@ -451,4 +452,4 @@ def test_enrich_email_to_vip_INVALID():
     assert response.status_code == 200
     data = response.json()
     assert data['meta']['count'] >= 1
-    assert data['data'][0]['is_vip'] == False
+    assert not data['data'][0]['is_vip']

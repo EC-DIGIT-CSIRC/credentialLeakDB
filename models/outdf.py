@@ -63,5 +63,3 @@ class Answer(BaseModel):
     data: List[Dict]  # Union[Dict,List]
     success: bool
     errormsg: Optional[str] = ""
-
-

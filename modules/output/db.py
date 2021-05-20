@@ -34,7 +34,7 @@ class PostgresqlOutput(BaseOutput):
                 """
         if data:
             try:
-                with self.dbconn.cursor(cursor_factory = psycopg2.extras.RealDictCursor) as cur:
+                with self.dbconn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
                     print(cur.mogrify(sql, (
                         data.leak_id, data.email, data.password, data.password_plain, data.password, data.hash_algo,
                         data.ticket_id, data.email_verified, data.password_verified_ok, data.ip, data.domain,
@@ -49,5 +49,3 @@ class PostgresqlOutput(BaseOutput):
                 logging.error("%s(): error: %s" % (self.process.__name__, ex.pgerror))
                 raise ex
             return True
-
-

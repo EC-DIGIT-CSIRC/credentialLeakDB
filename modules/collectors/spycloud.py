@@ -29,7 +29,7 @@ class SpycloudParser(BaseParser):
             return df
 
         except Exception as ex:
-            logging.error("could not pandas.read_csv(%s). Reason: %s. Skipping file." %(fname, str(ex)))
+            logging.error("could not pandas.read_csv(%s). Reason: %s. Skipping file." % (fname, str(ex)))
             return pd.DataFrame()
 
     def normalize_data(self, df: pd.DataFrame, leak_id=None) -> pd.DataFrame:
@@ -70,10 +70,10 @@ class SpycloudParser(BaseParser):
 
         # This complexity sucks! need to get rid of it. No, itertools won't make it more understandable.
         retdf = pd.DataFrame()
-        for i,r in df.iterrows():       # go over all df rows. Returns index, row
+        for i, r in df.iterrows():       # go over all df rows. Returns index, row
             # print(f"{i}:{r}")
             retrow = dict()             # build up what we want to return
-            for k,v in r.items():       # go over all key-val items in the row
+            for k, v in r.items():       # go over all key-val items in the row
                 # print(f"{k}:{v}", file=sys.stderr)
                 if k in mapping_tbl.keys():
                     map_to = mapping_tbl[k]

@@ -56,4 +56,3 @@ def _connect_db(dsn: str):
         raise HTTPException(status_code=500, detail="could not connect to the DB. Reason: %s" % (str(ex)))
     logging.info("connection to DB established")
     return conn
-

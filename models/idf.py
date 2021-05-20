@@ -34,4 +34,3 @@ class InternalDataFormat(BaseModel):
     error_msg: Optional[str]
     notify: Optional[bool]
     needs_human_intervention: Optional[bool]
-

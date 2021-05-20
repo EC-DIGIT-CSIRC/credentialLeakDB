@@ -1,9 +1,9 @@
 import unittest
-import pandas as pd
 
 from pathlib import Path
 
 from modules.collectors.spycloud.collector import SpyCloudCollector
+
 
 class SpyCloudCollectorTest(unittest.TestCase):
     def test_collect(self):

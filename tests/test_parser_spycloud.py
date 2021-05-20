@@ -1,5 +1,4 @@
 import unittest
-import pandas as pd
 from pathlib import Path
 from modules.parsers.spycloud import SpyCloudParser
 from modules.collectors.spycloud.collector import SpyCloudCollector
