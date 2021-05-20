@@ -18,7 +18,7 @@ NaN_values = ['', '#N/A', '#N/A N/A', '#NA', '-1.#IND', '-1.#QNAN', '-NaN', '-na
 
 class SpyCloudCollector(BaseCollector):
     def __init__(self):
-        pass
+        super().__init__()
 
     def collect(self, input_file: Path, **kwargs) -> (str, pd.DataFrame):
         try:

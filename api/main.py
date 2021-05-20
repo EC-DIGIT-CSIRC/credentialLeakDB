@@ -272,7 +272,8 @@ async def check_user_by_email(email: EmailStr,
 
     # Example
     ``foo@example.com`` -->
-    ``{ "meta": { "version": "0.5", "duration": 0.002, "count": 1 }, "data": [ { "count": 1 } ], "success": true, "errormsg": null }``
+    ``{ "meta": { "version": "0.5", "duration": 0.002, "count": 1 }, "data": [ { "count": 1 } ], "success": true,
+        "errormsg": null }``
     """
     sql = """SELECT count(*) from leak_data where upper(email)=upper(%s)"""
     t0 = time.time()
@@ -980,6 +981,7 @@ async def import_csv_spycloud(parent_ticket_id: str,
         return Answer(success = False, errormsg = str(ex), data = [])
 
     # okay, we found the leak, let's insert the CSV
+    # noinspection PyTypeChecker
     file_on_disk = await store_file(_file.filename, _file.file)
     await check_file(file_on_disk)  # XXX FIXME. Additional checks on the dumped file still missing
 
@@ -1052,6 +1054,7 @@ async def import_csv_spycloud(parent_ticket_id: str,
                   data = data)
 
 
+# noinspection PyTypeChecker
 @app.post("/import/csv/by_leak/{leak_id}",
           tags = ["CSV import"],
           status_code = 200,
