@@ -1019,15 +1019,14 @@ async def import_csv_spycloud(parent_ticket_id: str,
                 logger.info("skipping item (%s, %s), since it already existed in the DB." % (email, password))
                 continue  # next item
         except Exception as ex:
-            logger.exception(
-                "Could not deduplicate item (%s, %s). Skipping this row. Reason: %s" % (email, password, str(ex)))
+            logger.error("Could not deduplicate item (%s, %s). Skipping this row. Reason: %s" % (email, password, str(ex)))
             continue
         try:
             item = enrich(item, leak_id = leak_id)
             item.leak_id = leak_id
         except Exception as ex:
             errmsg = "Could not enrich item (%s, %s). Skipping this row. Reason: %s" % (email, password, str(ex),)
-            logger.exception(errmsg)
+            logger.error(errmsg)
             item.error_msg = errmsg
             item.needs_human_intervention = True
             item.notify = False
@@ -1044,7 +1043,7 @@ async def import_csv_spycloud(parent_ticket_id: str,
                 db_output.process(out_item)
             except Exception as ex:
                 errmsg = "Could not store row. Skipping this row. Reason: %s" % str(ex)
-                logger.exception(errmsg)
+                logger.error(errmsg)
                 out_item.error_msg = errmsg
                 out_item.needs_human_intervention = True
                 out_item.notify = False
@@ -1158,7 +1157,7 @@ async def import_csv_with_leak_id(leak_id: int,
     t1 = time.time()
     d = round(t1 - t0, 3)
     num_deduped = len(inserted_ids)
-    logger.info("inserted %d rows, %d duplicates, %d new rows" % (i, i - num_deduped, num_deduped))
+    # logger.info("inserted %d rows, %d duplicates, %d new rows" % (i, i - num_deduped, num_deduped))
 
     # now get the data of all the IDs / dedup
     try:

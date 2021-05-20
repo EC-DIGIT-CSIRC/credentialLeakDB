@@ -29,7 +29,7 @@ def getlogger(name: str, log_level=logging.INFO) -> logging.Logger:
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 
-    logger.info('Setting up logger: DONE')
+    logger.info('Logger ready')
 
     return logger
 

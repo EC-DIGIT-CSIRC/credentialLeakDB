@@ -1,3 +1,5 @@
+from lib.helpers import getlogger
+
 import urllib.parse
 import uuid
 import unittest
@@ -11,6 +13,7 @@ from api.main import *
 VALID_AUTH = {'x-api-key': 'random-test-api-key'}
 INVALID_AUTH = {'x-api-key': 'random-test-api-XXX'}
 
+logger = getlogger(__name__)
 client = TestClient(app)  # ,  base_url='http://localhost:8080/')
 
 
@@ -428,6 +431,7 @@ def test_import_csv_with_leak_id():
     fixtures_file = "./tests/fixtures/data.csv"
     f = open(fixtures_file, "rb")
     response = client.post('/import/csv/by_leak/%s' % (_id,), files = {"_file": f}, headers = VALID_AUTH)
+    logger.info("response = %r" % response.text)
     assert 200 <= response.status_code < 300
     assert response.json()['meta']['count'] >= 0
 

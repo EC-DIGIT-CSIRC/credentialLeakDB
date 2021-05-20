@@ -1,11 +1,15 @@
 """Database output module. Stores an IDF item to the DB."""
-import logging
+from lib.helpers import getlogger
+
 import psycopg2
 import psycopg2.extras
 
 from lib.baseoutput.output import BaseOutput
 from lib.db.db import _get_db
 from models.outdf import LeakData
+
+
+logger = getlogger(__name__)
 
 
 class PostgresqlOutput(BaseOutput):
@@ -46,6 +50,6 @@ class PostgresqlOutput(BaseOutput):
                     leak_data_id = int(cur.fetchone()['id'])
                     print("leak_data_id: %s" % leak_data_id)
             except psycopg2.Error as ex:
-                logging.error("%s(): error: %s" % (self.process.__name__, ex.pgerror))
+                logger.error("%s(): error: %s" % (self.process.__name__, ex.pgerror))
                 raise ex
             return True
