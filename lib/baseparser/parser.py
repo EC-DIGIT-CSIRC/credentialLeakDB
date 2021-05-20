@@ -1,4 +1,4 @@
-"""Base Parser definitions. Purely abstrat."""
+"""Base Parser definitions. Purely abstract."""
 
 import pandas as pd
 
