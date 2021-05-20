@@ -852,35 +852,6 @@ async def update_leak_data(row: LeakData,
         return Answer(success = False, errormsg = str(ex), data = [])
 
 
-"""
-@app.post("/import/csv")
-async def import_csv_auto_mode(ticket_id=str, summary=None):
-      return (deduplicated data including the newly created leak_id)
-"""
-
-
-def postprocess(_list: list) -> list:
-    # df.loc[:,'errors'] = 0
-    # df.loc[:,'needs_human_intervention'] = True
-    for item in _list:
-        attention = random.random() > 0.5
-        notify = not attention
-        is_vip = random.random() > 0.5
-        item.update({'is_vip': is_vip,
-                     "credential_type": ["EU Login", "External"],
-                     "report_to": "Benoit.Roussille@ec.europa.eu",
-                     "needs_human_attention": attention,
-                     "notify": notify
-                     })
-    return _list
-    # print("type(d) = %s, d= %r" %(type(d), d))
-    # if 'is_vip' not in d:
-    #     d['is_vip'] = False
-    # credType = CredentialType()     # XXX FIXME
-    # credType = ['External', 'EU Login']
-    # d['credential_type'] = credType
-    # return d           # XXX FIXME
-
 
 # ############################################################################################################
 # CSV file importing
