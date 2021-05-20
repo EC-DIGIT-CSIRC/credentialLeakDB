@@ -7,7 +7,7 @@ License: see LICENSE
 """
 
 # system / base packages
-import logging
+from lib.helpers import getlogger, anonymize_password
 import os
 import shutil
 import time
@@ -47,6 +47,8 @@ API_KEY_NAME = "x-api-key"
 api_key_header = APIKeyHeader(name = API_KEY_NAME, auto_error = True)
 
 VER = "0.6"
+
+logger = getlogger(__name__)
 
 app = FastAPI(title = "CredentialLeakDB", version = VER, )  # root_path='/api/v1')
 
@@ -133,7 +135,7 @@ async def store_file(orig_filename: str, _file: SpooledTemporaryFile,
     # filepath syntax:  <UPLOAD_PATH>/<original filename>
     #   example: /tmp/Spycloud.csv
     path = "{}/{}".format(upload_path, orig_filename)  # prefix, orig_filename, sha256, pid, suffix)
-    logging.info("storing %s ... to %s" % (orig_filename, path))
+    logger.info("storing %s ... to %s" % (orig_filename, path))
     _file.seek(0)
     with open(path, "w+b") as outfile:
         shutil.copyfileobj(_file._file, outfile)
@@ -773,7 +775,7 @@ async def new_leak_data(row: LeakData,
         """
     t0 = time.time()
     db = get_db()
-    logging.debug(row)
+    logger.debug(row)
     try:
         cur = db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
         cur.execute(sql, (row.leak_id, row.email, row.password, row.password_plain, row.password_hashed, row.hash_algo,
@@ -831,8 +833,8 @@ async def update_leak_data(row: LeakData,
     db = get_db()
     try:
         cur = db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
-        logging.debug("HTTP request: '%r'" % request)
-        logging.debug("SQL command: '%s'" % cur.mogrify(sql, (row.leak_id, row.email, row.password, row.password_plain,
+        logger.debug("HTTP request: '%r'" % request)
+        logger.debug("SQL command: '%s'" % cur.mogrify(sql, (row.leak_id, row.email, row.password, row.password_plain,
                                                               row.password_hashed, row.hash_algo,
                                                               row.ticket_id, row.email_verified,
                                                               row.password_verified_ok, row.ip, row.domain, row.browser,
@@ -945,10 +947,12 @@ async def import_csv_spycloud(parent_ticket_id: str,
     t0 = time.time()
 
     if not parent_ticket_id:
+        response.status_code = 400
         return Answer(success = False,
                       errormsg = "Please specify a parent_ticket_id as a GET-style parameter in the URL. "
                                  "This is the parameter, needed to link the sub-issues against", data = [])
     if not summary:
+        response.status_code = 400
         return Answer(success = False,
                       errormsg = "Please specify a summary for the Leak object which needs to be created. ", data = [])
 
@@ -957,25 +961,25 @@ async def import_csv_spycloud(parent_ticket_id: str,
     db = get_db()
     try:
         with db.cursor(cursor_factory = psycopg2.extras.RealDictCursor) as cur:
-            print(cur.mogrify(sql, (summary, parent_ticket_id)))
+            logger.debug(cur.mogrify(sql, (summary, parent_ticket_id)))
             cur.execute(sql, (summary, parent_ticket_id))
             rows = cur.fetchall()
             nr_results = len(rows)
             if nr_results >= 1:
                 # take the first one
                 leak_id = rows[0]['id']
-                logging.info("Found existing leak object: %s" % leak_id)
+                logger.info("Found existing leak object: %s" % leak_id)
             else:
                 # nothing found, create one
                 source_name = "SpyCloud"
                 leak = Leak(ticket_id = parent_ticket_id, summary = summary, source_name = source_name)
                 answer = await new_leak(leak, response = response, api_key = api_key)
-                logging.info("Did not find existing leak object, creating one")
+                logger.info("Did not find existing leak object, creating one")
                 if answer.success:
                     leak_id = int(answer.data[0]['id'])
-                    logging.info("Created with id %s" % leak_id)
+                    logger.info("Created with id %s" % leak_id)
                 else:
-                    logging.error("Could not create leak object for spycloud CSV file")
+                    logger.error("Could not create leak object for spycloud CSV file")
                     return Answer(success = False, errormsg = "could not create leak object", data = [])
     except Exception as ex:
         return Answer(success = False, errormsg = str(ex), data = [])
@@ -1003,20 +1007,19 @@ async def import_csv_spycloud(parent_ticket_id: str,
     data = []
     for item in items:  # FIXME: this pipeline could be done nicer with functools and reduce
         # send it through the complete pipeline
-        print(item)
         item = filter.filter(item)
         email = item.email
-        password = item.password
+        password = anonymize_password(item.password)
         if not item:
-            logging.info("skipping item (%s, %s), It got filtered out by the filter." % (email, password))
+            logger.info("skipping item (%s, %s), It got filtered out by the filter." % (email, password))
             continue
         try:
             item = deduper.dedup(item)
             if not item:
-                logging.info("skipping item (%s, %s), since it already existed in the DB." % (email, password))
+                logger.info("skipping item (%s, %s), since it already existed in the DB." % (email, password))
                 continue  # next item
         except Exception as ex:
-            logging.error(
+            logger.exception(
                 "Could not deduplicate item (%s, %s). Skipping this row. Reason: %s" % (email, password, str(ex)))
             continue
         try:
@@ -1024,7 +1027,7 @@ async def import_csv_spycloud(parent_ticket_id: str,
             item.leak_id = leak_id
         except Exception as ex:
             errmsg = "Could not enrich item (%s, %s). Skipping this row. Reason: %s" % (email, password, str(ex),)
-            logging.error(errmsg)
+            logger.exception(errmsg)
             item.error_msg = errmsg
             item.needs_human_intervention = True
             item.notify = False
@@ -1033,6 +1036,7 @@ async def import_csv_spycloud(parent_ticket_id: str,
         # after all is finished, convert to output format and return the (deduped) row
         # convert to output format:
         out_item = convert_to_output(item)
+        logger.info(out_item)
 
         # and finally, store it in the DB
         if not item.needs_human_intervention:
@@ -1040,7 +1044,7 @@ async def import_csv_spycloud(parent_ticket_id: str,
                 db_output.process(out_item)
             except Exception as ex:
                 errmsg = "Could not store row. Skipping this row. Reason: %s" % str(ex)
-                logging.error(errmsg)
+                logger.exception(errmsg)
                 out_item.error_msg = errmsg
                 out_item.needs_human_intervention = True
                 out_item.notify = False
@@ -1154,7 +1158,7 @@ async def import_csv_with_leak_id(leak_id: int,
     t1 = time.time()
     d = round(t1 - t0, 3)
     num_deduped = len(inserted_ids)
-    logging.info("inserted %d rows, %d duplicates, %d new rows" % (i, i - num_deduped, num_deduped))
+    logger.info("inserted %d rows, %d duplicates, %d new rows" % (i, i - num_deduped, num_deduped))
 
     # now get the data of all the IDs / dedup
     try:
