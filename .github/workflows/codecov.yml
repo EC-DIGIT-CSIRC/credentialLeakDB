@@ -9,6 +9,7 @@ jobs:
       DBUSER: credentialleakdb
       DBPASSWORD: 1234testForUnitTesting
       DBNAME: credentialleakdb
+      VIPLIST: tests/fixtures/vips.txt
     steps:
     - uses: actions/checkout@v2
       with:

@@ -5,7 +5,7 @@ name: flak8 and pytest
 
 on:
   push:
-    branches: [ main, develop, release/* ]
+    branches: [ main, develop, re-write-modules, release/* ]
   pull_request:
     branches: [ main ]
 
@@ -19,6 +19,7 @@ jobs:
       DBUSER: credentialleakdb
       DBPASSWORD: 1234testForUnitTesting
       DBNAME: credentialleakdb
+      VIPLIST: tests/fixtures/vips.txt
     steps:
     - uses: actions/checkout@v2
       with:
@@ -53,9 +54,9 @@ jobs:
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --count --select=E9,F63,F7,F82 --ignore=E251 --show-source --statistics --exclude venv
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --ignore=E251 --statistics --exclude venv
     - name: Start the RESTful API server
       run: |
         uvicorn --host 127.0.0.1 --port 8080 --reload api.main:app &

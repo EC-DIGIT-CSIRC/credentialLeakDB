@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """Spycloud parser"""
-import sys
 import collections
 import logging
 from pathlib import Path
@@ -26,12 +25,12 @@ class SpycloudParser(BaseParser):
         try:
             # df = pd.read_csv(fname, dialect=csv_dialect, header=1, error_bad_lines=False, warn_bad_lines=True)
             df = pd.read_csv(fname, error_bad_lines=False, warn_bad_lines=True)
-            print(df)
+            logging.debug(df)
             return df
 
         except Exception as ex:
-            logging.error("could not pandas.read_csv(%s). Reason: %s. Skipping file." %(fname, str(ex)))
-            return None
+            logging.error("could not pandas.read_csv(%s). Reason: %s. Skipping file." % (fname, str(ex)))
+            return pd.DataFrame()
 
     def normalize_data(self, df: pd.DataFrame, leak_id=None) -> pd.DataFrame:
         """Bring the pandas DataFrame into an internal data format."""
@@ -46,7 +45,7 @@ class SpycloudParser(BaseParser):
             "spycloud_publish_date": None,
             "breach_date": None,
             "email": "email",
-            "domain": "domain",
+            "domain": None,
             "username": None,
             "password": "password",
             "salt": None,
@@ -60,7 +59,7 @@ class SpycloudParser(BaseParser):
             "cc_number": None,
             "infected_path": None,
             "infected_machine_id": "infected_machine",
-            "email_domain": None,
+            "email_domain": "domain",
             "cc_expiration": None,
             "cc_last_four": None,
             "email_username": None,
@@ -71,10 +70,10 @@ class SpycloudParser(BaseParser):
 
         # This complexity sucks! need to get rid of it. No, itertools won't make it more understandable.
         retdf = pd.DataFrame()
-        for i,r in df.iterrows():       # go over all df rows. Returns index, row
+        for i, r in df.iterrows():       # go over all df rows. Returns index, row
             # print(f"{i}:{r}")
             retrow = dict()             # build up what we want to return
-            for k,v in r.items():       # go over all key-val items in the row
+            for k, v in r.items():       # go over all key-val items in the row
                 # print(f"{k}:{v}", file=sys.stderr)
                 if k in mapping_tbl.keys():
                     map_to = mapping_tbl[k]
@@ -86,8 +85,8 @@ class SpycloudParser(BaseParser):
                     else:
                         # don't map it
                         pass
-            print("retrow = %r" % retrow)
+            logging.debug("retrow = %r" % retrow)
             retdf = retdf.append(pd.Series(retrow), ignore_index=True)
         # retdf[:,'leak_id'] = leak_id
-        print("retdf: %s" % retdf)
+        logging.debug("retdf: %s" % retdf)
         return retdf

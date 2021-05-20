@@ -1,3 +1,10 @@
+0.6 * complete re-write. Refactor everything.
+    * make a structure of collectors, parsers, enrichers, filters, output modules
+    * re-wrote spycloud parsing completely
+    * re-wrote the output / postgresql storing of the data
+    * lots of unit tests . Brings coverage > 80%
+
+0.5 * things sort of work, but feels buggy
 
 0.4 * added endpoints for /leak and /leak_data
     * fixed the Answer format for all endpoints.

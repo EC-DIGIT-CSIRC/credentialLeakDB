@@ -4,11 +4,11 @@ Author: Aaron Kaplan
 License: see LICENSE.
 """
 
-from pydantic import BaseModel, EmailStr
-from typing import Optional, Dict, List    # Union
-from enum import Enum
-
 import datetime
+from enum import Enum
+from typing import Optional, Dict, List  # Union
+
+from pydantic import BaseModel, EmailStr
 
 
 class Leak(BaseModel):
@@ -42,15 +42,21 @@ class LeakData(BaseModel):
     password_verified_ok: Optional[bool]
     ip: Optional[str]
     domain: Optional[str]
-    target_domain: Optional[str]        # new
+    target_domain: Optional[str]  # new
     browser: Optional[str]
     malware_name: Optional[str]
     infected_machine: Optional[str]
     dg: Optional[str]
     is_vip: Optional[bool]
     credential_type: Optional[List[CredentialType]]
-    report_to: Optional[str]
-    needs_human_attention: Optional[bool]
+    report_to: Optional[List[str]]  # the security contact to report this to, in case it's not the the user directly.
+    #
+    # meta stuff and things for error reporting
+    count_seen: Optional[int] = 1
+    original_line: Optional[str]        # the original CSV file in case of errors
+    error_msg: Optional[str]
+    notify: bool
+    needs_human_intervention: bool
 
 
 class AnswerMeta(BaseModel):
@@ -61,7 +67,7 @@ class AnswerMeta(BaseModel):
 
 class Answer(BaseModel):
     meta: Optional[AnswerMeta]
-    data: List[Dict]    # Union[Dict,List]
+    data: List[Dict]  # Union[Dict,List]
     success: bool
     errormsg: Optional[str] = ""
 
