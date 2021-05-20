@@ -56,3 +56,19 @@ def peek_into_file(fname: Path) -> csv.Dialect:
         logging.debug("skipinitialspace: %s", dialect.skipinitialspace)
         # noinspection PyTypeChecker
         return dialect
+
+
+def anonymize_password(password: str) -> str:
+    """
+    "*"-out the characters of a password. Must be 4 chars in length at least.
+
+    :param password: str
+    :returns anonymized password (str):
+
+    """
+    anon_password = password
+    if password and len(password) >= 4:
+        prefix = password[:1]
+        suffix = password[-2:]
+        anon_password = prefix + "*" * (len(password) - 3) + suffix
+    return anon_password
