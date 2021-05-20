@@ -22,7 +22,7 @@ def test_ping():
 
 class DBTestCases(unittest.TestCase):
     def test_get_db(self):
-        assert get_db() != None
+        assert get_db() is not None
 
     def test_close_db(self):
         get_db()  # initialize connection
@@ -59,6 +59,7 @@ def test_root_auth():
     assert response.json() == {"message": "Hello World"}
 
 
+# noinspection PyPep8Naming
 def test_root_INVALID_auth():
     response = client.get("/", headers = INVALID_AUTH)
     assert response.status_code == 403
@@ -72,6 +73,7 @@ def test_get_user_by_email():
     assert "meta" in response.text and "data" in response.text and data['meta']['count'] >= 1
 
 
+# noinspection PyPep8Naming
 def test_get_nonexistent_user_by_INVALID_email():
     email = urllib.parse.quote("aaron@doesnotexist.com")
     response = client.get("/user/%s" % email, headers = VALID_AUTH)
@@ -89,6 +91,7 @@ def test_get_user_by_email_and_password():
     assert "meta" in response.text and "data" in response.text and data['meta']['count'] >= 1
 
 
+# noinspection PyPep8Naming
 def test_get_nonexistent_user_by_email_and_INVALID_password():
     email = urllib.parse.quote("aaron@example.com")
     passwd = "12345XXXXXXXXXX"
@@ -106,6 +109,7 @@ def test_check_user_by_email():
     assert "meta" in response.text and "data" in response.text and data['meta']['count'] >= 1
 
 
+# noinspection PyPep8Naming
 def test_check_nonexistent_user_by_INVALID_email():
     email = urllib.parse.quote("aaron@doesnotexist.com")
     response = client.get("/exists/by_email/%s" % email, headers = VALID_AUTH)
@@ -123,6 +127,7 @@ def test_check_user_by_password():
     assert "meta" in response.text and "data" in response.text and data['meta']['count'] >= 1
 
 
+# noinspection PyPep8Naming
 def test_check_nonexistent_user_by_INVALID_password():
     password = 'DOESNOTEXIST@59w47YTISJGw496UASGJSATARSASJKGJSAKGASRG'
     response = client.get("/exists/by_password/%s" % password, headers = VALID_AUTH)
@@ -139,6 +144,7 @@ def test_check_user_by_domain():
     assert "meta" in response.text and "data" in response.text and data['meta']['count'] >= 1
 
 
+# noinspection PyPep8Naming
 def test_check_nonexistent_user_by_INVALID_domain():
     domain = "example.com-foobar-2esugksti2uwasgjskhsjhsa.net"
     response = client.get("/exists/by_domain/%s" % domain, headers = VALID_AUTH)
@@ -222,6 +228,7 @@ def test_update_leak():
     assert response.status_code == 404
 
 
+# noinspection PyPep8Naming
 def test_update_INVALID_leak():
     test_data = {
         "id": -1,
@@ -248,6 +255,7 @@ def test_get_leak_by_summary():
     assert data['data'][0]['reporter_name'] == 'aaron'
 
 
+# noinspection PyPep8Naming
 def test_get_leak_by_INVALID_summary():
     summary = "COMB-XXX-DOESNETEXIST"
     response = client.get('/leak/by_summary/%s' % (summary,), headers = VALID_AUTH)
@@ -266,6 +274,7 @@ def test_get_leak_by_ticket_id():
     assert data['data'][0]['summary'] == "COMB"
 
 
+# noinspection PyPep8Naming
 def test_get_leak_by_INVALID_ticket_id():
     ticket_id = "COMB-XXX-DOESNETEXIST"
     response = client.get('/leak/by_ticket_id/%s' % (ticket_id,), headers = VALID_AUTH)
@@ -307,6 +316,7 @@ def test_get_leak_data_by_leak():
     assert data['data'][0]['email'] == 'aaron@example.com'
 
 
+# noinspection PyPep8Naming
 def test_get_leak_data_by_INVALID_leak():
     leak_id = -1  # we know this does not exist
     response = client.get('/leak_data/%s' % (leak_id,), headers = VALID_AUTH)
@@ -418,7 +428,7 @@ def test_import_csv_with_leak_id():
     fixtures_file = "./tests/fixtures/data.csv"
     f = open(fixtures_file, "rb")
     response = client.post('/import/csv/by_leak/%s' % (_id,), files = {"_file": f}, headers = VALID_AUTH)
-    assert response.status_code >= 200 and response.status_code < 300
+    assert 200 <= response.status_code < 300
     assert response.json()['meta']['count'] >= 0
 
 
@@ -433,6 +443,8 @@ def test_enrich_email_to_vip():
     assert data['meta']['count'] >= 1
     assert data['data'][0]['is_vip'] == True
 
+
+# noinspection PyPep8Naming
 def test_enrich_email_to_vip_INVALID():
     email_vip = "aaron-invalid-does-not-exist@example.com"
     response = client.get('/enrich/email_to_vip/%s' % (email_vip,), headers = VALID_AUTH)

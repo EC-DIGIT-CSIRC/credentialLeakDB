@@ -1,7 +1,7 @@
-
 from typing import Union
 
 from models.idf import InternalDataFormat
+
 
 class Filter:
     def __init__(self):

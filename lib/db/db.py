@@ -31,6 +31,7 @@ def _get_db():
     return db_conn
 
 
+# noinspection PyUnresolvedReferences
 def _close_db():
     """Closes the database again at the end of the request."""
     global db_conn

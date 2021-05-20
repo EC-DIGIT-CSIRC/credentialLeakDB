@@ -1,7 +1,7 @@
 import datetime
 from enum import Enum
 from typing import Optional, Dict, List  # Union
-from pydantic import BaseModel, IPvAnyAddress, EmailStr
+from pydantic import BaseModel, EmailStr
 
 
 class Leak(BaseModel):

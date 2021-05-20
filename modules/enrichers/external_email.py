@@ -1,5 +1,6 @@
 """ExternalEmailEnricher"""
 
+
 class ExternalEmailEnricher:
     """Can determine if an Email Adress is an (organisation-) external email address. Also super trivial code."""
 
@@ -14,4 +15,3 @@ class ExternalEmailEnricher:
     @staticmethod
     def is_external_email(email: str) -> bool:
         return not ExternalEmailEnricher.is_internal_email(email)
-

@@ -9,7 +9,6 @@ License: see LICENSE
 # system / base packages
 import logging
 import os
-import random
 import shutil
 import time
 from pathlib import Path
@@ -852,7 +851,6 @@ async def update_leak_data(row: LeakData,
         return Answer(success = False, errormsg = str(ex), data = [])
 
 
-
 # ############################################################################################################
 # CSV file importing
 
@@ -869,7 +867,7 @@ def enrich(item: InternalDataFormat, leak_id: str) -> InternalDataFormat:
     # DG
     ldap_enricher = LDAPEnricher()
     if not item.dg:
-        dg = ldap_enricher.email_to_DG(item.email)
+        dg = ldap_enricher.email_to_dg(item.email)
         if not dg:
             dg = "Unknown"
         item.dg = dg
@@ -997,7 +995,7 @@ async def import_csv_spycloud(parent_ticket_id: str,
         return Answer(success = False, errormsg = str(ex), data = [])
 
     deduper = Deduper()
-    dbOutput = PostgresqlOutput()
+    db_output = PostgresqlOutput()
     filter = Filter()
 
     data = []
@@ -1037,7 +1035,7 @@ async def import_csv_spycloud(parent_ticket_id: str,
         # and finally, store it in the DB
         if not item.needs_human_intervention:
             try:
-                dbOutput.process(out_item)
+                db_output.process(out_item)
             except Exception as ex:
                 errmsg = "Could not store row. Skipping this row. Reason: %s" % str(ex)
                 logging.error(errmsg)
@@ -1179,7 +1177,7 @@ async def enrich_dg_by_email(email: EmailStr,
                              api_key: APIKey = Depends(validate_api_key_header)) -> Answer:
     t0 = time.time()
     le = LDAPEnricher()
-    retval = le.email_to_DG(email)
+    retval = le.email_to_dg(email)
     t1 = time.time()
     d = round(t1 - t0, 3)
     if not retval:

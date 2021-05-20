@@ -2,6 +2,7 @@
 
 from models.idf import InternalDataFormat
 
+
 class BaseEnricher:
     def __init__(self):
         pass

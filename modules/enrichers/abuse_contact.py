@@ -36,4 +36,4 @@ class AbuseContactLookup:
                     return [email]
                 else:
                     return v
-        return ""
+        return [""]

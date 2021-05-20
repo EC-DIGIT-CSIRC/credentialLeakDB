@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 
-from modules.enrichers.ldap import LDAPEnricher
+# from modules.enrichers.ldap import LDAPEnricher
 from modules.enrichers.external_email import ExternalEmailEnricher
 from modules.enrichers.abuse_contact import AbuseContactLookup
 from modules.enrichers.vip import VIPEnricher
@@ -18,7 +18,7 @@ class TestVIPenrichment(unittest.TestCase):
 
     def test_load_vips_invalid_path(self):
         path = 'tests/fixtures/vips.txt-doesnotexist'
-        te = VIPEnricher(path)  # will pass because there we catch the exception
+        te = VIPEnricher(Path(path))  # will pass because there we catch the exception
         self.assertRaises(Exception, te.load_vips, path)
 
 

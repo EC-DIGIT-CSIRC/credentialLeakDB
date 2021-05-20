@@ -7,7 +7,6 @@ from modules.collectors.spycloud.collector import SpyCloudCollector
 
 class SpyCloudCollectorTest(unittest.TestCase):
     def test_collect(self):
-        data = pd.DataFrame()
         path = Path('tests/fixtures/data_anonymized_spycloud.csv')
         tc = SpyCloudCollector()
         statuscode, data = tc.collect(path)

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """Spycloud parser"""
-import sys
 import collections
 import logging
 from pathlib import Path
@@ -31,7 +30,7 @@ class SpycloudParser(BaseParser):
 
         except Exception as ex:
             logging.error("could not pandas.read_csv(%s). Reason: %s. Skipping file." %(fname, str(ex)))
-            return None
+            return pd.DataFrame()
 
     def normalize_data(self, df: pd.DataFrame, leak_id=None) -> pd.DataFrame:
         """Bring the pandas DataFrame into an internal data format."""

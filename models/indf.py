@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional, Union
+from typing import Optional, Union
 from pydantic import BaseModel, IPvAnyAddress
 
 
@@ -8,8 +8,8 @@ class SpyCloudInputEntry(BaseModel):
     breach_title: str
     spycloud_publish_date: Optional[Union[str, datetime]]
     breach_date: Optional[Union[str, datetime]]
-    email: str          # mandatory
-    domain: str         # mandatory
+    email: str  # mandatory
+    domain: str  # mandatory
     username: Optional[str]
     password: str
     salt: Optional[str]

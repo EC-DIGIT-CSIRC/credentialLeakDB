@@ -28,6 +28,7 @@ class BaseCollector:
      4. return it as pandas DF to the next processing step in the chain
      5. return errors in case it encountered errors in validation.
     """
+
     def __init__(self):
         pass
 
@@ -40,7 +41,7 @@ class BaseCollector:
         try:
             with open(input_file, "r") as f:
                 df = pd.read_csv(f, kwargs)
-                return ("OK", df)
+                return "OK", df
         except pd.errors.ParserError as ex:
-            logging.error("could not parse CSV file. Reason: %r" %(str(ex),))
-            return (str(ex), pd.DataFrame())
+            logging.error("could not parse CSV file. Reason: %r" % (str(ex),))
+            return str(ex), pd.DataFrame()

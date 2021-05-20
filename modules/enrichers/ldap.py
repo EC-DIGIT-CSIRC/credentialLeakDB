@@ -1,5 +1,6 @@
-
 import logging
+from typing import Union
+
 from modules.enrichers.ldap_lib import CEDQuery
 
 
@@ -9,7 +10,7 @@ class LDAPEnricher:
     def __init__(self):
         self.ced = CEDQuery()
 
-    def email_to_DG(self, email: str) -> str:
+    def email_to_dg(self, email: str) -> str:
         """Return the DG of an email. Note that there might be multiple DGs, we just return the first one here."""
         try:
             results = self.ced.search_by_mail(email)
@@ -22,11 +23,11 @@ class LDAPEnricher:
             logging.error("could not query LDAP/CED. Reason: %s" % str(ex))
             raise ex
 
-    def email_to_user_id(self, email: str) -> str:
+    def email_to_user_id(self, email: str) -> Union[str, None]:
         """Return the userID of an email. """
         try:
             results = self.ced.search_by_mail(email)
-            if results and results[0]['attributes'] and  results[0]['attributes']['ecMoniker'] and \
+            if results and results[0]['attributes'] and results[0]['attributes']['ecMoniker'] and \
                     results[0]['attributes']['ecMoniker'][0]:
                 return results[0]['attributes']['ecMoniker'][0]
             else:
