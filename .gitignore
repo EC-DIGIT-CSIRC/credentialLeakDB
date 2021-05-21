@@ -8,6 +8,8 @@ api/config.py
 .venv
 venv
 
+# editor
+.idea/
 
 # real data directories, don't upload to github ;-)
 modules/collectors/real_data
