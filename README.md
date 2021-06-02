@@ -173,20 +173,33 @@ Also pretty self-explanatory. You need to first create a leak object, give it's 
 
 ## Installation
 
-1. Install Postgresql:
+1. Install git and checkout this repository:
+```bash
+apt install git
+git clone ...
+cd credentialLeakDB
+```
+
+3. Install Postgresql:
 ```bash 
 # in Ubuntu:
-apt install postgresql-12
+apt install postgresql-12           
+# alternatively, if you are in Debian 10, you can also use postgresql-11, both work:
+# apt install postgresql-11
 ```
 
 2. as user postgres:
 ```bash
+sudo su - postgres
 createdb credentialleakdb
 createuser credentialleakdb
 psql -c "ALTER ROLE credentialleakdb WITH PASSWORD '<insert some random password here>'" template1
 ```
-3. ``psql credentialleakdb < db.sql``
-4. set the env vars: 
+
+3. create the DB:
+```psql -u credentialleakdb credentialleakdb < db.sql```
+
+5. set the env vars: 
 ```bash
 export PORT=8080
 export DBNAME=credentialleakdb
