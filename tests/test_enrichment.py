@@ -8,6 +8,7 @@ from modules.enrichers.vip import VIPEnricher
 
 
 class TestVIPenrichment(unittest.TestCase):
+
     def test_load_vips(self):
         path = 'tests/fixtures/vips.txt'
         te = VIPEnricher(Path(path))
