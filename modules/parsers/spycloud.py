@@ -37,24 +37,33 @@ class SpyCloudParser(BaseParser):
         # validate via pydantic
         items = []
         for row in df.reset_index().to_dict(orient = 'records'):
-            logging.error("row=%s" % row)
-            idf_dict = dict(email = "", password="", notify = False, error_msg = "incomplete data",
+            logging.debug("row=%s" % row)
+            idf_dict = dict(email = None, password = None, notify = False, domain = None, error_msg = "incomplete data",
                             needs_human_intervention = True)
+            idf_dict['original_line'] = str(row)
             try:
                 input_data_item = parse_obj_as(SpyCloudInputEntry, row)  # here the validation magic happens
                 idf_dict = input_data_item.dict()  # conversion magic happens between input format and internal df
                 idf_dict['domain'] = input_data_item.email_domain        # map specific fields
-            except ValidationError as ex:
+            except Exception as ex:
                 idf_dict['needs_human_intervention'] = True
                 idf_dict['notify'] = False
-                idf_dict['error_msg'] = ex.json()
-                idf_dict['original_line'] = str(row)
-                logging.error("could not parse CSV file. Original line: %r.\nReason: %s" % (repr(row), str(ex)))
+                idf_dict['error_msg'] = str(ex)
+                logging.error("could not parse CSV row. Original line: %r.\nReason: %s" % (repr(row), str(ex)))
+                logging.debug("idf_dict = %s" % idf_dict)
             else:
+                logging.error("everything successfully converted")
                 idf_dict['needs_human_intervention'] = False
                 idf_dict['notify'] = True
                 idf_dict['error_msg'] = None
             finally:
-                idf = InternalDataFormat(**idf_dict)  # another step of validation happens here
-                items.append(idf)
+                try:
+                    idf = InternalDataFormat(**idf_dict)  # another step of validation happens here
+                    logging.debug("idf = %r" % idf)
+                except Exception as ex2:
+                    logging.error("Exception in finally. idf_dict = %r" % idf_dict)
+                    raise ex2
+                else:
+                    items.append(idf)
+
         return items

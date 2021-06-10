@@ -6,7 +6,7 @@ class InternalDataFormat(BaseModel):
     """The Internal Data Format (IDF)."""
     leak_id: Optional[str]      # the leak(id) reference
     email: str
-    password: str
+    password: Optional[str]     # not mandatory yet
     password_plain: Optional[str]
     password_hashed: Optional[str]
     hash_algo: Optional[str]
