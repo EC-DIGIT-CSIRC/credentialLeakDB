@@ -23,6 +23,25 @@ Think: our own, internal [HaveIBeenPwned](https://haveibeenpwned.com/) database.
 
 ## Documentation
 
+### Installation
+
+#### Docker
+
+#### Via pip and venv
+
+```bash
+git clone https://github.com/EC-DIGIT-CSIRC/credentialLeakDB.git
+cd credentialLeakDB
+# create a virtualenv
+virtualenv --python=python3.7 venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+Next, make sure the following files exist:
+  * ``VIPs.txt`` ... a \n separated list of email addresses which you would consider VIPs.
+  * api/config.py ... see below
+ 
 ### Database structure
 Search in Confluence for "credentialLeakDB" in the Automation space.
 

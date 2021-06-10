@@ -25,8 +25,8 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: set up demo database
       run: |
-        sudo apt install postgresql-12 
-        sudo -u postgres pg_ctlcluster 12 main start
+        sudo apt install postgresql 
+        # sudo -u postgres pg_ctlcluster 12 main start
         sudo service postgresql start
         # sudo -u postgres pg_ctlcluster 12 main start
         sudo -u postgres createdb credentialleakdb
